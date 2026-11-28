@@ -12,6 +12,6 @@
   "maximum_mutants": 512,
   "mutation_jobs": 1,
   "campaign_admission": false,
-  "candidate_sha256": "24c675d9af83d5b95a85ac2db5a5a7c90464cfff6e06af9dfa8e220c49501b1e",
-  "line_policy_sha256": "bac772447d2627c2f46702f2bf5e226bad98b91254962ea70085b40546fecbcb"
+  "candidate_sha256": "18db3db3c4ac593d6830244275c536b7c4c98de30ee304aa0052a32716eced86",
+  "line_policy_sha256": "80a1f256e6762a1904c8105ce54fa5afc8fc08c369539324e1399fa277b51ec8"
 }

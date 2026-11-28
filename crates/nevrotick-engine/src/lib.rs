@@ -42,10 +42,10 @@ pub use ke_preview_target::{KePreviewTarget, KePreviewTargetError};
 pub use nts_ke_experiment::managed_preview::ProtectedTimingObservationRefusal;
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{
-    CertificateTimeProvenance, ManagedPowerObservation, ManagedProtectedPairReport,
-    ManagedProtectedPlan, ManagedProtectedReceipt, ManagedProtectedReport,
-    ManagedProtectedRestriction, ManagedProtectedTerminal, ProtectedReceiptAdmission,
-    SourceProtectedProbeFailure, SourceProtectedProbeReport,
+    CertificateCause, CertificateTimeProvenance, ManagedPowerObservation,
+    ManagedProtectedPairReport, ManagedProtectedPlan, ManagedProtectedReceipt,
+    ManagedProtectedReport, ManagedProtectedRestriction, ManagedProtectedTerminal,
+    ProtectedReceiptAdmission, SourceProtectedProbeFailure, SourceProtectedProbeReport, TlsCause,
 };
 #[cfg(all(feature = "ke-association-prototype", any(windows, test)))]
 pub use nts_ke_experiment::managed_preview::{SourceKePreviewFailure, SourceKePreviewReport};

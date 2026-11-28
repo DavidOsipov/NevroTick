@@ -1891,8 +1891,8 @@ mod ordered_round {
         ControlledAgreement, ControlledDate, IntervalError, IntervalPolicy,
     };
     use nevrotick_engine::roughtime::round::recovery::{
-        ConflictEvidence, ConflictProof, ControlledRecovery, DisclosureError, RecoveryControl,
-        RecoveryDatePolicy, RecoveryRound, SelectedPeer,
+        ConflictEvidence, ConflictProof, ControlledRecovery, DisclosureAction, DisclosureError,
+        DisclosureView, RecoveryControl, RecoveryDatePolicy, RecoveryRound, SelectedPeer,
     };
     use nevrotick_engine::roughtime::round::{
         OrderedRound, ProbeProgress, RetryRoundPeer, RoundControl, RoundError, RoundPeer,
@@ -4579,21 +4579,25 @@ mod ordered_round {
         ))?;
         let observed: Vec<SignedFrames> = first_recovery_conflict(&mut recovery, &servers)?;
         let evidence: &ConflictEvidence = recovery.first_conflict().ok_or("missing conflict")?;
-        let old = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
-        let current = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        let old: DisclosureAction<'_> =
+            checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        let current: DisclosureAction<'_> =
+            checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
         assert!(matches!(old.submit(), Err(DisclosureError::Stale)));
         assert!(checked_disclosure(evidence.disclosure_report())?.is_none());
         checked_disclosure(current.submit())?;
         let first_report: Vec<u8> = {
-            let view = checked_disclosure(evidence.disclosure_report())?.ok_or("missing report")?;
+            let view: DisclosureView<'_> =
+                checked_disclosure(evidence.disclosure_report())?.ok_or("missing report")?;
             let bytes: &[u8] = view.bytes().ok_or("missing recipient bytes")?;
             inspect_disclosure(bytes, &servers, &observed)?;
             bytes.to_vec()
         };
-        let busy = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        let busy: DisclosureAction<'_> =
+            checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
         assert!(matches!(busy.submit(), Err(DisclosureError::Busy)));
         {
-            let view =
+            let view: DisclosureView<'_> =
                 checked_disclosure(evidence.disclosure_report())?.ok_or("lost full report")?;
             assert_eq!(
                 view.bytes().ok_or("missing full report bytes")?,
@@ -4601,11 +4605,13 @@ mod ordered_round {
             );
         }
         checked_disclosure(evidence.clear_disclosure_report())?;
-        let dismissed = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        let dismissed: DisclosureAction<'_> =
+            checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
         checked_disclosure(evidence.dismiss_disclosure())?;
         assert!(matches!(dismissed.submit(), Err(DisclosureError::Stale)));
         assert!(checked_disclosure(evidence.disclosure_report())?.is_none());
-        let successor = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        let successor: DisclosureAction<'_> =
+            checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
         checked_disclosure(successor.submit())?;
         checked_disclosure(evidence.clear_disclosure_report())?;
         checked_disclosure(evidence.retire_disclosure())?;
@@ -4732,8 +4738,10 @@ mod ordered_round {
                     ) = if expected_cap_report.is_some() {
                         recovery_capped_leg(&mut round, server, midpoint)?
                     } else {
-                        let ((request, response), progress) =
-                            recovery_leg(&mut round, server, midpoint)?;
+                        let ((request, response), progress): (
+                            SignedFrames,
+                            Result<ProbeProgress, RoundError>,
+                        ) = recovery_leg(&mut round, server, midpoint)?;
                         ((request, response.to_vec()), progress)
                     };
                     observed.push(frames);
@@ -4758,7 +4766,7 @@ mod ordered_round {
                 checked_disclosure(retained.confirm_disclosure(PROBE_BUDGET))?.submit(),
             )?;
             {
-                let report = checked_disclosure(retained.disclosure_report())?
+                let report: DisclosureView<'_> = checked_disclosure(retained.disclosure_report())?
                     .ok_or("missing disclosure")?;
                 let bytes: &[u8] = report.bytes().ok_or("missing report bytes")?;
                 if let Some(size) = expected_cap_report {
@@ -4832,7 +4840,7 @@ mod ordered_round {
             checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?.submit(),
         )?;
         {
-            let view = checked_disclosure(evidence.disclosure_report())?
+            let view: DisclosureView<'_> = checked_disclosure(evidence.disclosure_report())?
                 .ok_or("missing report after timeout")?;
             inspect_disclosure(
                 view.bytes().ok_or("missing report bytes after timeout")?,

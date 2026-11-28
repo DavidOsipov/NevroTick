@@ -2,15 +2,18 @@
 //! Same-transition disclosure controls using actual signed recovery evidence.
 
 use super::{
-    ConflictEvidence, ConflictProofError, DisclosureAction, DisclosureError, DisclosureView, LIMIT,
-    base64,
+    ConflictEvidence, ConflictProofError, Current, DisclosureAction, DisclosureError,
+    DisclosureView, LIMIT, State, base64,
 };
 use crate::roughtime::{
     exchange::Receipt, round::recovery::proof::tests::signed_recovery_evidence,
 };
 use std::{
     error::Error,
-    sync::mpsc::{self, RecvTimeoutError},
+    sync::{
+        MutexGuard,
+        mpsc::{self, Receiver, RecvTimeoutError, Sender},
+    },
     thread::{self, ScopedJoinHandle},
     time::{Duration, Instant},
 };
@@ -80,11 +83,11 @@ fn maximal_inert_report_profile_fits_the_output_limit() {
 /// Panics if retirement fails or the retired action publishes any bytes.
 #[test]
 fn session_retirement_before_commit_refuses_publication() -> Result<(), Box<dyn Error>> {
-    let evidence = signed_recovery_evidence()?;
-    let action = evidence
+    let evidence: ConflictEvidence = signed_recovery_evidence()?;
+    let action: DisclosureAction<'_> = evidence
         .confirm_disclosure(Duration::from_secs(3))
         .map_err(|error| format!("{error:?}"))?;
-    let result = action.submit_using(
+    let result: Result<(), DisclosureError> = action.submit_using(
         || Some(Instant::now()),
         || {
             assert!(evidence.retire_disclosure().is_ok());
@@ -120,8 +123,8 @@ fn check_replaced_reservation(evidence: &ConflictEvidence) -> Result<(), Box<dyn
         let original: DisclosureAction<'_> = evidence
             .confirm_disclosure(MAX_LIFETIME)
             .map_err(|error| format!("{error:?}"))?;
-        let (prepared, preparation) = mpsc::channel::<()>();
-        let (resume, resumed) = mpsc::channel::<()>();
+        let (prepared, preparation): (Sender<()>, Receiver<()>) = mpsc::channel();
+        let (resume, resumed): (Sender<()>, Receiver<()>) = mpsc::channel();
         let worker: ScopedJoinHandle<'_, Result<(), DisclosureError>> = scope.spawn(move || {
             original.submit_using(
                 || Some(Instant::now()),
@@ -182,7 +185,8 @@ fn check_held_recipient(
         .map_err(|error| format!("{error:?}"))?
         .ok_or("missing report before contention")?;
     thread::scope(move |scope| -> Result<(), Box<dyn Error>> {
-        let (finished, completion) = mpsc::channel::<Result<(), DisclosureError>>();
+        type Disposition = Result<(), DisclosureError>;
+        let (finished, completion): (Sender<Disposition>, Receiver<Disposition>) = mpsc::channel();
         let contender: ScopedJoinHandle<'_, ()> = scope.spawn(move || {
             assert!(finished.send(evidence.clear_disclosure_report()).is_ok());
         });
@@ -258,16 +262,17 @@ fn check_allocation_refusal(
 /// Panics when an invalidated action publishes or a valid neighbor fails.
 #[test]
 fn current_action_is_rechecked_at_the_actual_transfer() -> Result<(), Box<dyn Error>> {
-    let mut evidence = signed_recovery_evidence()?;
+    let mut evidence: ConflictEvidence = signed_recovery_evidence()?;
     let lifetime: Duration = Duration::from_secs(3);
     let mut exact_size: usize = 0;
     for case in 0..4 {
-        let action = evidence
+        let action: DisclosureAction<'_> = evidence
             .confirm_disclosure(lifetime)
             .map_err(|e| format!("{e:?}"))?;
         let (issued, cutoff): (Instant, Instant) = {
-            let state = evidence.disclosure.lock().map_err(|e| format!("{e:?}"))?;
-            let current = state.current.as_ref().ok_or("missing current action")?;
+            let state: MutexGuard<'_, State> =
+                evidence.disclosure.lock().map_err(|e| format!("{e:?}"))?;
+            let current: &Current = state.current.as_ref().ok_or("missing current action")?;
             (current.issued, current.cutoff)
         };
         let timely: Instant = cutoff
@@ -301,7 +306,7 @@ fn current_action_is_rechecked_at_the_actual_transfer() -> Result<(), Box<dyn Er
             .is_some();
         assert_eq!(present, case == 3);
         if case == 3 {
-            let view = evidence
+            let view: DisclosureView<'_> = evidence
                 .disclosure_report()
                 .map_err(|e| format!("{e:?}"))?
                 .ok_or("missing report")?;
@@ -311,10 +316,10 @@ fn current_action_is_rechecked_at_the_actual_transfer() -> Result<(), Box<dyn Er
             .clear_disclosure_report()
             .map_err(|e| format!("{e:?}"))?;
     }
-    let action = evidence
+    let action: DisclosureAction<'_> = evidence
         .confirm_disclosure(lifetime)
         .map_err(|e| format!("{e:?}"))?;
-    let result = action.submit_using(
+    let result: Result<(), DisclosureError> = action.submit_using(
         || Some(Instant::now()),
         || {
             assert!(evidence.dismiss_disclosure().is_ok());
@@ -330,7 +335,7 @@ fn current_action_is_rechecked_at_the_actual_transfer() -> Result<(), Box<dyn Er
             .is_none()
     );
     check_replaced_reservation(&evidence)?;
-    let too_small = evidence
+    let too_small: DisclosureAction<'_> = evidence
         .confirm_disclosure(lifetime)
         .map_err(|e| format!("{e:?}"))?;
     assert!(matches!(
@@ -349,7 +354,7 @@ fn current_action_is_rechecked_at_the_actual_transfer() -> Result<(), Box<dyn Er
             .is_none()
     );
     check_allocation_refusal(&evidence, exact_size)?;
-    let exact = evidence
+    let exact: DisclosureAction<'_> = evidence
         .confirm_disclosure(lifetime)
         .map_err(|e| format!("{e:?}"))?;
     exact
@@ -383,7 +388,7 @@ fn current_action_is_rechecked_at_the_actual_transfer() -> Result<(), Box<dyn Er
     check_held_recipient(&evidence, exact_size)?;
     // This mutation is possible only in this descendant test module.
     let _removed: Receipt = evidence.receipts.pop().ok_or("missing last receipt")?;
-    let incomplete = evidence
+    let incomplete: DisclosureAction<'_> = evidence
         .confirm_disclosure(lifetime)
         .map_err(|e| format!("{e:?}"))?;
     assert!(matches!(

@@ -23,7 +23,7 @@ published files retain their original bytes. The Windows module original SHA256 
 6b277079bdd38ddc7d13a813aaeeb0f290905c01e90639f6381d6c96d89f28a2;
 upstream/windows.rs preserves those exact original bytes separately. The owned
 Windows source SHA256 is
-fb8e3f734f1e6ad46bb12e0c0a4f9d57316bc4e5710a0b8b72b885cbd62da8c3.
+5926e5f83ff56f3d2b841834ecad848115d049fc43aaf15c6fa48a1b5f4cf92c.
 
 Dependency binding: the owned normalized manifest narrows the Windows windows-sys
 requirement from >=0.52.0,<0.62.0 to exactly 0.61.2. Actual offline resolution otherwise
@@ -42,6 +42,9 @@ Windows delta:
   SSL/server-name policy, requested serverAuth usage, algorithm/usage/distrust
   handling and Rustls handshake-signature checks remain the verification owners.
   Unknown/offline status without acceptable current cached evidence refuses.
+- Preserve CRYPT_E_NO_REVOCATION_CHECK and CRYPT_E_REVOCATION_OFFLINE as
+  Rustls UnknownRevocationStatus. Both remain terminal certificate refusals
+  and do not identify a particular missing or stale CRL.
 - Fully initialize CERT_CHAIN_POLICY_STATUS, including checked cbSize and a null
   extra-status pointer, before its OS call. Preserve rejection of API failure and
   nonzero policy error. Initial zero fields themselves establish no authentication.
@@ -60,13 +63,14 @@ strict laboratory caller must use the reviewed normal-date profile and ordinary
 Verifier::new, without extra/fake roots. Retained generic APIs confer no laboratory
 permission to select weaker trust.
 
-Four pure Windows regression tests are added in
+Five pure Windows regression tests are added in
 src/verification/windows/laboratory_tests.rs, SHA256
-c05f7c92d23991a1b81cca292490fbca0280f213973cffb47a304fd8b75f72cb:
+8e425a97bea626d061329f4a44d67ccabbd94eaac48ba0fbd5a8cf7c59c252cb:
 laboratory_filetime_matches_literal_ticks_and_words;
 laboratory_filetime_refuses_outside_dates_with_bounded_errors;
 laboratory_chain_settings_match_the_call_site_contract;
-laboratory_policy_status_has_complete_initialized_inputs.
+laboratory_policy_status_has_complete_initialized_inputs;
+laboratory_policy_retains_unavailable_revocation.
 They inspect the actual private parameter/date/status helpers. Literal integer
 oracles cover seconds 0, 1, 71, 72, the upper boundary and its neighbors, including
 the low-word carry; refusals include u64::MAX. They perform no OS verification,

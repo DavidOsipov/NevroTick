@@ -22,7 +22,7 @@
     "crates/nevrotick-engine/src/roughtime/round/recovery/proof.rs",
     "crates/nevrotick-engine/src/roughtime/interval.rs"
   ],
-  "candidate_sha256": "24c675d9af83d5b95a85ac2db5a5a7c90464cfff6e06af9dfa8e220c49501b1e",
+  "candidate_sha256": "18db3db3c4ac593d6830244275c536b7c4c98de30ee304aa0052a32716eced86",
   "test_inventory": {
     "src/lib.rs": [
       "roughtime::exchange::retry::tests::floor_refuses_early_active_and_reversed_observations",

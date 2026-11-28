@@ -2,6 +2,7 @@
 """Exercise the combined ArtworkLab reader through its portable CLI."""
 
 from collections.abc import Callable
+from copy import deepcopy
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -13,7 +14,10 @@ import tempfile
 import unittest
 
 from test_check_package import block_map, make_zip, with_zip64_end_records
+from test_prepare_artwork_payload import GUARDED_ROLE_SOURCES
 from test_prepare_payload import write_guarded_role_export
+from test_windows_pe import _ui_resource_image
+from test_windows_versioninfo import _DESCRIPTION, _FIXED, _MANIFEST, version_resource
 
 
 SCRIPT: Path = Path(__file__).with_name("check_artwork_package.py")
@@ -229,15 +233,24 @@ class CombinedPackageTests(unittest.TestCase):
             "--guarded-ui-receipt", str(ui_receipt), "--guarded-ui-sha256", sha256(body).hexdigest(),
             "--guarded-ui-link-map", str(link_map),
             "--guarded-role-receipt", str(self.root / "unused-role.json"), "--guarded-role-sha256", "0" * 64,
+            "--guarded-ui-source-sha256", "0" * 64,
         )), b"guarded UI link receipt differs from the archived UI")
 
     def test_guarded_archive_joins_both_original_service_roles(self) -> None:
         role_receipt: Path = self.root / "cross-artwork-roles.json"
         images, _, role_report = write_guarded_role_export(self.root / "cross-artwork-roles-artifacts")
+        service_source: str = "tools/windows-service-fixture/msix/service_entry.c"
+        service_sources: dict[str, str] = {**GUARDED_ROLE_SOURCES, service_source: "a" * 64}
+        ui_sources: dict[str, str] = {**GUARDED_ROLE_SOURCES, "metadata/product.toml": "9" * 64}
+        # Derive the independent pin once from the original fixture roster.
+        source_pairs: str = ",".join(f'"{name}":"{pin}"' for name, pin in sorted(ui_sources.items()))
+        source_pin: str = sha256(("{" + source_pairs + "}").encode("ascii")).hexdigest()
+        role_report["source_sha256"] = service_sources
         role_bytes: bytes = json.dumps(role_report).encode("utf-8")
         role_receipt.write_bytes(role_bytes)
-        gui: bytearray = bytearray(images[ENGINE])
-        struct.pack_into("<H", gui, 0x98 + 68, 2)
+        role_pin: str = sha256(role_bytes).hexdigest()
+        gui: bytearray = _ui_resource_image(version_resource(), _MANIFEST)
+        struct.pack_into("<I", gui, 0x98 + 16, 0x1010)
         self.data.update(images)
         self.data[UI] = bytes(gui)
 
@@ -252,8 +265,10 @@ class CombinedPackageTests(unittest.TestCase):
         link_map: Path = self.root / "ui.map"
         link_map.write_bytes(mapping)
         image_pin: str = sha256(gui).hexdigest()
-        ui_report: dict[str, object] = {
+        ui_report = {
             "status": "passed", "native_windows_execution": "not performed",
+            "dependency_profile": "default",
+            "source_sha256": ui_sources,
             "artifact": {
                 "component_role": "ui", "source_state": "fixture", "profile": "release",
                 "target": "x86_64-pc-windows-msvc", "sha256": image_pin,
@@ -263,20 +278,79 @@ class CombinedPackageTests(unittest.TestCase):
                 "entry_rva": 0x1010, "crt_startup_rva": 0x1030, "image_base": 0x140000000,
                 "tls_callback_table_rva": 0, "direct_import_modules": [],
             },
+            "ui_versioninfo": {
+                "image_sha256": image_pin,
+                "fixed": list(_FIXED), "translation": [1033, 1200],
+                "strings": {"FileDescription": _DESCRIPTION, "OriginalFilename": UI},
+                "execution_manifest": {
+                    "level": "asInvoker", "ui_access": False, "sha256": sha256(_MANIFEST).hexdigest(),
+                },
+            },
         }
-        body: bytes = json.dumps(ui_report).encode("utf-8")
         ui_receipt: Path = self.root / "ui.json"
-        ui_receipt.write_bytes(body)
-        guarded: tuple[str, ...] = (
-            "--guarded-ui-receipt", str(ui_receipt), "--guarded-ui-sha256", sha256(body).hexdigest(),
-            "--guarded-ui-link-map", str(link_map),
-            "--guarded-role-receipt", str(role_receipt), "--guarded-role-sha256", sha256(role_bytes).hexdigest(),
-        )
+
+        def write_receipt(report: dict[str, object], service_pin: str = role_pin) -> tuple[str, ...]:
+            body: bytes = json.dumps(report).encode("utf-8")
+            ui_receipt.write_bytes(body)
+            return (
+                "--guarded-ui-receipt", str(ui_receipt), "--guarded-ui-sha256", sha256(body).hexdigest(),
+                "--guarded-ui-link-map", str(link_map),
+                "--guarded-role-receipt", str(role_receipt), "--guarded-role-sha256", service_pin,
+                "--guarded-ui-source-sha256", source_pin,
+            )
+
+        guarded: tuple[str, ...] = write_receipt(ui_report)
         healthy: subprocess.CompletedProcess[bytes] = self.run_reader(guarded=guarded)
         self.assertEqual(healthy.returncode, 0, healthy.stderr)
         observed: dict[str, dict[str, object]] = json.loads(healthy.stdout)["startup_inventory"]["members"]
         self.assertEqual(set(observed), {UI, ENGINE, BROKER})
         self.assertEqual(observed[UI]["crt_startup_rva"], 0x1030)
+        self.assert_refusal(self.run_reader(guarded=guarded[:-2]),
+                            b"the original UI map and the UI source digest")
+
+        original_archive: bytes = self.package.read_bytes()
+        crossed = {**role_report, "source_sha256": {**service_sources, "Cargo.lock": "0" * 64}}
+        crossed_bytes: bytes = json.dumps(crossed).encode("utf-8")
+        role_receipt.write_bytes(crossed_bytes)
+        with self.subTest(service_source="Cargo.lock"):
+            result = self.run_reader(guarded=write_receipt(ui_report, sha256(crossed_bytes).hexdigest()))
+            self.assertEqual(self.package.read_bytes(), original_archive)
+            self.assert_refusal(result, b"guarded service link evidence refused")
+
+        shared: str = "crates/nevrotick-ui/src/native_tray.rs"
+        incomplete_service: dict[str, str] = service_sources.copy()
+        del incomplete_service[shared]
+        incomplete_service_bytes: bytes = json.dumps({**role_report, "source_sha256": incomplete_service}).encode("utf-8")
+        role_receipt.write_bytes(incomplete_service_bytes)
+        incomplete_service_pin: str = sha256(incomplete_service_bytes).hexdigest()
+        self.assert_refusal(self.run_reader(guarded=write_receipt(ui_report, incomplete_service_pin)),
+                            b"guarded service link evidence refused")
+        incomplete_ui: dict[str, str] = ui_sources.copy()
+        del incomplete_ui[shared]
+        for altered_sources in (incomplete_ui, {**incomplete_ui, service_source: service_sources[service_source]}):
+            with self.subTest(ui_source_count=len(altered_sources)):
+                altered_report: dict[str, object] = {**ui_report, "source_sha256": altered_sources}
+                result = self.run_reader(guarded=write_receipt(altered_report, incomplete_service_pin))
+                self.assertEqual(self.package.read_bytes(), original_archive)
+                self.assert_refusal(result, b"guarded UI source map SHA-256 differs")
+        role_receipt.write_bytes(role_bytes)
+
+        for field, replacement in (
+            ("strings", {"FileDescription": "Altered description", "OriginalFilename": UI}),
+            ("fixed", [*_FIXED[:9], True, *_FIXED[10:]]),
+            ("translation", [1033.0, 1200]),
+            ("execution_manifest", {"level": "asInvoker", "ui_access": 0,
+                                    "sha256": sha256(_MANIFEST).hexdigest()}),
+            ("execution_manifest", {"level": "asInvoker", "ui_access": False, "sha256": "0" * 64}),
+            ("image_sha256", "0" * 64),
+        ):
+            with self.subTest(resource_field=field, replacement=replacement):
+                altered = deepcopy(ui_report)
+                altered["ui_versioninfo"][field] = replacement
+                self.assert_refusal(self.run_reader(guarded=write_receipt(altered)),
+                                    b"guarded UI resource facts differ from the archived PE")
+
+        guarded = write_receipt(ui_report)
         for service, original in images.items():
             with self.subTest(service=service):
                 self.data[service] = original + b"\0"

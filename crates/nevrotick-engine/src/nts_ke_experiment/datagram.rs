@@ -67,7 +67,7 @@ mod reached {
         StagedProtectedControl, StagedProtectedSuccessor, Ticket,
     };
     use crate::nts_ke_experiment::job::{NormalOperation, ReceivingOutcome};
-    use crate::nts_ke_experiment::profile::CertificateTimeProvenance;
+    use crate::nts_ke_experiment::profile::{CertificateTimeProvenance, FullAuthenticationBracket};
     use crate::nts_ke_experiment::receiving::{ManagedReceivingContext, ReceivedOrdinaryReceipt};
     use crate::nts_ke_experiment::recovery::BoundProtectedReceiver;
     use crate::nts_ke_experiment::{
@@ -677,6 +677,8 @@ mod reached {
         policy: Option<ProtectedReceiptPolicy>,
         /// The actual publishing association's original accepted KE provenance.
         certificate_time_provenance: CertificateTimeProvenance,
+        /// The same association's original checked handshake readings.
+        full_authentication_bracket: Option<FullAuthenticationBracket>,
     }
 
     /// Genuine first-leg commit that left the original invocation published.
@@ -724,6 +726,8 @@ mod reached {
         ke_association_identity: Arc<()>,
         /// Original KE verifier and time input, with no current trust or date claim.
         certificate_time_provenance: CertificateTimeProvenance,
+        /// The original handshake bracket, independent of UDP receipt and commit times.
+        full_authentication_bracket: Option<FullAuthenticationBracket>,
         /// The guarded terminal decision, separate from the receipt age reference.
         committed_at: Instant,
         /// Checked historical pool entries/bytes, including duplicate entries.
@@ -1243,6 +1247,13 @@ mod reached {
             self.certificate_time_provenance
         }
 
+        /// Return the original KE bracket retained at the protected commit.
+        pub(in super::super) const fn full_authentication_bracket(
+            &self,
+        ) -> Option<FullAuthenticationBracket> {
+            self.full_authentication_bracket
+        }
+
         /// Borrow only the unchanged CLI count projection of this owning history.
         pub(in super::super) const fn summary(&self) -> &Summary {
             &self.summary
@@ -1379,6 +1390,7 @@ mod reached {
                 configuration,
                 policy,
                 certificate_time_provenance: association.certificate_time_provenance(),
+                full_authentication_bracket: association.full_authentication_bracket(),
             }))
         }
 
@@ -1440,6 +1452,7 @@ mod reached {
                 configuration,
                 policy,
                 certificate_time_provenance: association.certificate_time_provenance(),
+                full_authentication_bracket: association.full_authentication_bracket(),
             })
         }
         /// Only completed socket/runtime retirement permits making the ledger transfer.
@@ -1577,6 +1590,7 @@ mod reached {
                 receipt,
                 ke_association_identity: Arc::clone(&control.first_receipt_identity),
                 certificate_time_provenance: self.certificate_time_provenance,
+                full_authentication_bracket: self.full_authentication_bracket,
                 committed_at: self.committed_at,
                 population: (cookies, cookie_bytes),
                 send_before,

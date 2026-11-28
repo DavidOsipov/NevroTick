@@ -57,6 +57,11 @@ class UiBuildInputs(NamedTuple):
     profile: str
     source_sha256: dict[str, str]
 
+    def service_matching_sources(self) -> dict[str, str]:
+        """Project the shared product pins without the UI verifier's extra inputs."""
+        windows_input_files: set[str] = set(verify.WINDOWS_PE_INPUT_FILES + verify.WINDOWS_UI_INPUT_FILES)
+        return {name: digest for name, digest in self.source_sha256.items() if name not in windows_input_files}
+
 
 def read_build_receipt(anchor: Path, descriptor: int, pin: str) -> dict[str, Any]:
     """Read the same pinned build receipt from the held export directory."""
@@ -404,15 +409,9 @@ def main() -> int:
                     guarded_export, guarded_pin, guarded_map, generation=generation,
                     matching_ui=ui, matching_build=build,
                 )
-                # The service link freezes the product inventory. The Windows verifier adds
-                # these resource and PE reader inputs separately from that inventory.
-                windows_input_files: set[str] = set(verify.WINDOWS_PE_INPUT_FILES + verify.WINDOWS_UI_INPUT_FILES)
-                matching_sources: dict[str, str] = {
-                    name: digest for name, digest in guarded_build.source_sha256.items()
-                    if name not in windows_input_files
-                }
                 images = stage.role_images(
-                    role_receipt, role_pin, require_baseline_entry=True, matching_sources=matching_sources,
+                    role_receipt, role_pin, require_baseline_entry=True,
+                    matching_sources=guarded_build.service_matching_sources(),
                 )
             else:
                 images = stage.role_images(role_receipt, role_pin)

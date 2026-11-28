@@ -10,7 +10,7 @@ use zeroize::Zeroizing;
 
 use super::handoff::PreparedRequest;
 use super::process::ProviderScope;
-use super::profile::{CertificateTimeProvenance, StrictProfile};
+use super::profile::{CertificateTimeProvenance, FullAuthenticationBracket, StrictProfile};
 use super::request::DirectionalKeys;
 use super::{COOKIE_BYTES_LIMIT, COOKIE_LIMIT, Config, Control, Failure};
 
@@ -183,6 +183,11 @@ impl<'a> AssociationOwner<'a> {
     /// Read the original profile's historical certificate time provenance.
     pub(super) const fn certificate_time_provenance(&self) -> CertificateTimeProvenance {
         self.material.profile.certificate_time_provenance()
+    }
+
+    /// Preserve the original KE profile's process-local authentication bracket.
+    pub(super) const fn full_authentication_bracket(&self) -> Option<FullAuthenticationBracket> {
+        self.material.profile.full_authentication_bracket()
     }
 
     /// Check the closed operation selection and borrow its original negotiated lease.

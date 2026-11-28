@@ -15,7 +15,7 @@ use rustls::{CipherSuite, ClientConfig, ClientConnection, StreamOwned, Supported
 use rustls_pki_types::UnixTime;
 use zeroize::Zeroizing;
 
-use super::profile::{CertificateTimeProvenance, StrictProfile};
+use super::profile::{CertificateTimeProvenance, FullAuthenticationBracket, StrictProfile};
 use super::transport_fault::{self, SetupStage, TlsIoStage, TransportIo};
 use super::{AssociationCandidate, AssociationOwner, ProviderScope, request::DirectionalKeys};
 use super::{Config, Control, Failed, Failure, SCRATCH_LIMIT, encode_offer, read_response};
@@ -293,16 +293,25 @@ fn prepare<'a>(
     certificate_time: ConfiguredCertificateTime,
 ) -> Result<InternalCandidate<'a>, Failure> {
     let config: &'a Config = stream.sock.admission.config();
-    let handshake = stream
-        .conn
-        .complete_io(&mut stream.sock)
-        .map_err(|error| transport_fault::project_io(TlsIoStage::Handshake, &error));
+    let control: &'a Control = stream.sock.admission.control();
+    let started_at: Instant = Instant::now();
+    let handshake: io::Result<(usize, usize)> = stream.conn.complete_io(&mut stream.sock);
+    let completed_by: Instant = Instant::now();
+    let handshake: Result<(usize, usize), Failure> = handshake
+        .map_err(|error: io::Error| transport_fault::project_io(TlsIoStage::Handshake, &error));
     stream
         .sock
         .admission
         .resolve(handshake, Failure::Handshake)?;
     stream.sock.admission.current(Failure::Handshake)?;
-    let profile: StrictProfile = StrictProfile::capture(&stream.conn, certificate_time)?;
+    let authentication: Option<FullAuthenticationBracket> = FullAuthenticationBracket::within(
+        started_at,
+        completed_by,
+        control.origin,
+        control.handshake_deadline,
+    );
+    let profile: StrictProfile =
+        StrictProfile::capture(&stream.conn, certificate_time, authentication)?;
     stream.sock.admission.begin_exchange();
     let mut storage = [0_u8; 16];
     let offer = encode_offer(&mut storage)?;
@@ -341,10 +350,10 @@ fn prepare<'a>(
     stream.sock.admission.current(Failure::Response)?;
     Ok(InternalCandidate {
         config,
-        control: stream.sock.admission.control(),
+        control,
         peer,
         udp: reply.udp,
-        expiry: stream.sock.admission.control().expiry,
+        expiry: control.expiry,
         profile,
         aead,
         c2s_key,

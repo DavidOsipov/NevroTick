@@ -1762,11 +1762,13 @@ fn loopback_control_operation<'scope>(
     first_receipt: crate::nts_ke_experiment::job::FirstReceiptWriter<'scope>,
     remote: std::net::SocketAddr,
     before_commit: super::LoopbackBeforeCommit,
+    component_authentication_bracket: bool,
 ) -> Operation {
     let original_expiry: Instant = control.expiry;
     let mut producer: ScriptProducer<'_> =
         ScriptProducer::new(config, provider, vec![Ok(())], ExchangeCase::Healthy);
     producer.managed_loopback = Some(remote);
+    producer.synthetic_authentication_bracket = component_authentication_bracket;
     producer.before_loopback_commit = Some(before_commit);
     let result: Operation =
         drive_successor_fixture(config, provider, control, &mut producer, first_receipt);
@@ -2204,6 +2206,8 @@ struct LoopbackScenario {
     sends_nak: bool,
     /// Outside event after joined take and before receiving.
     receiving_event: LoopbackReceivingEvent,
+    /// Attach a synthetic component bracket to test one association's two receipts.
+    component_authentication_bracket: bool,
 }
 
 #[cfg(any(windows, target_os = "linux"))]
@@ -2214,6 +2218,7 @@ impl LoopbackScenario {
             successor,
             sends_nak,
             receiving_event: LoopbackReceivingEvent::None,
+            component_authentication_bracket: false,
         }
     }
 
@@ -2585,6 +2590,7 @@ fn run_managed_loopback_observing<T: Send>(
             fixture.job,
             remote,
             fixture.before_commit,
+            scenario.component_authentication_bracket,
         )?;
         fixture.gate.wait(slot)?;
         let before_successor_commit: Instant = Instant::now();
@@ -2639,6 +2645,9 @@ fn run_managed_loopback_observing<T: Send>(
             &fixture.expected,
             &(original_origin..=before_successor_commit),
             first_endpoints,
+            scenario
+                .component_authentication_bracket
+                .then_some([original_origin; 2]),
         )?;
         verify(report.as_ref(), peer_result?)
     })?;
@@ -2756,6 +2765,7 @@ fn submit_managed_loopback_worker(
     prepared: PreparedInvocation,
     remote: std::net::SocketAddr,
     before_commit: super::LoopbackBeforeCommit,
+    component_authentication_bracket: bool,
 ) -> Result<Arc<OnceLock<Weak<()>>>, Failure> {
     let provider_lifetime: Arc<OnceLock<Weak<()>>> = Arc::new(OnceLock::new());
     let worker_provider_lifetime: Arc<OnceLock<Weak<()>>> = Arc::clone(&provider_lifetime);
@@ -2775,6 +2785,7 @@ fn submit_managed_loopback_worker(
                         first_receipt,
                         remote,
                         before_commit,
+                        component_authentication_bracket,
                     )
                 },
                 Hooks::none(),
@@ -2990,6 +3001,7 @@ fn submit_pair_loopback(
                 writer,
                 remote,
                 Box::new(|| Ok(())),
+                false,
             )
         },
         hooks,
@@ -4160,6 +4172,7 @@ fn assert_joined_loopback_successor(
     expected: &crate::SourceConfigurationSnapshot,
     first_commit_window: &std::ops::RangeInclusive<Instant>,
     first_endpoints: Result<(std::net::SocketAddr, std::net::SocketAddr), Failure>,
+    expected_authentication_bracket: Option<[Instant; 2]>,
 ) -> Result<Option<ManagedProtectedReport>, Failure> {
     match (successor, result) {
         (
@@ -4193,6 +4206,25 @@ fn assert_joined_loopback_successor(
                 sends_nak,
                 first_commit_window,
             )?;
+            if let Some(expected_bracket) = expected_authentication_bracket {
+                let first_receipt: &crate::ManagedProtectedReceipt =
+                    report.first().ok_or(Failure::Control)?;
+                let ManagedProtectedTerminal::Ordinary(terminal_receipt) = report.terminal() else {
+                    return Err(Failure::Control);
+                };
+                assert_eq!(
+                    first_receipt.component_authentication_bracket(),
+                    Some(expected_bracket)
+                );
+                assert_eq!(
+                    terminal_receipt.component_authentication_bracket(),
+                    Some(expected_bracket)
+                );
+                assert_eq!(first_receipt.full_authentication_bracket(), None);
+                assert_eq!(terminal_receipt.full_authentication_bracket(), None);
+                assert!(first_receipt.same_ke_association(terminal_receipt));
+                assert!(!first_receipt.same_exchange(terminal_receipt));
+            }
             let nak: Option<Instant> = report.first_nak_at();
             assert_loopback_work(&report, ordinary, sends_nak);
             assert_eq!(
@@ -4775,6 +4807,44 @@ fn managed_loopback_successor_preserves_nak_and_ordinary_reply_after_join() -> R
     run_managed_loopback_control(&SLOT, &ADMISSION, LoopbackSuccessor::ApplyOrdinary)
 }
 
+/// The same active receiver retains its association bracket on first and terminal receipts.
+/// # Errors
+/// Preserve the actual bounded worker, loopback peer and joined receiving refusals.
+/// # Panics
+/// Reject lost/rebound bracket custody or accidental public component authentication credit.
+#[cfg(any(windows, target_os = "linux"))]
+#[test]
+fn managed_loopback_first_and_terminal_receipts_keep_same_association_bracket()
+-> Result<(), Failure> {
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let mut scenario: LoopbackScenario =
+        LoopbackScenario::new(LoopbackSuccessor::ApplyOrdinary, true);
+    scenario.component_authentication_bracket = true;
+    run_managed_loopback_observing(
+        &SLOT,
+        &ADMISSION,
+        scenario,
+        None,
+        || Ok(()),
+        |report, _peer: [LoopbackPeerLeg<()>; 2]| {
+            let report: &ManagedProtectedReport = report.ok_or(Failure::Control)?;
+            let first: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+            let crate::ManagedProtectedTerminal::Ordinary(terminal) = report.terminal() else {
+                return Err(Failure::Control);
+            };
+            let bracket: Option<[Instant; 2]> = first.component_authentication_bracket();
+            assert!(bracket.is_some());
+            assert_eq!(terminal.component_authentication_bracket(), bracket);
+            assert_eq!(first.full_authentication_bracket(), None);
+            assert_eq!(terminal.full_authentication_bracket(), None);
+            assert!(first.same_ke_association(terminal));
+            assert!(!first.same_exchange(terminal));
+            Ok(())
+        },
+    )
+}
+
 /// Withhold only the terminal reply after the peer's optional NAK send.
 /// # Errors
 /// Preserve the separate peer's actual I/O or script failure.
@@ -4865,6 +4935,7 @@ fn assert_joined_nak_receive_stop(
                             first_receipt,
                             remote,
                             Box::new(|| Err(Failure::Control)),
+                            false,
                         )
                     },
                     Hooks::none(),
@@ -5107,6 +5178,7 @@ fn assert_joined_receiving_event(
         successor: LoopbackSuccessor::ApplyOrdinary,
         sends_nak: false,
         receiving_event,
+        component_authentication_bracket: false,
     };
     let measurement: LoopbackMeasurement = LoopbackMeasurement {
         profile: valid_loopback_measurement_profile()?,

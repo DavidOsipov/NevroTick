@@ -28,21 +28,21 @@ use super::managed_preview::{
     SourceProtectedProbeReport, protected_receipt, protected_report,
 };
 use super::process::{ProcessAdmission, ProcessClaim, ProviderScope};
-use super::profile::StrictProfile;
+use super::profile::{CertificateTimeProvenance, FullAuthenticationBracket, StrictProfile};
 use super::recovery::{End, Invocation, Producer, Snapshot, Step, step_with};
 use super::request::DirectionalKeys;
 use super::response::fixtures;
-use super::transport_fault::TransportIo;
+use super::transport_fault::{TlsFailure, TlsIoStage, TransportIo};
 use super::{
     Config, Control, Failed, Failure, PowerObserverCleanup, RunFailed, StopDisposition, StopHandle,
     Summary, output, run_observing, run_synchronously_with,
 };
 use crate::source_policy::{FixtureRequest, SourceBinding, fixture_control, fixture_send};
 use crate::{
-    ExperimentalMeasurement, ExperimentalProfile, KePreviewTarget, KePreviewTargetError,
-    ManagedProtectedReceipt, MeasurementRefusal, SoftwareClock, SourceConfigurationSnapshot,
-    SourceHandle, SourcePolicyAuthority, SourcePolicyError, SourcePolicyLimits,
-    SourcePolicySnapshot, SourceScale,
+    CertificateCause, ExperimentalMeasurement, ExperimentalProfile, KePreviewTarget,
+    KePreviewTargetError, ManagedProtectedReceipt, MeasurementRefusal, SoftwareClock,
+    SourceConfigurationSnapshot, SourceHandle, SourcePolicyAuthority, SourcePolicyError,
+    SourcePolicyLimits, SourcePolicySnapshot, SourceScale, TlsCause,
 };
 
 /// Finite component observation only; it supplies no product operation deadline.
@@ -68,6 +68,8 @@ enum ProtectedLeapWarning {
 enum Scenario {
     /// Complete under the genuine unchanged definition.
     Healthy,
+    /// Return one bounded component observation at the actual establishment call.
+    EstablishmentRefusal(Failed),
     /// Retain two distinct cookies while sealing only the original first cookie.
     TwoCookies,
     /// Replace the actual issued revision while entropy is outside all guards.
@@ -90,6 +92,8 @@ enum Scenario {
     ProtectedMembershipBeforeReplyCommit,
     /// Replace a protected source after commit, before joined reconstruction.
     ProtectedAfterCommit,
+    /// Retain distinct component authentication endpoints through source replacement and join.
+    ProtectedAuthenticationBracket([Duration; 2]),
     /// Exercise distinct original placement endpoints through joined projection.
     ProtectedPlacementAfterCommit,
     /// Replace the committed smeared definition before the numerical receiver.
@@ -109,6 +113,7 @@ impl Scenario {
                 | Self::ProtectedMembershipBeforeSend
                 | Self::ProtectedMembershipBeforeReplyCommit
                 | Self::ProtectedAfterCommit
+                | Self::ProtectedAuthenticationBracket(_)
                 | Self::ProtectedPlacementAfterCommit
                 | Self::ProtectedSmearedAfterCommit
                 | Self::ProtectedLeapWarningAfterCommit(_)
@@ -615,8 +620,12 @@ impl Producer for PreviewProducer {
         self.calls[0] += 1;
         assert_eq!(config.peer, self.target.peer());
         assert_eq!(config.identity, self.target.identity());
+        if let Scenario::EstablishmentRefusal(failure) = self.scenario {
+            return Err(failure);
+        }
         let candidate: AssociationCandidate<'tx> =
-            component_candidate(config, control, provider, COMPONENT_UDP, self.scenario);
+            component_candidate(config, control, provider, COMPONENT_UDP, self.scenario)
+                .map_err(Failed::from)?;
         if matches!(self.scenario, Scenario::ReplaceBeforePublication) {
             self.replace_definition().map_err(Failed::from)?;
         }
@@ -736,14 +745,33 @@ impl Producer for PreviewProducer {
 
 /// Supply fixed public component material to the same actual receiving constructor.
 /// The candidate claims no TLS or exporter qualification and retains all real owners.
+/// # Errors
+/// Refuse unrepresentable component times or a bracket outside the handshake window.
 fn component_candidate<'a>(
     config: &'a Config,
     control: &'a Control,
     provider: &'a ProviderScope<'a>,
     udp: SocketAddr,
     scenario: Scenario,
-) -> AssociationCandidate<'a> {
-    let profile: StrictProfile = StrictProfile::component();
+) -> Result<AssociationCandidate<'a>, Failure> {
+    let profile: StrictProfile = match scenario {
+        Scenario::ProtectedAuthenticationBracket([start, completion]) => {
+            let started_at: Instant = control.origin.checked_add(start).ok_or(Failure::Control)?;
+            let completed_by: Instant = control
+                .origin
+                .checked_add(completion)
+                .ok_or(Failure::Control)?;
+            let bracket: FullAuthenticationBracket = FullAuthenticationBracket::within(
+                started_at,
+                completed_by,
+                control.origin,
+                control.handshake_deadline,
+            )
+            .ok_or(Failure::Control)?;
+            StrictProfile::component_with_authentication_bracket(bracket)
+        }
+        _ => StrictProfile::component(),
+    };
     let keys: DirectionalKeys = if matches!(&config.mode, super::ExchangeMode::ManagedProtected(_))
     {
         managed_component_keys()
@@ -758,7 +786,9 @@ fn component_candidate<'a>(
     } else {
         vec![Zeroizing::new(vec![0xa5_u8; 12])]
     };
-    AssociationCandidate::new(config, control, provider, udp, profile, keys, cookies)
+    Ok(AssociationCandidate::new(
+        config, control, provider, udp, profile, keys, cookies,
+    ))
 }
 
 /// Publish one genuine component owner for direct guarded-entry controls.
@@ -774,7 +804,7 @@ fn with_owner(
     let claim: ProcessClaim<'_> = admission.claim()?;
     let provider: ProviderScope<'_> = ProviderScope::component(claim);
     let candidate: AssociationCandidate<'_> =
-        component_candidate(config, &control, &provider, udp, Scenario::Healthy);
+        component_candidate(config, &control, &provider, udp, Scenario::Healthy)?;
     let mut owner: AssociationOwner<'_> =
         AssociationOwner::receive(config, &control, &provider, candidate)?;
     exercise(&mut owner, &control)
@@ -901,6 +931,7 @@ fn component_operation<'scope>(
             }
             Scenario::ReplaceAfterCommit
             | Scenario::ProtectedAfterCommit
+            | Scenario::ProtectedAuthenticationBracket(_)
             | Scenario::ProtectedPlacementAfterCommit
             | Scenario::ProtectedLeapWarningAfterCommit(ProtectedLeapWarning::Insertion) => {
                 producer.replace_definition()?;
@@ -990,6 +1021,72 @@ pub(super) fn component_protected_receipt(
         .outcome
         .map_err(|failure: RunFailed| operation_primary(&failure))?;
     protected_receipt(&joined).ok_or(Failure::Control)
+}
+
+/// The joined receipts retain their own original component brackets across replacement.
+///
+/// # Errors
+/// Preserve actual preparation, worker, or joined receipt refusal.
+/// # Panics
+/// Fail on changed endpoints, context substitution, or synthetic authentication credit.
+#[test]
+fn managed_protected_receipts_keep_original_authentication_brackets() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 3] = [const { WorkerSlot::new() }; 3];
+    static ADMISSIONS: [ProcessAdmission; 3] = [const { ProcessAdmission::new() }; 3];
+    let cases: [Option<[Duration; 2]>; 3] = [
+        Some([Duration::from_nanos(3), Duration::from_nanos(7)]),
+        Some([Duration::from_nanos(11), Duration::from_nanos(13)]),
+        None,
+    ];
+    let mut previous: Option<(ManagedProtectedReceipt, Option<[Instant; 2]>)> = None;
+    for ((slot, admission), expected) in SLOTS.iter().zip(&ADMISSIONS).zip(cases) {
+        let scenario: Scenario = expected.map_or(
+            Scenario::ProtectedHealthy,
+            Scenario::ProtectedAuthenticationBracket,
+        );
+        let run: Run = run(slot, admission, scenario)?;
+        let joined: ReceivedCompletion = run
+            .outcome
+            .map_err(|failure: RunFailed| operation_primary(&failure))?;
+        let receipt: ManagedProtectedReceipt =
+            protected_receipt(&joined).ok_or(Failure::Control)?;
+        let origin: Instant = run.work.before.origin;
+        let actual: Option<[Instant; 2]> = receipt.component_authentication_bracket();
+        let original_offsets: Option<[Duration; 2]> = actual
+            .map(
+                |[started_at, completed_by]: [Instant; 2]| -> Result<[Duration; 2], Failure> {
+                    Ok([
+                        started_at
+                            .checked_duration_since(origin)
+                            .ok_or(Failure::Control)?,
+                        completed_by
+                            .checked_duration_since(origin)
+                            .ok_or(Failure::Control)?,
+                    ])
+                },
+            )
+            .transpose()?;
+        assert_eq!(original_offsets, expected);
+        assert_eq!(receipt.full_authentication_bracket(), None);
+        assert_eq!(
+            receipt.certificate_time_provenance(),
+            CertificateTimeProvenance::Component
+        );
+        assert!(receipt.configuration().same_configuration(&run.expected));
+        if expected.is_some() {
+            let replacement: &SourceConfigurationSnapshot =
+                run.work.replacement.as_ref().ok_or(Failure::Control)?;
+            assert!(!receipt.configuration().same_configuration(replacement));
+        }
+        if let Some((earlier, earlier_bracket)) = &previous {
+            assert!(!receipt.same_invocation(earlier));
+            assert!(!receipt.same_ke_association(earlier));
+            assert_eq!(earlier.component_authentication_bracket(), *earlier_bracket);
+        }
+        assert_eq!(run.work.calls, [1, 0, 1, 0]);
+        previous = Some((receipt, actual));
+    }
+    Ok(())
 }
 
 /// Install the selected worker hook while exercising the real source and joined result.
@@ -1227,6 +1324,142 @@ fn managed_ke_preview_worker_healthy_preserves_issued_history() -> Result<(), Fa
     )
 }
 
+/// Project actual joined Preview refusals without changing labels or entering packet work.
+///
+/// # Errors
+/// Preserve fixture setup or an unexpected worker/projection result.
+/// # Panics
+/// Reject lost distinctions, an unrelated handshake diagnostic, or unexpected work.
+#[test]
+fn managed_ke_preview_reports_only_original_typed_handshake_refusals() -> Result<(), Failure> {
+    static SLOTS: [WorkerSlot; 7] = [const { WorkerSlot::new() }; 7];
+    static ADMISSIONS: [ProcessAdmission; 7] = [const { ProcessAdmission::new() }; 7];
+    let handshake_causes: [TlsCause; 5] = [
+        TlsCause::Certificate(CertificateCause::Expired),
+        TlsCause::Certificate(CertificateCause::NotYetValid),
+        TlsCause::LocalClock,
+        TlsCause::Certificate(CertificateCause::Name),
+        TlsCause::Unclassified,
+    ];
+    let typed_observations: [(Failure, (&str, &str), Option<TlsCause>); 5] =
+        handshake_causes.map(|cause: TlsCause| {
+            (
+                Failure::Tls(TlsFailure::component(TlsIoStage::Handshake, cause)),
+                ("handshake", "invalid-data"),
+                Some(cause),
+            )
+        });
+    let other_cases: [(Failure, (&str, &str), Option<TlsCause>); 2] = [
+        (
+            Failure::Tls(TlsFailure::component(
+                TlsIoStage::Request,
+                TlsCause::LocalClock,
+            )),
+            ("request", "invalid-data"),
+            None,
+        ),
+        (
+            Failure::Handshake(io::ErrorKind::InvalidData),
+            ("handshake", "invalid-data"),
+            None,
+        ),
+    ];
+    for ((slot, admission), (primary, labels, diagnostic)) in SLOTS
+        .iter()
+        .zip(&ADMISSIONS)
+        .zip(typed_observations.into_iter().chain(other_cases))
+    {
+        let failure: Failed = Failed::from(primary);
+        let run: Run = run(slot, admission, Scenario::EstablishmentRefusal(failure))?;
+        let Err(refusal): Result<SourceKePreviewReport, SourceKePreviewFailure> =
+            SourceKePreviewReport::from_run(run.outcome, PowerObserverCleanup::default())
+        else {
+            return Err(Failure::Control);
+        };
+        assert_eq!(refusal.labels(), labels);
+        assert_eq!(refusal.primary_labels(), Some(labels));
+        assert_eq!(refusal.original_handshake_refusal(), diagnostic);
+        assert!(refusal.cleanup_labels().is_none());
+        assert_eq!(run.work.last_failure, Some(failure));
+        assert_eq!(run.work.calls, [1, 0, 0, 0]);
+        assert_eq!(run.work.after.end, Some(End::Failure));
+    }
+    Ok(())
+}
+
+/// Preserve the protected probe's original handshake refusal across independent cleanup.
+///
+/// # Errors
+/// Preserve setup or an unexpected worker/projection result.
+/// # Panics
+/// Reject a lost cause, substituted cleanup, published receipt, or extra work.
+#[test]
+fn managed_protected_probe_reports_original_handshake_refusal_with_cleanup() -> Result<(), Failure>
+{
+    static SLOT: WorkerSlot = WorkerSlot::new();
+    static ADMISSION: ProcessAdmission = ProcessAdmission::new();
+    let fixture: Issued = issued(Scenario::Healthy)?;
+    let config: Config = fixture.transport_config()?;
+    let close_error: NonZeroU32 = NonZeroU32::new(5).ok_or(Failure::Control)?;
+    let cause: TlsCause = TlsCause::Certificate(CertificateCause::RevocationUnavailable);
+    let failure: Failed = Failed {
+        primary: Failure::Tls(TlsFailure::component(TlsIoStage::Handshake, cause)),
+        cleanup: Some(Failure::Tls(TlsFailure::component(
+            TlsIoStage::Shutdown,
+            TlsCause::PeerAlert,
+        ))),
+        admission_cleanup: None,
+    };
+    let producer: PreviewProducer = PreviewProducer {
+        authority: fixture.authority,
+        configuration: fixture.configuration,
+        target: fixture.target,
+        scenario: Scenario::EstablishmentRefusal(failure),
+        stop_before_commit: None,
+        replacement: None,
+        original_captures: None,
+        calls: [0; 4],
+    };
+    let (observed, receiver): (SyncSender<Work>, Receiver<Work>) = sync_channel(1);
+    let result: Result<SourceProtectedProbeReport, SourceProtectedProbeFailure> =
+        SourceProtectedProbeReport::from_observed(run_observing(
+            config,
+            &SLOT,
+            |_stop: StopHandle| Ok(|| Err(close_error)),
+            |reservation: SubmissionReservation| {
+                reservation.submit_fixture(
+                    &ADMISSION,
+                    component_provider,
+                    move |config: &Config, provider: &ProviderScope<'_>, control: Control| {
+                        component_operation(config, provider, control, producer, &observed)
+                    },
+                    Hooks::none(),
+                )
+            },
+        ));
+    let observation: Observation = SLOT.observer().poll_until(Instant::now() + WAIT);
+    drain(&SLOT, observation)?;
+    assert_eq!(observation, Observation::Taken);
+    let Err(refusal) = result else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(refusal.labels(), ("handshake", "invalid-data"));
+    assert_eq!(
+        refusal.primary_labels(),
+        Some(("handshake", "invalid-data"))
+    );
+    assert_eq!(refusal.cleanup_labels(), Some(("shutdown", "invalid-data")));
+    assert_eq!(refusal.original_handshake_refusal(), Some(cause));
+    assert_eq!(refusal.power_unregistration_error(), Some(close_error));
+    assert!(refusal.admission_cleanup_labels().is_none());
+    assert!(refusal.retained_first().is_none());
+    let work: Work = receiver.recv_timeout(WAIT).map_err(|_| Failure::Control)?;
+    assert_eq!(work.last_failure, Some(failure));
+    assert_eq!(work.calls, [1, 0, 0, 0]);
+    assert_eq!(work.after.end, Some(End::Failure));
+    Ok(())
+}
+
 /// Preflight refusals leave the bounded Preview slot reusable by the next attempt.
 /// # Errors
 /// Preserve actual source setup refusal.
@@ -1260,6 +1493,7 @@ fn managed_ke_preview_power_registration_refusal_releases_slot() -> Result<(), F
     let missing: SourceKePreviewFailure = preview(&unconfigured).err().ok_or(Failure::Control)?;
     assert_eq!(missing.labels(), ("source-policy", "refused"));
     assert_eq!(missing.primary_labels(), Some(("source-policy", "refused")));
+    assert!(missing.original_handshake_refusal().is_none());
     assert_eq!(
         missing.source_policy_error(),
         Some(SourcePolicyError::ConfigurationChanged)

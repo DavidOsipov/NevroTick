@@ -22,6 +22,7 @@ use crate::nts_ke_experiment::datagram::ProtectedCompletion;
 use crate::nts_ke_experiment::datagram::{
     ObservedRetiredSuccessor, RetiredProtectedResponse, SuccessorFailure,
 };
+use crate::nts_ke_experiment::profile::FullAuthenticationBracket;
 #[cfg(any(windows, target_os = "linux"))]
 use crate::nts_ke_experiment::recovery::LoopbackBeforeCommit;
 use crate::nts_ke_experiment::recovery::{
@@ -927,6 +928,8 @@ pub(in crate::nts_ke_experiment) struct ScriptProducer<'fixture> {
     backend_lifetime: Option<Weak<()>>,
     /// Optional raw-tail substitution for the final original-context read.
     final_receive_tail: Option<FinalReceiveTail>,
+    /// Attach a synthetic component bracket to the association for custody tests.
+    synthetic_authentication_bracket: bool,
     last_exchange: Option<ExchangeObservation>,
     /// Last genuine retired exchange, observed before its final commit may refuse.
     last_protected: Option<ProtectedWitness>,
@@ -983,6 +986,7 @@ impl<'fixture> ScriptProducer<'fixture> {
             draw_delay: Duration::ZERO,
             backend_lifetime: None,
             final_receive_tail: None,
+            synthetic_authentication_bracket: false,
             last_exchange: None,
             last_protected: None,
             successor: None,
@@ -1186,15 +1190,20 @@ impl Producer for ScriptProducer<'_> {
         let remote: SocketAddr = SocketAddr::new(config.peer.ip(), 123);
         #[cfg(any(windows, target_os = "linux"))]
         let remote: SocketAddr = self.managed_loopback.unwrap_or(remote);
-        let candidate = AssociationCandidate::new(
-            config,
-            control,
-            provider,
-            remote,
-            StrictProfile::component(),
-            keys,
-            cookies,
-        );
+        let profile: StrictProfile = if self.synthetic_authentication_bracket {
+            let bracket: FullAuthenticationBracket = FullAuthenticationBracket::within(
+                control.origin,
+                control.origin,
+                control.origin,
+                control.handshake_deadline,
+            )
+            .ok_or_else(|| failed(Failure::Control))?;
+            StrictProfile::component_with_authentication_bracket(bracket)
+        } else {
+            StrictProfile::component()
+        };
+        let candidate: AssociationCandidate<'_> =
+            AssociationCandidate::new(config, control, provider, remote, profile, keys, cookies);
         let owner =
             AssociationOwner::receive(config, control, provider, candidate).map_err(failed)?;
         self.established_contexts += 1;

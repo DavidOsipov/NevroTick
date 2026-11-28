@@ -99,6 +99,16 @@ coverage. Signature verification is recorded as `not-run`.
 Keep the expected pins from the original authoring and link inputs.
 This unsigned profile has separate installed and signing gates.
 
+For guarded startup readback, also pass `--guarded-ui-receipt`,
+`--guarded-ui-sha256`, `--guarded-ui-link-map`, `--guarded-role-receipt`,
+`--guarded-role-sha256` and `--guarded-ui-source-sha256`. Retain the last
+digest from the original qualified UI build independently of the receipt
+provided for readback. It is the SHA-256 of the original `source_sha256`
+object serialized as UTF-8 JSON with sorted keys, compact separators and
+ASCII escaping. The reader checks the complete UI source map against that
+pin before comparing shared source hashes with the service receipt. The
+separately owned UI readers and service-only inputs keep their own scope.
+
 ### Inspect the ScmFixture archive before native pre-start
 
 The Windows [archive reader](msix/prestart_archive_facts.cs) measures the

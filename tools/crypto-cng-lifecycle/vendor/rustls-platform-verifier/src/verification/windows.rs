@@ -41,7 +41,8 @@ use rustls::{
 use windows_sys::Win32::{
     Foundation::{
         CERT_E_CN_NO_MATCH, CERT_E_EXPIRED, CERT_E_INVALID_NAME, CERT_E_UNTRUSTEDROOT,
-        CERT_E_WRONG_USAGE, CRYPT_E_REVOKED, FILETIME, TRUE,
+        CERT_E_WRONG_USAGE, CRYPT_E_NO_REVOCATION_CHECK, CRYPT_E_REVOCATION_OFFLINE,
+        CRYPT_E_REVOKED, FILETIME, TRUE,
     },
     Security::Cryptography::{
         CertAddEncodedCertificateToStore, CertCloseStore, CertCreateCertificateChainEngine,
@@ -188,6 +189,30 @@ fn laboratory_policy_status() -> Result<CERT_CHAIN_POLICY_STATUS, TlsError> {
         lChainIndex: 0,
         lElementIndex: 0,
         pvExtraPolicyStatus: ptr::null_mut(),
+    })
+}
+
+/// Interpret the SSL policy status after the native policy call reports success.
+///
+/// Zero permits the original TLS handshake to continue. Nonzero statuses
+/// refuse, including failure to determine revocation under the selected policy.
+fn laboratory_policy_result(status: u32) -> Result<(), TlsError> {
+    if status == 0 {
+        return Ok(());
+    }
+    let win_error: i32 = i32::from_ne_bytes(status.to_ne_bytes());
+    Err(match win_error {
+        CERT_E_CN_NO_MATCH | CERT_E_INVALID_NAME => {
+            InvalidCertificate(CertificateError::NotValidForName)
+        }
+        CRYPT_E_REVOKED => InvalidCertificate(CertificateError::Revoked),
+        CRYPT_E_NO_REVOCATION_CHECK | CRYPT_E_REVOCATION_OFFLINE => {
+            InvalidCertificate(CertificateError::UnknownRevocationStatus)
+        }
+        CERT_E_EXPIRED => InvalidCertificate(CertificateError::Expired),
+        CERT_E_UNTRUSTEDROOT => InvalidCertificate(CertificateError::UnknownIssuer),
+        CERT_E_WRONG_USAGE => InvalidCertificate(CertificateError::InvalidPurpose),
+        error_num => invalid_certificate(std::io::Error::from_raw_os_error(error_num).to_string()),
     })
 }
 
@@ -706,29 +731,8 @@ impl Verifier {
             cert_chain = store.new_chain_in(&primary_cert, now, self.extra_roots.as_ref())?;
         }
 
-        let status = cert_chain.verify_chain_policy(server)?;
-
-        if status.dwError == 0 {
-            return Ok(());
-        }
-
-        // Only map the errors we have tests for.
-        #[allow(clippy::as_conversions)]
-        let win_error = status.dwError as i32;
-        Err(match win_error {
-            CERT_E_CN_NO_MATCH | CERT_E_INVALID_NAME => {
-                InvalidCertificate(CertificateError::NotValidForName)
-            }
-            CRYPT_E_REVOKED => InvalidCertificate(CertificateError::Revoked),
-            CERT_E_EXPIRED => InvalidCertificate(CertificateError::Expired),
-            CERT_E_UNTRUSTEDROOT => InvalidCertificate(CertificateError::UnknownIssuer),
-            CERT_E_WRONG_USAGE => InvalidCertificate(CertificateError::InvalidPurpose),
-            error_num => {
-                let err = std::io::Error::from_raw_os_error(error_num);
-                // The included error message has both the description and raw OS error code.
-                invalid_certificate(err.to_string())
-            }
-        })
+        let status: CERT_CHAIN_POLICY_STATUS = cert_chain.verify_chain_policy(server)?;
+        laboratory_policy_result(status.dwError)
     }
 }
 

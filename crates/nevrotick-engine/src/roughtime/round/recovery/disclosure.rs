@@ -3,6 +3,7 @@
 
 use super::{ConflictEvidence, ConflictProof, ConflictProofError};
 use crate::MAX_TIMEOUT;
+use crate::roughtime::exchange::Receipt;
 use ntp_wire::roughtime::MAX_RESPONSE_BYTES;
 use std::{
     collections::TryReserveError,
@@ -352,7 +353,7 @@ fn encode(
     limit: usize,
     reserve: impl FnOnce(&mut Vec<u8>, usize) -> Result<(), TryReserveError>,
 ) -> Result<Vec<u8>, DisclosureError> {
-    let entries = evidence.receipts();
+    let entries: &[Receipt] = evidence.receipts();
     if !(2..=9).contains(&entries.len()) {
         return Err(DisclosureError::Size);
     }

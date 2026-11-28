@@ -26375,6 +26375,77 @@ The source reader remains a portable oracle. The original native caller,
 admitted parent-handle and pipe collector, exact revised executable binding,
 and actual Windows recovery outcomes remain open.
 
+**Pending Dispatcher loss readback.** The independent portable reader follows
+the pinned recovery bridge's outstanding-Operation case. It checks intentional
+termination of the original Dispatcher, Worker survival and preimage under
+retained custody, caller-loss closure and input EOF before release, and the
+original Operation's effect, collection and exit. It requires one forwarded
+byte, no Helper and four recorded job lifetimes including the relay. The
+reader compares restoration with the independently supplied observed bytes.
+
+Independent review found two gaps in the first reader. The final control
+requires the Operation-collected row before the original forward cutoff and
+places the Operation exit observation after that row and before the Worker
+exit observation. One tick below the cutoff passes, and the exact cutoff
+refuses. The isolated Linux entry passed the original 22 controls and six
+new groups with pinned producer and source bookends. `tested.sha256` and
+`tests.log` under `loss-pending-readback.Z82j8dqS/` in the existing private
+recovery directory have SHA-256
+`4cb274d0a7eaa1ebcdca4d7c4e470d6124c249f8bd5cc5e3668a0d65a1e218c5` and
+`12edffd34f3ea2f35438220b49bf3d09557ab9b58880cf868eb90c95df73dd49`.
+This run supplied synthetic receipts. Original handle, QPC, stream and
+termination observations, the native control gate and AppX settlement retain
+their outstanding owners.
+
+**Pending-loss companion producer.** The private successor of the r2 bridge
+now captures the same run and QPC envelope, held Dispatcher and Worker
+observations, and the exact six-, 12- and six-byte subject observations at
+their read points. The Operation witness retains its separate reopened,
+gated PID and creation-time provenance. The bounded companion is published
+after the original successful retirement checks and remains outside the 14
+phase leaves and relay streams. Its receiver must still correlate the original
+outer exit, both EOFs and the exact admitted capture roster. Companion presence
+alone supplies no completion evidence.
+
+Four isolated static source checks passed, including independent review of the
+original Operation role and missing observation anchor controls. The candidate
+`topology.ps1` under `pending-loss-observer-source.dDqnNCVk/` in the existing
+private recovery directory has SHA-256
+`847a7b0421ad38325d8aecf40d7ae7e2069d4f154a88cbc667396f1cada563df`.
+Its `source-checks.log` has SHA-256
+`8e04af9824228878c685d6e14b72ee4109016f69a7a17b1f3dea8e00bd6b99cd`.
+PowerShell parsing and native execution remain held under the existing owner.
+
+**Pending-loss companion and sealed export readback.** The portable companion
+reader now checks the fixed 16-leaf roster, the successor bridge, original role
+and run identities, observed subject bytes and QPC order. It then passes the
+original phase rows and stream observations to the existing collector. The
+collector still requires successful exit of the original owner and both EOFs.
+All 35 isolated tests passed for this reader.
+
+The next portable caller reads the exact leaves through a held Linux directory
+descriptor. The caller supplies an independent seal for the directory identity
+and each file's length and SHA-256. The reader checks the roster and holds each
+leaf by path before opening it for data I/O. It refuses links and special
+objects, checks identity again after reading and passes the sealed bytes to the
+same companion reader. Independent review found that the first draft could
+open a special object before the type check. The fixed reader and the control
+that observes no ordinary open for a FIFO passed with the full 43-case cohort
+in 0.053 seconds. Other controls refused replaced objects, wrong byte digests,
+unrelated runs and missing original exit or EOF evidence.
+
+| Record in the existing inert recovery directory | SHA-256 |
+| --- | --- |
+| `pending-loss-companion-readback.EA0D7xp7/candidate.sha256` | `de4030f83a51af38392b6b32d448a579a5de0681936b800ae3a0ab38f5a9c862` |
+| `pending-loss-companion-readback.EA0D7xp7/tests.log` | `0fb12f7b27a00bcc38e88c19b1bc89d4f8931b928726cc8763bfc57486ee751a` |
+| `pending-loss-sealed-stage.9IBBeG9p/candidate.sha256` | `7ddb42dc256af68cf67eb25ff14926412327dead7c4b000d0555712f765ef4dd` |
+| `pending-loss-sealed-stage.9IBBeG9p/tests.log` | `4e5bdb553458bebfb159b6bbb0606e88abc733623b748688a9c7695ca0819a25` |
+
+These Linux controls used synthetic native observations. Re-entry needs the
+admitted native exporter and independent seal issuer, exact rendered case and
+relay, actual owner, stream and guest QPC observations, and the sealed export
+on an ordinary Linux filesystem with kernel procfs available.
+
 The external native owner draft binds the current five adapter sources
 and admits one fixed relay entry. The relay and its ordered ASCII case
 contract now bind the QPC bridge and check the original and effective
@@ -27565,6 +27636,95 @@ path and refusal before receipt publication.
 | `independent-header-readback.json` | `ba3ce554c9b283f36ea608f0fba709fbd4e383c52e6998e6764bcfb93f3fa79d` |
 | `source-bookends.json` | `e64044f47d10ebd4ac45d14a560e35a42477a7486984cf627711d7f6a129f8c4` |
 | `portable-msix-tests.stderr` | `e3834e6d920c4fb9efbfea74bf4436e68ff0049c1657c9c2d88c0f6d948fd409` |
+
+###### Check archived ArtworkLab UI resources against the guarded link receipt
+
+W11-W10/S6.4, MD-P4 and CHECK-18/20/23/26. The guarded archive reader now
+independently decodes VERSIONINFO and the execution manifest from the exact
+archived UI member. After the original payload, image, receipt and map checks,
+it compares the image digest, fixed fields, strings, translation and execution
+manifest, including the raw manifest digest, with the matching claims in the
+original link receipt. The existing JSON comparator distinguishes Booleans,
+integers and floats and compares nested arrays and objects exactly. Unrelated
+link-provenance fields retain their original owners. Both report shapes and
+the unguarded path remain compatible with the retained archive.
+
+Metadata, package-artifact, contract and regression skills selected six
+receipt-only repins against the actual guarded CLI. The predecessor accepted
+all six. The repaired reader refused a changed description, Boolean fixed
+word, floating translation entry, numeric UIAccess, changed manifest digest
+and crossed resource image digest before producing a success report. The
+healthy receipt and both service-role substitution controls still reached
+their intended outcomes. All 241 portable MSIX tests passed under CPython
+in a read-only, network-disabled namespace. The first artifact replay
+hit its 1 MiB output-file limit while copying the altered receipt. The
+corrected replay used the existing 8 MiB receipt bound.
+
+Independent review decoded the retained image's 13 fixed fields, eight
+strings, translation `[1033, 1200]`, and `asInvoker` execution manifest with
+`uiAccess=false`. The final isolated replay of the real 58-member archive
+`bb3f678a2ac9464881f8c86ac742b7c504ba3ca4efc3fe7bb0fa6ae1e0a19acf`
+reproduced both historical reports byte for byte. With the same archive
+and a separately repinned receipt claiming a different description, the
+guarded CLI exited 1 with the resource mismatch diagnostic and empty stdout.
+Its retained command, output and source hashes are in
+`~/.local/share/nevrotick/artwork-resource-readback.rFkRsJL0/record.json`
+(SHA-256 `6abe373fa74860f5881255817c7bdb513e799380dbbeba79a7e6f7ab1c9490d1`).
+The full-suite and initial refusal logs are in the agent's execution record.
+The combined candidate's comparison revalidated the same 833 product
+inputs used by TA-W07. Windows loader and installed lifecycle behavior,
+signature verification and the complete production package remain open.
+
+###### Reconcile guarded ArtworkLab build sources at archive readback
+
+W11-W10/S6.4 and CHECK-20/26. Package-artifact and contract checks found that
+the guarded archive reader checked the exact members but omitted the
+stager's common product-source projection. Both callers now use that
+projection and require the original matching source pins through the service
+receipt owner. The existing separately verified Windows UI resource and PE
+reader inputs retain their scope.
+
+The real guarded CLI previously accepted a repinned service receipt whose
+`Cargo.lock` digest differed with the archive bytes held fixed. The repair
+refused that receipt before reporting success. All 241 portable MSIX tests
+passed in 27.423 seconds with read-only inputs and source bookends. The
+retained archive `bb3f678a2ac9464881f8c86ac742b7c504ba3ca4efc3fe7bb0fa6ae1e0a19acf`
+replayed at `249dcee`. Both healthy reports matched the previous bytes, and the
+repinned receipt refused with exit 1 and empty stdout. Under
+`~/.local/share/nevrotick/artwork-source-join.KyFNNJOC/`, `red.log` has SHA-256
+`fdee28cfc2f2077797b86c094f02bd02b17267660ecc2417752e21f1c617ded2`,
+`green.log` has SHA-256
+`8559e1b02e5b9f5fe219a1a9e40bbd89ac47ae2d00c6b57fa3fe1aa4b58a2471`, and
+`replay.log` has SHA-256
+`a258d8259b741b35076373b399389305de2826f5e61190792d72a0638e2f4439`.
+This is guarded static fixture evidence. Native provisioning, current complete
+product payload and signing remain with the existing P6–P7 owners.
+
+###### Require the complete guarded ArtworkLab UI source map
+
+W11-W10/S6.4 and CHECK-20/26/27. The guarded archive reader now requires
+`--guarded-ui-source-sha256` from the original qualified UI build. It
+checks the full source map against that independently retained digest
+before projecting the shared inputs and comparing them with the original
+service receipt. The retained archive's original map has 775 paths,
+including 761 shared paths and 14 UI reader inputs. The comparison still
+allows the 124 service-only inputs from the original role link.
+
+Package-artifact and regression QA replayed the retained unsigned archive
+in the confined Linux reader. Before the change it accepted an incomplete
+source map and a same-count substitution. With the independent digest
+held fixed, both controls refused with exit 1 and empty stdout. The
+healthy guarded and ordinary reports matched their retained bytes. All
+241 portable MSIX tests passed under CPython 3.12.3 in 30.179 seconds,
+with matching source bookends. This checkpoint covers static readback.
+Product signing and installed Windows qualification remain open.
+
+| Record under `~/.local/share/nevrotick/artwork-source-completeness.tGnFK7b7/` | SHA-256 |
+| --- | --- |
+| `red.log` | `4c2bdb2193bd4368aed661ee8f31bd263cb05fae236156f85aea24e9f683bf88` |
+| `green-replay.log` | `878ea79e78efeb11de645e4e1ea82a083acd4bcea04b149b6238fa4b67368cdf` |
+| `suite.log` | `768a7b4c47e1c1cb9f70d55899d1eb167c0d4b5a9ef16e2c04ed6a654cfdbdc5` |
+| `suite-before.sha256` and `suite-after.sha256` | `5ac8fad520257abecec4f74dfb7a32eb7674bd7b26237e13d755d27e24b37241` |
 
 #### Separate the recovery census from confirmed job retirement
 

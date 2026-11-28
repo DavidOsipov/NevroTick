@@ -959,6 +959,30 @@ the mixed new-policy/old-pointer control rejected admission. Original copies
 remain available for rollback. Existing Miri/fuzz campaigns keep their separately
 pinned compiler and evidence chain.
 
+**Rust 1.100.0 instrumented standard-library targets — 28 November 2026.**
+The [OD-22 checkpoint](docs/nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
+uses the repository's [sanitizer qualification skill](.agents/skills/testing/qa-sanitizer-qualification/SKILL.md).
+The local tool preparation installed `x86_64-unknown-linux-gnuasan`,
+`x86_64-unknown-linux-gnumsan` and `x86_64-unknown-linux-gnutsan` in a separate
+Rustup store on C:. Its path is recorded in `install-path` under
+`~/.local/share/nevrotick/sanitizer-targets-1.100.0.5fy2sv/`. The downloaded
+channel manifest matched the existing Rust 1.100.0 manifest. Readback hashed
+54 installed files per target including `std` and the selected runtime.
+The installed compiler matched the existing compiler digest, and its isolated
+metadata-only `std` control compiled on each target. The configured five-family
+detector bundle separately passed hash-only admission with 211 pinned files.
+
+`target-payloads.json` has SHA-256
+`2f43f40e3c6ff2bd58fabaf41671932161365a5f535ee738d8e0e94bd829a088`.
+`smoke-metadata.sha256` has SHA-256
+`e146e78cee22954d3085f52b6b9083239f696f17211b207e400b2ee133e954dd`.
+`configured-detectors.json` has SHA-256
+`8c9c90e20e49a58b8d30dd0f44be6a1f9dc2c664ffff01bebdd767c3c62ad3cf`.
+These results establish installed inputs and compiler readability. Detector
+operation on these targets, instrumented product graphs and Windows execution
+retain their applicable qualification owners. The production toolchain and
+the configured standalone detector pointer retain their existing selections.
+
 ## Release SBOM tooling
 
 `cargo-cyclonedx` **0.5.9** is installed in the ordinary user's Cargo bin directory

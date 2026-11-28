@@ -19,13 +19,17 @@ use super::{
     PowerObserverCleanup, RunFailed, StopHandle,
     association::ledger::{AppliedProtectedControl, Receipt},
     datagram::{ManagedProtectedHistory, ReceivedInvocation},
-    failure_labels, handoff, io_label, job, receive_probe,
+    failure_labels, handoff, io_label, job,
+    profile::FullAuthenticationBracket,
+    receive_probe,
     receiving::ReceivedOrdinaryReceipt,
     response::{ControlProtection, ProtectedControlKind},
 };
 pub use super::{
-    power_target::ManagedPowerObservation, profile::CertificateTimeProvenance,
+    power_target::ManagedPowerObservation,
+    profile::CertificateTimeProvenance,
     receiving::ProtectedReceiptAdmission,
+    transport_fault::{CertificateCause, TlsCause},
 };
 use crate::{
     ExperimentalMeasurement, ExperimentalProfile, ExperimentalReferenceNs, MeasurementRefusal,
@@ -191,6 +195,16 @@ impl SourceKePreviewFailure {
     pub fn primary_labels(&self) -> Option<(&'static str, &'static str)> {
         self.operation_failure()
             .map(|failure: &Failed| failure_labels(failure.primary))
+    }
+
+    /// Return the bounded TLS cause when the original operation failed at handshake.
+    /// This is a historical diagnostic. Retry and date admission require separate authority.
+    #[must_use]
+    pub fn original_handshake_refusal(&self) -> Option<TlsCause> {
+        match self.operation_failure()?.primary {
+            Failure::Tls(failure) => failure.handshake_refusal(),
+            _ => None,
+        }
     }
 
     /// Return independent TLS cleanup refusal without replacing the primary cause.
@@ -591,6 +605,33 @@ impl ManagedProtectedReceipt {
     #[must_use]
     pub fn certificate_time_provenance(&self) -> CertificateTimeProvenance {
         self.history.history().certificate_time_provenance()
+    }
+
+    /// Return inclusive local monotonic bounds for the original full TLS handshake.
+    /// The readings surround the call and apply to this process's historical observation.
+    /// Component associations and unavailable observations return `None`.
+    #[must_use]
+    pub fn full_authentication_bracket(&self) -> Option<[Instant; 2]> {
+        #[cfg(test)]
+        if self.certificate_time_provenance() == CertificateTimeProvenance::Component {
+            return None;
+        }
+        self.history
+            .history()
+            .full_authentication_bracket()
+            .map(FullAuthenticationBracket::bounds)
+    }
+
+    /// Read only the synthetic bracket supplied by the joined component fixture.
+    #[cfg(test)]
+    pub(super) fn component_authentication_bracket(&self) -> Option<[Instant; 2]> {
+        if self.certificate_time_provenance() != CertificateTimeProvenance::Component {
+            return None;
+        }
+        self.history
+            .history()
+            .full_authentication_bracket()
+            .map(FullAuthenticationBracket::bounds)
     }
 
     /// Return the complete locally submitted protected request length in bytes.
@@ -1327,6 +1368,12 @@ impl SourceProtectedProbeFailure {
     #[must_use]
     pub fn primary_labels(&self) -> Option<(&'static str, &'static str)> {
         self.worker.primary_labels()
+    }
+
+    /// Return the original handshake refusal as a bounded historical diagnostic.
+    #[must_use]
+    pub fn original_handshake_refusal(&self) -> Option<TlsCause> {
+        self.worker.original_handshake_refusal()
     }
 
     /// The independent TLS cleanup refusal, when observed.

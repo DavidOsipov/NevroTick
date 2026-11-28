@@ -3447,7 +3447,8 @@ including both new `DisclosureAction` examples. The complete source, graph,
 tool, vendor and cgroup closing checks passed, and scratch retired. The receipt
 charges 234.067 seconds against the original 240-second allowance. Ordinary
 rustdoc output still does not expose the compile-fail case's compiler
-diagnostic. An exact E0451 external-consumer observation remains open.
+diagnostic. The [external consumer check](#346-data-18-explicit-bindings-and-external-action-privacy)
+records the exact E0451 observation for the successor candidate.
 
 The repaired result is
 `~/.local/share/nevrotick/data18-doctests-repaired.drNuiIie/result.json`
@@ -3622,6 +3623,436 @@ and `coverage.json` has
 `d1851f2387005118fa1278bd3c3fa34149271145673ae86afbd3ee0bef5b7500`.
 The original unmodified checkpoint and its consumed budget retain their
 recorded identity. This repair does not refresh historical per-file scores.
+
+### 3.44 TA-W07 distinguish unavailable certificate revocation status
+
+OPEN-8/R-05/CRYPTO-04 and TA-C11/19/22. The bounded source slice starts
+at `36849ebfc58ae0af1df5ee778b9d163b65acf492`. The ordinary laboratory
+verifier's SSL-policy status passes through Rustls and the real NTS-KE
+handshake error projector. Preserve an unavailable revocation check as a
+closed refusal distinct from certificate dates, name mismatch and explicit
+revocation. A successful SSL policy result still proceeds through the original
+handshake. The strict cache-only policy, stage labels and refusal before
+association publication govern the change.
+
+Apply `implement-rust`, `implement-rust-contracts`,
+`security-crypto-secrets`, `dependency-updates` for derivative byte
+admission, and `qa-contract-tests` for the policy-result and Engine
+projection controls. Select an isolated MSVC check only after its resource,
+tool and vendor preflight. The two documented nonzero policy statuses must
+refuse as unavailable revocation. Success, explicit revocation, expiry,
+name mismatch and an unrelated status are independent neighbors.
+
+The Windows policy result maps `CRYPT_E_NO_REVOCATION_CHECK` and
+`CRYPT_E_REVOCATION_OFFLINE` to Rustls `UnknownRevocationStatus`. The Engine's
+direct TLS error projector retains `RevocationUnavailable` at the original stage.
+Normal error reporting still projects `handshake / invalid-data`, and the
+existing mandatory handshake completion precedes any NTS-KE request, exporter
+or association publication. Pinned Rustls queues the fatal `UnknownCA` alert
+for this error. The previous opaque error queued `CertificateUnknown`.
+Neither Windows status identifies whether a CRL was missing or stale.
+[Windows SSL policy statuses](https://learn.microsoft.com/en-us/windows/win32/api/wincrypt/ns-wincrypt-cert_chain_policy_status)
+
+The fresh independent reviewer examined both native refusal codes, the
+existing handshake fallthrough and first-fault ordering, both test boundaries
+and the new source and policy pins. The review completed without a blocking
+finding on product input map
+`7542897bbb9fbe52adc6ed59dc1514adb35ae97f84702b15e7f7ee203b7b07f5`.
+The derivative's original upstream entries, licenses, manifests, dependency
+graph policy rows and Cargo lock stay pinned. Both Roughtime metric policy
+files bind the new complete source map. Historical results retain their
+original candidates.
+
+Regression selection used the real `nevrotick-engine` target and
+`ke-association-prototype` feature. The isolated Rust 1.100.0 check admitted
+the exact vendor and tool inputs, passed its sandbox boundary control, and
+matched the frozen Cargo metadata and Engine dependency trees for GNU and
+MSVC. MSVC Clippy checked the Engine library and tests with warnings denied.
+GNU executed the exact public label compatibility test: one passed, none
+failed or ignored, 652 filtered. Rustfmt and whitespace checks passed.
+Twenty-four dependency-profile and fifteen Roughtime role-reader Python
+controls passed. The two initial compiler-wrapper attempts stopped before
+Cargo because the private wrapper passed patch records rather than the tuple
+of package names. The corrected run completed within its bounded allowance.
+Source, tools and vendor matched on readback and the owned scratch retired.
+
+| Record under `~/.local/share/nevrotick/ta-w07-revocation.uebNzyUU/final/` | SHA-256 |
+| --- | --- |
+| `source.json` | `6c6be9a33bc8773683238e6a8c67a3804c8087f7966f1ac0f0068652226acd3f` |
+| `msvc-clippy.json` | `8268ed287a66246b7da9bea474ad4d5240ce9b417155bd707ff7092c8b8bd2d4` |
+| `gnu-cli-projection.json` | `8c628f70fa45bef44a0eb49f97b9da3377d8fe174a49bdc0619d3bd8c5791da8` |
+| `bookends.json` | `cd0a2586435887635c6087be30f56f12ff62a700135e4fa3f8d906aadfe24107` |
+
+The existing OPEN-8 point image and private collector currently expect opaque
+refusals for the three CRL rows. The next native trial needs a new admitted
+image and matching bounded transcript controls with the distinct expected
+cause. Observe actual Windows policy and the same-handshake outcome under
+independently cold admitted trust and candidate/ambient time settings.
+Revalidate the existing CRL fixture's admitted UTC window before use.
+No admitted volume met the existing cross-link's 6 GiB entry floor. The
+Windows-only Engine and derivative behavioral tests remain unexecuted, and
+the derivative test dependency graph retains its own admission gate.
+The configured OPEN-8 link, native result, full-interval receiving and
+production date-basis admission remain open.
+
+### 3.45 TA-W07 prepare the typed OPEN-8 point observer
+
+OPEN-8/R-05/CRYPTO-04 and TA-C11/19/22. The retained point image and
+collectors in the [crypto feasibility task](s0.1-crypto-feasibility.md#open-8-windows-laboratory-point-image-binding)
+remain the predecessor. Its three CRL cases required an opaque refusal.
+The successor Rust fixture, binding producer, Python comparator and PowerShell
+collector templates require the exact handshake-stage
+`Certificate(RevocationUnavailable)` for those three cases. They still pair
+each refusal with the same leaf, CRL or CRL absence, clock point and expected
+peer exit. The five publication and two leaf-expiry expectations are unchanged.
+The ambient-stale row retains the independent OpenSSL candidate-point success
+and ambient-time CRL expiry. The Windows refusal remains an expectation for the
+cold guest trial.
+
+Planning, environment preflight, golden fixture parity, regression selection
+and independent review used the retained predecessor pins. The private fixture
+patch applies to the current checkout. Its source map adds only the test module
+and its registration to the current 833 product inputs, producing 834 inputs
+with canonical SHA-256
+`8ac315f2a6657b7343788c2cb2ffffc9de50e652cb806281aefd99649f8d2fdf`.
+The successor binding checks that complete map before issuing a point receipt.
+Review found the historical image length in a guest gate, a missing successor
+scope check before guest effects and a stale patch blob label. The repaired
+source binds the new image's exact observed length within the 64 MiB PE reader
+limit, checks version, scope and supported outcome before dispatch, and
+identifies the correct Git blob. The reviewer rechecked all three corrections
+and matched the final receipt's hashes. Collector and comparator pin
+placeholders remain unfilled until a new image exists.
+
+The isolated Linux comparator ran ten synthetic matched cases and 53
+targeted refusals. The separate predecessor control rejected the successor
+classification and accepted its own original classification. The successor
+also refused opaque and explicit-revocation substitutions, wrong handshake
+stage, wrong result counts, appended output, stale scope and invalid image
+length. The existing renderer composed the pending PowerShell collector from
+the pinned predecessor. The first harness attempt could not create a mount
+under the read-only source tree. The retry reached the comparator controls
+and stopped at renderer import without a sandbox home. The final run used a
+separate read-only historical input mount, disposable home and scratch, matched
+input hashes before and after, and retired its scratch.
+
+| Record under `~/.local/share/nevrotick/open8-revocation-observer.dCxSw5QV/` | SHA-256 |
+| --- | --- |
+| `open8-fixture.patch` | `e1f260b4aa3b5fc19e730b4ea9575e1af11ac686df6ba8f555fe4d38b7046946` |
+| `bind-points.py` | `bd418f44723b3276bcc7f0ed2b456950135692bc57c2d4c31d615040333f07d4` |
+| `reviewed-observations.json` | `29ab7215c5e848b958c33fa3c5111bfbab45295ffbc521ba907f0fa21c743f30` |
+
+Re-enter after the existing 6 GiB cross-link preflight passes on an admitted
+volume. Bind the emitted PE/PDB, selector and exact executable length, apply
+the same new binding hash to both collector inputs and the Python comparator,
+then review the final rendered bytes and run the applicable PowerShell
+controls. Native re-entry also needs the original cold guest and trust
+prerequisites, a rechecked CRL validity window, image discovery and exclusive
+guest shelf custody. The successor image, native execution and whole-interval
+handoff remain open.
+
+### 3.46 DATA-18 explicit bindings and external action privacy
+
+The independent review of `36849eb` found missing explicit local types
+(QA-S01) and requested the external `DisclosureAction` construction diagnostic
+(QA-E01). Rust contract review and independent source readback checked the
+source-visible typing rule against the disclosure encoder and its unit and
+integration fixtures. The correction types 23 ordinary bindings and four
+adjacent destructuring patterns using their existing types. The 833-input
+product source map has canonical SHA-256
+`853924785c086acecfb14ccef731f18c79c7dcfa646e10ae342af31300b5beab`.
+Both metrics roles bind that candidate and retain the existing test rosters and
+thresholds. Formatting, GNU Clippy for the Roughtime Engine library and
+integration test, and 15 metrics reader tests passed.
+
+The contract and regression checks compiled two external consumers against the
+same sealed Engine library with pinned Rust 1.100.0, target
+`x86_64-unknown-linux-gnu` and feature `roughtime-verification`. The legal
+consumer compiled `confirm_disclosure` followed by `submit`. The struct
+literal from the compile-fail example produced one error at `direct.rs:3`,
+E0451, identifying both `evidence` and `generation` as private fields of
+`DisclosureAction`. The existing diagnostic reader matched the error code,
+location, field names and compiler summary. The negative produced no metadata.
+
+The isolated compiler check took 35.722 seconds within its 160-second bound,
+with two Cargo jobs and a 4 GiB scratch entry floor and 3 GiB stop floor. The
+source, tool, vendor and standard-library identities matched before and after
+execution. Scratch retired. The preceding doctest receipt retains its own
+234.067-second charge against the original 240-second allowance.
+
+| Record under `~/.local/share/nevrotick/disclosure-consumer-contract.adlgS0rp/` | SHA-256 |
+| --- | --- |
+| `bookends.json` | `98eb328657cda4068bb857e5f1be83cc187e5abaf7a60ddd9daf320231945afe` |
+| `legal.json` | `61afaca3e501dec8167a887cf9fdf5c8d7dc43fb2e944a4de9d0db4f1f01115f` |
+| `E0451.jsonl` | `0b6032b7d795b58623606ca33d0665c58434b80dc82607cffda588123046cf0e` |
+
+**Audit closeout on the §3.51 successor.** Independent source readback found
+all 23 ordinary bindings and four adjacent destructuring patterns explicitly
+typed. The remaining inferred waiters have the anonymous async types permitted
+by the source-visible rule. The successor's 833-input map hashes to
+`6c06a4d3292d7166eba081e9b60150fe060393730cee3f3eca86c7ecc7d39db4`.
+Fresh workspace formatting and GNU Roughtime Clippy passed. The paired external
+consumers used the same newly built Engine library. The legal call compiled
+and the forbidden literal produced exactly one E0451 at `direct.rs:3`, naming
+both private fields. Its raw diagnostic was byte-identical to the earlier
+observation. Input bookends passed and scratch retired after 58.380 seconds.
+
+| Record under `~/.local/share/nevrotick/disclosure-consumer-successor.sOrwZ9/` | SHA-256 |
+| --- | --- |
+| `bookends.json` | `374ff4bc05bd4a9f7e224af342ca5732c745fd3e094a2c3a818d21ef7489a520` |
+| `legal.json` | `521e03ca7fb23cd7a6a2a5c2f2f349cc226f4ee22ac90ff00fa3c98f25fdb1a9` |
+| `E0451.jsonl` | `0b6032b7d795b58623606ca33d0665c58434b80dc82607cffda588123046cf0e` |
+
+This compiler evidence covers external action construction. Current metrics,
+Windows execution and the whole-interval receiving path remain open.
+
+**Portable wire sanitizer code generation.** A bounded preparation attempt
+compiled the dependency-free `ntp-wire` library separately for ordinary GNU
+and the Rust 1.100.0 GNU ASan, MSan and TSan targets. The retained LLVM IR
+readback found zero sanitizer calls in each of three named decoders on the
+ordinary target. ASan found 4, 23 and 37 calls, MSan found 4, 33 and 62,
+and TSan found 7, 32 and 64, respectively, in fixed-header, Roughtime request
+and Roughtime response decoding. All four graph and compile commands passed.
+The compiler, target payloads, source snapshot and vendor inputs were admitted
+before the commands. The owned scratch readback subsequently matched all
+25 wire source files and the four retained IR hashes.
+
+The first preflight rejected an overly strict comparison of the ordinary
+standard-library inventory. A second attempt compiled successfully but the
+observer looked in the wrong Cargo output directory. A third observer included
+closure symbols in its function match. The repaired run reached all four IR
+observations but exhausted its original combined time budget during final
+input bookends. The qualification is incomplete. The retained records under
+`~/.local/share/nevrotick/wire-sanitizer-codegen-final.PCMtEd/` preserve
+the output and exit 124. The standalone inputs and IR do not establish
+detector operation or product execution on these targets.
+
+### 3.47 TA-W07 rebind the OPEN-8 overlay after the compiler contract check
+
+OPEN-8/R-05/CRYPTO-04 and TA-C11/19/22. Environment preflight and fixture
+parity applied the exact two-file fixture patch to the current product
+inputs. Independent readback reproduced the 834-input overlay SHA-256
+`4351c04b6cf3de902c04324dcbe09a4f03c6f7a05142ebaf1dc98e83e2012b03`.
+The product's three annotation files account for the full difference from
+the previous overlay. All 833 product inputs still matched after the
+documentation and skill fast-forward to `249dcee`.
+
+The rebound image binder's source gate accepted the new map and reached the
+deliberately absent staged fixture. It refused the previous map, one replaced
+annotation-file hash and an omitted fixture at the source gate. A fenced
+Linux run retained the same receipts before and after and retired scratch.
+No image binding was issued. Evidence under
+`~/.local/share/nevrotick/open8-disclosure-rebind.un6h10s9/` includes
+`source-rebind.json` SHA-256
+`72b3116fcf3f0ee9e11cb91cccd7d5601a6d00a5b409e42f93cab6f7a19d2096` and
+`binding-controls.json` SHA-256
+`2fdd1cb4ba29be5225389ed3b9685746e6b8f2fc5fe8ec65b1c833a362213254`.
+
+The Linux work volumes did not meet the existing 6 GiB entry floor. The
+[prior C: ext4 canary](engine-transport-pilot.md) supplies a backing-volume
+mechanism. Before reusing it, check executable linker-wrapper custody in the
+actual OPEN-8 sandbox, the 6 GiB entry and 4 GiB live floors, and separate
+retention capacity for the emitted PE/PDB. The cross-link, image binding and
+cold guest observations remain open. Apply [OD-22](../docs/nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
+to the coherent module checkpoints. The installed GNU sanitizer targets
+supply preparation evidence. Product instrumentation, applicable detectors
+and native Windows results remain separate task obligations.
+
+### 3.48 TA-W07 verify the C-backed OPEN-8 build volume
+
+Environment preflight and fixture parity exercised the existing product
+sandbox with an owned C:-backed ext4 image. The first 30.020-second attempt
+matched the 529-file SDK inventory and observed 9,927,102,464 free bytes on
+the mounted work volume. The outer hard CPU limit prevented the configured
+inner `prlimit` from starting the boundary control. The probe retired without
+invoking Cargo. Its `capacity.json` under `open8-ext4-canary.VKslK8/` has
+SHA-256 `a084b0f4e97e8b0efc11f2d82ec533110aa7b9cd170b2f94f6f550502b82e3fd`.
+
+The 24.465-second repair retained the first charge and used the remaining
+39-second wall allowance. The outer soft limits stayed at 45 CPU seconds
+and 128 descriptors, with hard ceilings matching the inner 90/256 limits.
+The configured isolation control passed. The pinned linker ran through the
+read-only `/work/linker` bind, a write to it failed with `EROFS`, and the
+sibling export was outside the sandbox's writable work mount. A same-device
+hard link produced the exact expected bytes after read-only remount. The
+work filesystem exceeded the 6 GiB entry and 4 GiB live floors. Inputs
+matched before and after. The image, mount and service retired. The
+`open8-ext4-retry.pG6NRA/capacity.json` SHA-256 is
+`19fa79f3c723f19c91cb7085d8cf1cdf8441d17039d3c9068e46ddf68ab4aade`.
+
+The C: parent exposes inherited read access to `CodexSandboxUsers`. The
+separate successor build directory has a directly observed Windows ACL
+granting the local owner access with inheritance disabled. This scopes
+artifact retention to the owned child. The SDK, tool and overlay identities
+still require their cross-link readback, and no guest execution follows
+from this storage probe.
+
+### 3.49 TA-W07 bounded cross-link on the admitted ext4 volume
+
+The first cross-link setup stopped after 56.045 seconds when Git could not
+write an object into the frozen checkout's FUSE-backed object database.
+Moving the source and index to private tmpfs reached the exact 834-file
+tree in another 6.859 seconds. That selected-file copy omitted the outer
+native runner, which sits outside the product input map. Preserve both
+failures. Their attempt receipts under `open8-crosslink-current.itdj8g/`
+and `open8-crosslink-repair.zat4a0/` have SHA-256
+`27f1d346016c66c91ee21124f463f617651493f2f7cf912f668a48bb4ca40c26` and
+`e6b3bfa2555b89db1a41ae1cd51ba16774ff2d123e3bcbf640200954dd84de5e`.
+
+The final freeze took the full tracked HEAD snapshot, replayed the current
+product inputs and fixture patch, and checked the native runner import before
+dispatch. The 834-file map matched §3.47 and the isolated Git tree was
+`7c2d7b7d011e51dfc78ea424d94c7f9845c6f31d`. The boundary control, compiler
+identity and Engine formatting passed. The fixed four-job MSVC
+`ke-association-prototype` libtest build reached Cargo and was still in that
+lane when the 191.351-second run expired. The outer timeout did not retain
+the in-progress Cargo stream, so the last completed Cargo operation and the
+dominant stall remain unclassified. No PE/PDB pair or image binding was
+published. The unit, source tmpfs, mount and image all retired.
+
+The three runs charged 254.255 seconds of the original 265-second allowance.
+The terminal receipts under `open8-crosslink-frozen.vNMaJh/` are
+`attempt.json` SHA-256 `7526372413d87a30dc4ebee8c2de83513625eb94938dce9ccd052a0c806cabd8`
+and `unit.log` SHA-256 `8497945b7912cd3e1922b6608f6db6a38d8d249b91060f45284e5e5d6347b5bd`.
+The current lane remains incomplete. Reentry requires a changed execution
+input such as the previously successful Linux filesystem route with its
+original reserve, plus a successor command that retains bounded Cargo
+output through enforced timeout. Keep existing scratch and artifact
+ownership when assessing capacity. The image binder, cold guest and
+whole-interval receiving observations remain open.
+
+### 3.50 TA-W07 preserve timeout evidence and check the private tmpfs route
+
+The predecessor's outer timeout could end the build driver before its Cargo
+receipt was written. The successor derives the exact pinned command supervisor
+with one raw output sink after its existing byte-budget guard. It writes and
+syncs each accepted chunk before continuing. Command arguments, capture limit,
+timeout, resource guard and process-group retirement remain the existing
+owner's. The separate `build-successor.py` binds those sinks to the selected
+cross-link lanes. Healthy mixed-stream bytes, inner wall timeout, refused
+overflow and changed-supervisor controls passed. An outer systemd timeout
+stopped the real sandboxed inert child and its supervisor before terminal
+receipt entry. The expected raw prefix survived and the unit retired.
+No Cargo command ran in these controls. Evidence under
+`~/.local/share/nevrotick/open8-stream-capture.jMV9BG/` includes
+`controls.log` SHA-256 `3977ddcdbcdcd591e2844e0c012bde0614e56fce0c956c9d09834cecfb27067a`
+and `outer.raw` SHA-256 `51a066525eb3d3de444b5fd507de659399ec2b2b7f4f5958eb9fdf9efcbd2499`.
+
+The two shared Linux paths remained below the 6 GiB build entry floor.
+The changed outer `bwrap` route mounted an 8 GiB private tmpfs and entered
+the actual inner product sandbox. The first attempt hit a missing outer
+`/tmp` mountpoint. The corrected topology passed the existing isolation check,
+selected real linker invocation, fresh executable from writable scratch,
+read-only source and linker controls, hidden sibling export and same-device
+hard-link readback. It observed 8,589,934,592 free bytes at entry and
+8,589,893,632 as the lowest live sample. Both attempts retired and consumed
+0.454 seconds total. The retry `result.json` under
+`~/.local/share/nevrotick/open8-private-tmpfs-retry.rS0dE5Jr/` has SHA-256
+`9cb61d18188a318082bdae26cf01981e3ea6cdebbe1a5c7e3d85413c260c0fb4`.
+The canary used small fixture inputs. Full-run physical memory fit, exact
+graph and SDK readback, and a supervised build remain open. The 10.745 seconds
+remaining in §3.49 do not admit another build.
+
+### 3.51 TA-W07 carry the original handshake refusal to the receiving report
+
+TA-C11/19/22 and CHECK-9/27. The existing Preview and protected-probe
+failure reports now project the original typed handshake cause. The shared
+owner selects the primary failure and admits only its `Handshake` stage.
+The payload-free `TlsCause` and `CertificateCause` types retain diagnostics
+with the verifier context discarded. The legacy stage/`invalid-data` labels
+and independent cleanup observations retain their current interpretation.
+The projection supplies historical data. Retry, date admission and protected
+publication keep their existing guards.
+
+Rust contract and regression checks followed actual joined worker reports.
+They preserve expired and not-yet-valid certificate, local clock, wrong
+name, unclassified and unavailable revocation status. The Preview checks
+refuse a typed error at a later request stage and an untyped handshake I/O
+failure as diagnostic inputs. The protected-probe control preserves the
+handshake cause alongside independent TLS and observer cleanup, with no
+published receipt. Healthy Preview and protected worker cases still passed.
+
+The 833-input product map has SHA-256
+`6c06a4d3292d7166eba081e9b60150fe060393730cee3f3eca86c7ecc7d39db4`.
+The first exact-candidate run passed MSVC Clippy and the legacy label test.
+An incorrect module path selected zero new GNU cases and triggered the
+nonempty test guard. The repaired 49.051-second GNU run matched all
+source/tool/vendor and dependency bookends, passed five exact tests, and
+retired scratch. It retained the MSVC check from the first run on the same
+map. The first `msvc-clippy.json`, under
+`~/.local/share/nevrotick/ta-w07-projection.rnygmH/`, has SHA-256
+`60b5c122a3fc7c8ff1536356a937c0e26245abdf28899e516af6e8233059e9d4`.
+The final `bookends.json`, under `ta-w07-projection-selectors.DXzpbj/`, has
+SHA-256 `2d3fa204345a894e55e1fffc09bef61c22e347151747a96cf68d91fc394aa279`.
+
+The planned eleven-owner metrics roles bind this candidate and their existing
+acceptance gates. All 15 reader tests passed. The exact two-file OPEN-8 patch
+also yielded the successor 834-file overlay SHA-256
+`c3c80a6b2ce7dd506ccda533634b540e13de9086ac816b5bfaa28c9ad44a3064`.
+Its `source-rebind.json`, under `open8-typed-refusal-rebind.xyvdffjq/`, has
+SHA-256 `80be1135306374838f98491cc2a3462b84b8e45a1f728af33319bd70f1ad565f`.
+The current per-file qualification, cross-link, native verifier, and
+same-connection whole-interval receiving path remain open.
+
+### 3.52 Rebind Roughtime verification after the authentication bracket change
+
+TA-W03/04/06 and CHECK-26/27. Both configured Roughtime lanes required the
+§3.51 source identity after the Engine began retaining the original TLS
+authentication bracket. The coverage and inventory policies now bind the
+admitted 833-input product map
+`18db3db3c4ac593d6830244275c536b7c4c98de30ee304aa0052a32716eced86`.
+The inventory binds the updated line policy. The roster still has 32
+library and 63 integration cases. The 90% line threshold, 95% per-file
+mutation threshold and listing-only inventory admission remain in force.
+
+Rust contract review made the component test's `AssociationCandidate<'_>`
+type explicit before freezing the product map. On that map, the isolated
+Rust 1.100.0 run passed formatting, Windows-target Engine library Clippy,
+and four GNU Engine library cases with `ke-association-prototype`. The
+cases covered the bracket window, separate associations, typed refusal
+with cleanup, and the two receipts from one association. Source,
+dependency, tool and vendor bookends matched.
+
+The configured policy readers agreed with full product admission and
+all 15 isolated Python reader tests passed. The first reader launch
+stopped before discovery because the namespace had no account entry.
+The retry used one inert account with its home inside the namespace.
+Coverage and mutation inventory execution remain open for this map.
+
+| Record under `~/.local/share/nevrotick/nov28-audit-rust.GMIVpIWj/` | SHA-256 |
+| --- | --- |
+| `roughtime-policy-readback.json` | `2de1a3c9320a69d45bc108aa0fd951522d72ab5472c341660a2ecb6fbf7af9f9` |
+| `roughtime-policy-controls-retry.log` | `d5801f2d8ca4fdbe6d6c7b627358f87fa6fcfb1fc0bb77332c905fadb66b68e0` |
+| `bookends.json` | `44975ca25470a536c9afbc3698f251762643093aa88937fdb2885cd371c517fc` |
+| `msvc-clippy.json` | `adad99e9b6b7e5f54fab3cdfd42660fb66d0fe68d3999a94102ef85a5bcd785d` |
+| `gnu-auth-3.json` | `c39752a1cd6470d3cd4a2963e3f026b13c2ffcacd3ea7b39e215e34348a12a6b` |
+
+### 3.53 TA-W07 rebind the OPEN-8 overlay after the authentication bracket change
+
+OPEN-8/R-05/CRYPTO-04 and TA-C11/19/22. The original two-file Windows
+point fixture now applies to the §3.52 product map. Independent replay
+produced the 834-input overlay SHA-256
+`f56ca5e8b481cfd834381ee63ea0666bc2f3ed388495a13342905d7783718104`.
+The patch keeps the original fixture bytes and its single registration
+in the current transport. The §3.47 and §3.51 overlays retain their
+historical identities.
+
+The private binder now checks the new overlay digest. Confined Linux
+controls refused the preceding map, one restored annotation hash and a
+map missing the fixture. The current map reached the absent staged
+fixture check. With the fixture present and the original PKI, collector
+and peer digests verified, it reached the deliberately absent Engine image.
+The source bookends matched and scratch retired. The current cross-link,
+exact PE/PDB binding, cold Windows observations and complete-interval
+receiving path remain open.
+
+| Record under `~/.local/share/nevrotick/open8-auth-bracket-rebind.hr8f1bol/` | SHA-256 |
+| --- | --- |
+| `source-rebind.json` | `730b9531bfe9d5e740b8ff8aa9c5f32458ed1eadfff8d517de3fcdf6c58a93f0` |
+| `binding-controls.json` | `aec895fbd010fb4c2af29a6f7897fddcb51547049eeef098be4b42ed1f7e82fe` |
+| `expected-fixture-source.json` | `52770aa3cf630d5752340f9a90ab6825187f023de2e0a8863b2dc6d2737ed372` |
+| `open8-fixture.patch` | `96b2c6eb87739da3aae3e251c6fa8f3203c9ba6362e158198155413530595875` |
+| `bind-points.py` | `84651a168ed7b5293de5d7cd4831951dc484042eaa5e4f8c0a6212ac8ddd4a53` |
 
 ## 4. Independent acceptance cases
 

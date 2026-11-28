@@ -7,9 +7,12 @@
 
 use std::{error::Error, mem};
 
+use rustls::{CertificateError, Error as TlsError};
+
 use super::{
-    laboratory_chain_parameters, laboratory_filetime, laboratory_policy_status,
-    CERT_CHAIN_POLICY_STATUS, LABORATORY_CHAIN_FLAGS, LABORATORY_POLICY_FLAGS,
+    laboratory_chain_parameters, laboratory_filetime, laboratory_policy_result,
+    laboratory_policy_status, CERT_CHAIN_POLICY_STATUS, LABORATORY_CHAIN_FLAGS,
+    LABORATORY_POLICY_FLAGS,
 };
 
 /// Preserve unexpected checked helper failures after a primary assertion.
@@ -114,4 +117,29 @@ fn laboratory_policy_status_has_complete_initialized_inputs() -> TestResult {
     assert_eq!(status.lElementIndex, 0);
     assert!(status.pvExtraPolicyStatus.is_null());
     Ok(())
+}
+
+/// Check literal Wincrypt statuses through the policy-result receiver.
+/// # Panics
+/// Fail if a refusal is accepted or classified as certificate expiry or revocation.
+#[test]
+fn laboratory_policy_retains_unavailable_revocation() {
+    assert_eq!(laboratory_policy_result(0), Ok(()));
+    let cases: [(u32, CertificateError); 5] = [
+        (0x8009_2012, CertificateError::UnknownRevocationStatus),
+        (0x8009_2013, CertificateError::UnknownRevocationStatus),
+        (0x8009_2010, CertificateError::Revoked),
+        (0x800b_0101, CertificateError::Expired),
+        (0x800b_010f, CertificateError::NotValidForName),
+    ];
+    for (status, cause) in cases {
+        assert_eq!(
+            laboratory_policy_result(status),
+            Err(TlsError::InvalidCertificate(cause))
+        );
+    }
+    assert!(matches!(
+        laboratory_policy_result(0x8000_4005),
+        Err(TlsError::InvalidCertificate(CertificateError::Other(_)))
+    ));
 }

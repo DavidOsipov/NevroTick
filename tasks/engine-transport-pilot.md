@@ -35946,3 +35946,43 @@ source identity.
 | `%LOCALAPPDATA%/NevroTick/s21-exact-bind.gntlJNZe/retry/verification.json` | `25b63f2654e6546e8b79fa02baabee0054a6cb0b5695e824f3debf9ebe806ad8` |
 | `%LOCALAPPDATA%/NevroTick/s21-exact-bind.gntlJNZe/retry/exact-selector-readback.json` | `182998ae5abf993c53a59ed86e9262c9a4df64f67f9c84c70a3234d3a0a69937` |
 | `~/.local/share/nevrotick/s21-bound-endpoint-native.qERXDWMI/bounds_a8f5d0201951/verification.json` | `d46f35219d244bd46836ceb2d8bcea44d5efd87ea19706a835253c0ab5eed9dc` |
+
+##### Retain the original full authentication bracket in protected receipts
+
+S2.2, R-05/OPEN-8 and CHECK-8/9/15/26/27. The Windows KE transport records
+monotonic readings immediately around the original TLS handshake call. The
+accepted full handshake profile retains the pair only if it is ordered and
+inside the original handshake window. Both managed protected receipt paths
+take the bracket from the publishing association, independently of packet
+capture and commit times. A missing bracket is visible as `None`.
+
+Rust contract and integration checks exercised the original time window,
+including the exact cutoff and reversed readings. A joined GNU loopback
+component fixture observed identical original readings on the first and
+terminal receipts of one association, with distinct exchanges. The component
+fixture's public receipt view returned `None`. A separate selected case
+checked original handshake refusal and cleanup reporting.
+
+The confined Rust 1.100.0 candidate
+`b82cda2316befaa2e6a3bd1be5d4ae364cf03e66a02c36dfd2042ca3f7a18680`
+passed formatting, MSVC target Clippy and all four selected GNU Engine
+library tests with `ke-association-prototype`. The runner recorded matching
+bookends and all 833 admitted source hashes matched the working files at
+readback. The Windows TLS capture path remains pending native execution.
+Association expiry and invalidation policy, suspend and restart continuity,
+S2.3 cached and resumed authentication, and the applicable 90% line and 95%
+per-file mutation gates remain open.
+
+The [audit follow-up](time-assurance-integration.md#352-rebind-roughtime-verification-after-the-authentication-bracket-change)
+records the successor with the explicit component fixture type and its
+fresh focused Rust results. The receipts below bind this original snapshot.
+
+| Record under `~/.local/share/nevrotick/nts-auth-bracket-same-association-20261128-final2/` | SHA-256 |
+| --- | --- |
+| `source.json` | `7b327ba5179061bf77cab0bbb2d7a429b04c0b96e90878c1301ac29284fbed67` |
+| `msvc-clippy.json` | `978a58cc1cd80c7a188ca2fb61412429ca4952d147587417047acec50137a26d` |
+| `gnu-auth-0.json` | `16fec12620cfc1c18a98209124ca9d07783cbe66e9aa65f02a6a4ff69a91cfbb` |
+| `gnu-auth-1.json` | `d82d946e3f2e7ec5aa3c42c4a9763219b08129b23b0e4cc218be3432d107584e` |
+| `gnu-auth-2.json` | `4754d53833f556f73540989415bc4a08a5a01d9197056b3e97c806548d382c45` |
+| `gnu-auth-3.json` | `b4020e58198836b65e7b8caaeab366ff9aea25ba3be337b37a434024e2af6520` |
+| `bookends.json` | `9887dd618249420a957ca586270219c20e522747895bd6cdf4f7b42c8a896bd6` |

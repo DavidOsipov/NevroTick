@@ -1384,6 +1384,35 @@ test discovery, current coverage and mutation work remain open under their
 own preflight and campaign gates. The DATA-18 direction in the table continues
 with the actual authorized product recipient and persistence/clearance owners.
 
+The [TA-W07 revocation refusal source slice](../../tasks/time-assurance-integration.md#344-ta-w07-distinguish-unavailable-certificate-revocation-status)
+preserves a distinct Engine cause when Windows SSL policy cannot verify
+revocation. The [receiving report projection](../../tasks/time-assurance-integration.md#351-ta-w07-carry-the-original-handshake-refusal-to-the-receiving-report)
+carries the original typed refusal through Preview and the protected probe.
+The [successor point observer](../../tasks/time-assurance-integration.md#345-ta-w07-prepare-the-typed-open-8-point-observer)
+checks the distinct outcome offline and keeps the final collector bound to
+the next exact image and its length. The native trial still needs the
+cross-link, a cold guest and candidate-versus-ambient clock observations.
+Whole-interval validation and the same-connection NTS receiving handoff
+remain open. The [current OPEN-8 source binding](../../tasks/time-assurance-integration.md#353-ta-w07-rebind-the-open-8-overlay-after-the-authentication-bracket-change)
+includes the original authentication bracket and the explicit fixture type.
+The [Roughtime verification policies](../../tasks/time-assurance-integration.md#352-rebind-roughtime-verification-after-the-authentication-bracket-change)
+also bind the current product map. The [earlier bounded cross-link](../../tasks/time-assurance-integration.md#349-ta-w07-bounded-cross-link-on-the-admitted-ext4-volume)
+reached Cargo on the C:-backed ext4 work volume and timed out. Reentry needs
+an admitted build placement with the same resource reserves. The [private
+tmpfs and output-retention controls](../../tasks/time-assurance-integration.md#350-ta-w07-preserve-timeout-evidence-and-check-the-private-tmpfs-route)
+exercise a candidate route and durable timeout output. Full-run memory
+admission and build time remain open. The separate GNU sanitizer tool
+preparation supplies installed inputs for future [OD-22](../nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
+module checkpoints.
+
+The [guarded ArtworkLab readback](../../tasks/windows11-integration.md#check-archived-artworklab-ui-resources-against-the-guarded-link-receipt)
+checks UI resources from the archived image against the original link
+receipt. Its [common build-source check](../../tasks/windows11-integration.md#reconcile-guarded-artworklab-build-sources-at-archive-readback)
+also joins the original UI and service build pins. The reader now [requires
+the original complete UI source map](../../tasks/windows11-integration.md#require-the-complete-guarded-artworklab-ui-source-map)
+before comparing shared inputs. The retained unsigned fixture passed. The
+actual product package, signing and installed lifecycle retain their P6–P7 exits.
+
 The [owner's USB GNSS observation](../../tasks/windows11-integration.md#observe-the-owners-usb-gnss-time-source)
 identified a concrete reference candidate. The user-provided NEO-M9N
 supplied 600 accepted NMEA time rows at 10 Hz through COM10. The retained

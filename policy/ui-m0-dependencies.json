@@ -6101,13 +6101,13 @@
     },
     {
       "build_script": false,
-      "files_sha256": "d7067ea2b133f507571229110c394578211e33c6eba1e67c256ad520d2b32bca",
+      "files_sha256": "1c6548bd26562c47a44a588ad266ebbe48ef2204b2264f708c9011c2315e91bb",
       "license": "MIT OR Apache-2.0",
       "links": null,
       "modified_files_sha256": {
         "Cargo.toml": "f97cadbade2e2833889bfb8421737c9a4fe3a0d10adf72f6002867efe32be5e5",
-        "NOTICE": "9793594763df5ea8572ad1ec48dc6b61c8637746180232416f95734c38f7596f",
-        "src/verification/windows.rs": "fb8e3f734f1e6ad46bb12e0c0a4f9d57316bc4e5710a0b8b72b885cbd62da8c3"
+        "NOTICE": "ef4a42307d42c6c52275c4fc5b7c71929651743f7797bb52523d00e76c33dc2a",
+        "src/verification/windows.rs": "5926e5f83ff56f3d2b841834ecad848115d049fc43aaf15c6fa48a1b5f4cf92c"
       },
       "name": "rustls-platform-verifier",
       "path": "tools/crypto-cng-lifecycle/vendor/rustls-platform-verifier",

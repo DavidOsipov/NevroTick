@@ -45,10 +45,11 @@ impl TlsIoStage {
     }
 }
 
-/// Closed certificate facts; context names, dates, OIDs and text never survive.
+/// Bounded certificate refusal with all verifier context discarded.
 #[cfg(any(windows, test))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum CertificateCause {
+#[non_exhaustive]
+pub enum CertificateCause {
     /// The peer supplied no certificate.
     Missing,
     /// Certificate encoding was rejected.
@@ -63,6 +64,8 @@ enum CertificateCause {
     Issuer,
     /// The verifier reported revocation.
     Revoked,
+    /// The verifier could not establish revocation status for the certificate.
+    RevocationUnavailable,
     /// The certificate's permitted usage does not cover this operation.
     Purpose,
     /// A certificate or handshake signature was rejected.
@@ -71,10 +74,11 @@ enum CertificateCause {
     Unclassified,
 }
 
-/// Closed facts, not retry eligibility, peer fault or certificate-date authority.
+/// Bounded TLS refusal for diagnostics only.
 #[cfg(any(windows, test))]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum TlsCause {
+#[non_exhaustive]
+pub enum TlsCause {
     /// A recognized certificate-verification refusal, with all context discarded.
     Certificate(CertificateCause),
     /// A recognized TLS protocol or received-record refusal.
@@ -106,6 +110,20 @@ impl TlsFailure {
     pub(super) const fn labels(self) -> (&'static str, &'static str) {
         (self.stage.label(), "invalid-data")
     }
+
+    /// Project only the typed failure recorded at actual handshake completion.
+    pub(super) const fn handshake_refusal(self) -> Option<TlsCause> {
+        match self.stage {
+            TlsIoStage::Handshake => Some(self.cause),
+            TlsIoStage::Request | TlsIoStage::Response | TlsIoStage::Shutdown => None,
+        }
+    }
+
+    /// Supply a bounded component observation to the worker's refusal controls.
+    #[cfg(test)]
+    pub(super) const fn component(stage: TlsIoStage, cause: TlsCause) -> Self {
+        Self { stage, cause }
+    }
 }
 
 /// Exact local setup site; CNG initialization/panic policy remains independent.
@@ -128,25 +146,26 @@ pub(super) enum SetupStage {
 fn classify_tls(error: &rustls::Error) -> TlsCause {
     use rustls::{CertificateError, Error};
     match error {
-        Error::InvalidCertificate(certificate) => {
-            TlsCause::Certificate(match certificate {
-                CertificateError::BadEncoding => CertificateCause::Encoding,
-                CertificateError::Expired | CertificateError::ExpiredContext { .. } => {
-                    CertificateCause::Expired
-                }
-                CertificateError::NotValidYet | CertificateError::NotValidYetContext { .. } => {
-                    CertificateCause::NotYetValid
-                }
-                CertificateError::Revoked => CertificateCause::Revoked,
-                CertificateError::UnknownIssuer => CertificateCause::Issuer,
-                CertificateError::BadSignature => CertificateCause::Signature,
-                CertificateError::NotValidForName
-                | CertificateError::NotValidForNameContext { .. } => CertificateCause::Name,
-                CertificateError::InvalidPurpose
-                | CertificateError::InvalidPurposeContext { .. } => CertificateCause::Purpose,
-                _ => CertificateCause::Unclassified,
-            })
-        }
+        Error::InvalidCertificate(certificate) => TlsCause::Certificate(match certificate {
+            CertificateError::BadEncoding => CertificateCause::Encoding,
+            CertificateError::Expired | CertificateError::ExpiredContext { .. } => {
+                CertificateCause::Expired
+            }
+            CertificateError::NotValidYet | CertificateError::NotValidYetContext { .. } => {
+                CertificateCause::NotYetValid
+            }
+            CertificateError::Revoked => CertificateCause::Revoked,
+            CertificateError::UnknownRevocationStatus => CertificateCause::RevocationUnavailable,
+            CertificateError::UnknownIssuer => CertificateCause::Issuer,
+            CertificateError::BadSignature => CertificateCause::Signature,
+            CertificateError::NotValidForName | CertificateError::NotValidForNameContext { .. } => {
+                CertificateCause::Name
+            }
+            CertificateError::InvalidPurpose | CertificateError::InvalidPurposeContext { .. } => {
+                CertificateCause::Purpose
+            }
+            _ => CertificateCause::Unclassified,
+        }),
         Error::NoCertificatesPresented => TlsCause::Certificate(CertificateCause::Missing),
         Error::InappropriateMessage { .. }
         | Error::InappropriateHandshakeMessage { .. }
@@ -643,6 +662,7 @@ mod tests {
             CertificateCause::Name,
             CertificateCause::Issuer,
             CertificateCause::Revoked,
+            CertificateCause::RevocationUnavailable,
             CertificateCause::Purpose,
             CertificateCause::Signature,
             CertificateCause::Unclassified,
@@ -855,6 +875,10 @@ mod windows_tests {
             (
                 TlsError::InvalidCertificate(CertificateError::Revoked),
                 TlsCause::Certificate(CertificateCause::Revoked),
+            ),
+            (
+                TlsError::InvalidCertificate(CertificateError::UnknownRevocationStatus),
+                TlsCause::Certificate(CertificateCause::RevocationUnavailable),
             ),
             (
                 TlsError::InvalidCertificate(CertificateError::InvalidPurpose),
