@@ -179,8 +179,9 @@ Require explicit content-integrity enforcement in the **final packaged manifest*
 
 This fragment belongs under `Package/Properties`, with
 `xmlns:uap10="http://schemas.microsoft.com/appx/manifest/uap/windows10/10"` and the
-prefix added to the existing `IgnorableNamespaces` list. It is a requirement for
-future authoring, **not a deployable product manifest**. The documented minimum
+prefix added to the existing `IgnorableNamespaces` list. It is required in final
+package authoring; the current laboratory profiles are distinguished in §3.1.1.
+The fragment is **not a deployable product manifest**. The documented minimum
 is build 19041; NevroTick still needs its selected client/Server qualification
 matrix under [OD-14](../nevrotick-owner-decisions.md#18-od-14--compact-windows-platform-scope).
 Use explicit `on`: the documented `default` behavior is `off`. Package signing
@@ -227,6 +228,22 @@ The [guarded UI staging check](../../tasks/windows11-integration.md#bind-the-gua
 also binds the selected UI build receipts to the same dependency profile and
 source before assembling the laboratory payload.
 
+**Resource-only event DLL:** this existing optional artifact is built outside
+Cargo by [the metadata resource builder](../../metadata/build_event_resource.py)
+and has [its own structural reader](../../metadata/event_resource_pe.py). Its
+profile requires no code, entry point, imports or exports, one read-only `.rsrc`
+section, fixed NX/ASLR/high-entropy characteristics and exact resource contents.
+The shared EXE gate does not cover it, and executable CFG/CET instrumentation
+must not be credited to a code-free image. The current unsigned reader rejects
+certificate-directory data, overlays and an individually signed representation.
+The optional resource archive route is separate from the signed-base fixture
+route; neither establishes its final signing handoff. Preserve the validated
+resources and no-code invariant through individual signing, complete-package
+assembly and installed resolution under
+[signing §4.1's existing inventory](../windows-time-signing-guide.md#resource-only-dll-signing-handoff--28-november-2026).
+The default product provider remains unset; source preparation selects no
+provider or installed registration. [S126, S127]
+
 The [selected leap dataset and policy](leap-second-policy.md#3-knowledge-and-distribution-contract)
 are **reviewed immutable generated data compiled into the admitted consumers**,
 delivered through this same authenticated complete release. Bind pinned source
@@ -240,8 +257,8 @@ rollback retain protected floors, consumed correction authority and recovery.
 
 #### 3.1.1 Trusted Launch for the supported package profile
 
-Add **Trusted Launch** to the strongest-profile qualification target on supported
-Windows builds. Microsoft documents `trustedLaunch:TrustedLaunch` under
+Require **Trusted Launch** in the strongest supported compatible package profile
+and qualify its actual enforcement. Microsoft documents `trustedLaunch:TrustedLaunch` under
 `Package/Properties`, with the value `true`, together with the explicit
 `uap10:PackageIntegrity` / `uap10:Content Enforcement="on"` requirement above:
 
@@ -272,6 +289,21 @@ The current Microsoft example has a placeholder value comment and lowercase
 schema rather than copying the defective example. XML well-formedness and an
 ignorable namespace do not establish schema support or enforcement. [S34, S50,
 S53]
+
+**Source and archive-check status — 28 November 2026:** keep the two laboratory
+profiles distinct:
+
+| Package profile | Existing authoring and static readback | Remaining qualification |
+| --- | --- | --- |
+| Base `NevroTick.S06.ScmFixture` | [Its manifest](../../tools/windows-service-fixture/msix/AppxManifest.xml) declares Content Enforcement `on` and has no Trusted Launch declaration. It contains an inert application and two disabled LocalService fixture services. | This profile supplies no Trusted Launch claim or final product activation result. |
+| ArtworkLab | [The Properties generator](../../scripts/verify.py) already emits Content Enforcement `on` and `trustedlaunch:TrustedLaunch=true`; [the archive reader](../../tools/windows-service-fixture/msix/check_artwork_package.py) requires both exact declarations. | The supported final manifest/catalog, exact signed and distributed package, and actual installed activation/enforcement remain open. |
+
+The guarded ArtworkLab archive path additionally binds resources read from the
+exact archived UI image and the admitted UI/service source and image receipts.
+This static continuity is distinct from signatures, loaded-module closure or
+installed policy. The ordinary archive path supplies no guarded-startup claim.
+Externally supplied digest pins require independent trusted custody; a digest
+delivered with arbitrary bytes cannot authenticate their producer.
 
 CHECK-16/18/23/26 must observe a catalog-listed intended executable starting
 under the correct identity, and a harmless unlisted executable being refused
@@ -351,6 +383,7 @@ enforcement or lift the current execution holds.
 | --- | --- |
 | DEP/NX, ASLR, high entropy, CFG | Preserve the build baseline; inspect final images and instrumented call sites/dependencies. Strict CFG is the target when every executable module supports it; do not manufacture compatibility by dropping instrumentation. CFG has no audit mode. |
 | CIG | Direct-distribution compatibility and effective profile under §3.2 for each role; no automatic Store-signer assumption. Keep independently authorized helper/package identity and an explicit disposition for a concrete incompatible profile. |
+| Forced image integrity | Assess `/INTEGRITYCHECK` separately from CIG, package integrity and ordinary Authenticode. Microsoft's current signing guidance requires Azure Artifact Signing for images linked with this option; preserve the signer/profile compatibility work in signing §6.1. No provider is selected and no option is added to an unsigned fixture by this plan. [S125] |
 | ACG / dynamic code | Target `ProhibitDynamicCode` with no thread opt-out or remote downgrade. Inventory JIT/dynamic-code users; do not add a JIT or escape flag for convenience. Services are strongest candidates; UI compatibility needs its own observations. |
 | CET / hardware stack protection | Preserve the selected `/CETCOMPAT` and `/CETCOMPATSTRICT` markers; require strict effective shadow stacks on the supported hardware/OS class and qualify supported non-CET/EHCONT restrictions against the actual metadata/module closure. Rust EHCONT generation is unavailable in the pinned stable profile; a linker-only flag cannot repair it. Image markers are no runtime proof, and v3 does not imply CET hardware. |
 | Image loading | Target `NoRemoteImages`, `NoLowMandatoryLabelImages`, `PreferSystem32Images` alongside sealed content and safe search. The last is a search preference; low-IL blocking does not reject every medium-IL writable path. |
@@ -374,6 +407,35 @@ decision and visible in the release evidence; never silently weaken every role.
 Required-protection failure denies new protected work while preserving the
 separately designed recovery path. These are product-process policies, not
 authorization to alter global Defender, WDAC, UAC or enterprise security settings.
+
+#### Artifact and activation coverage — 28 November 2026
+
+Populate architecture §15.4's single mitigation record for each **role × artifact
+kind × selected feature/dependency graph × actual activation route × supported
+OS/hardware/VM class**. Keep required settings and applicability separate from
+observations: supported, incompatible, not implemented, failed, not run and
+audit-only are different outcomes. Record the setting/query result, effective
+state, readiness/refusal decision and bounded recovery. Bind source/toolchain and
+native inputs to the exact linked, individually signed, packaged, downloaded and
+installed identities; a later byte-changing transformation invalidates the
+affected earlier observations. Full catalog applicability remains owned by
+architecture §15.4 and the hardening guide, not just the summary table above.
+
+| Eligible artifact or host | Coverage and existing owner |
+| --- | --- |
+| Product UI, engine, broker and narrow lifecycle helper | W11-W10/W11-W05 and the [GUI task](../../tasks/slint-gui-handoff.md#desktop-delivery-hardening--25-november-2026) qualify each real packaged/UI, SCM or UAC activation route. Laboratory standalone policy readback cannot qualify installed roles or policy before the loader runs. Production composition and helper activation remain open. |
+| First-party crates/submodules, generated Slint code, selected path patches, static native code and assembly | [Build/artifact ownership](../../tasks/build-optimization.md#linked-windows-pe-hardening-gate--21-november-2026) follows each selected contribution into its actual EXE or DLL and records which code was rebuilt/instrumented. A library is not a separate process, and one hardened consumer does not qualify another feature or link profile. |
+| Prebuilt std/CRT/SDK inputs, shipped native dependencies and admitted Windows modules | Bind provenance, image-kind checks and actual initial/lazy module closure, including crypto/certificate providers, UI/COM/accessibility/font/image paths, recovery and shutdown. Target Rust flags do not instrument prebuilt or external code, and static imports alone do not enumerate later loads. Preserve approved upstream signatures and explicit platform-owned trust. |
+| Optional event-resource DLL | Keep its separate resource-only profile and unsigned-to-signed handoff under §3.1 and signing §4.1. Record structural absence of executable code instead of claiming EXE-only CFG/CET coverage; qualify actual installed resource resolution if the provider is later selected. |
+| Observe/CNG/TLS diagnostics, tests/examples, generated helpers, C#/CLR and PowerShell supervisors | Record the actual diagnostic image/host and compatible policy separately. Managed/JIT or child-supervision needs do not justify a weaker shipping service profile. Rust child flags confer no protection on the supervising host, and unshipped tools are not package members. |
+
+The final record must pair legitimate functional work with the relevant refusal
+under the same profile and actual activation owner, including startup, lazy
+features, maintenance/recovery and shutdown. W11-W10/W11-W05 retain
+CHECK-16/18/20/23/26/27; build and GUI owners contribute their existing evidence.
+Source declarations, support masks, archive checks and diagnostic observations
+cannot close final signed/installed enforcement. Current execution holds and
+UI-M0 deferrals remain unchanged.
 
 ### 3.4 Threats and independent controls
 
@@ -903,8 +965,8 @@ than a deployable or release-qualified package:
 | --- | --- | --- |
 | W11-W05 platform/security; CHECK-1/2/15/16 | Manifest-supported account topology, actual per-operation rights and supported no-UI provisioning/reentry before functional exposure | Begin with section 7.5's handle-only rights discriminator; separately resolve invocation and the section 4 account/ordering bridge. Do not promote two LocalService services to a chosen topology without the same-account isolation proof. |
 | W11-W05 lifecycle/storage; CHECK-5/12/13/23/27 | Recovery owner remains invocable until durable restoration, including independent removal/Reset when the service is already stopped | Identify the supported bridge, then compare running versus already-stopped/crashed removal with the same durable pending obligation. Observe actual independent activation and recovery before expanding the matrix; a record or retained bytes alone cannot restore the system. |
-| W11-W10 platform/build; CHECK-16/18/20/26/27 | Concrete launch path and module graph satisfy required CIG and other policies; Trusted Launch supported on the selected OS row | Inspect real emitted/loaded images and runtime admission once actual roles exist. Preserve the pre-entry loader gap and the documented signer-class distinction. |
-| Release/packaging; CHECK-18/23/24 | Real identity, production payloads, qualified local mechanics and candid capability/reviewer notes | Prepare the complete direct-MSIX candidate through P3/P4/P6. Signing selection is deferred; final signed/downloaded-byte qualification remains future work, with no Store prerequisite. |
+| W11-W10 platform/build; CHECK-16/18/20/26/27 | Each role/artifact/feature/activation/OS-hardware row satisfies its required CIG and other policies; Trusted Launch supported and effective for the selected package profile | Extend the existing §3.3 record through real emitted/loaded images and runtime admission once actual roles exist. Preserve the pre-entry loader gap and Microsoft/Store/WHQL signer-class distinctions. ArtworkLab declaration/readback is already present; final catalog and installed enforcement remain open. |
+| Release/packaging with W11-W10/W11-W05; CHECK-18/23/24/26 | Real identity, production payloads, all required individual/package signatures and qualified local mechanics | Prepare the complete direct-MSIX candidate through P3/P4/P6. Keep the event-resource structural/signing handoff and `/INTEGRITYCHECK` signer-compatibility assessment explicit. Signing selection is deferred; exact final signed/downloaded/installed qualification remains future work, with no Store prerequisite or interruption of independent source work. |
 
 **First native experiment, still held:** use one inert locally test-signed
 package with an automatic test service, no first UI launch and no clock/W32Time
@@ -1832,3 +1894,6 @@ employee reply. Their limited evidentiary scope is stated in section 7.5.
 - **S122:** [Microsoft Store App Developer Agreement v8.11](https://cdn-dynmedia-1.microsoft.com/is/content/microsoftcorp/microsoft/store/documents/legal/ada/fy26/MS.Store.ADAv8.11.US.EN.pdf), published 17 March 2026, effective 17 April 2026, §10(c). Source for the publisher indemnity David rejects; no Store acceptance is recorded.
 - **S123:** [Choose a Windows distribution path](https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/choose-distribution-path), including direct MSIX download and optional App Installer delivery.
 - **S124:** [Install Windows apps from a web page](https://learn.microsoft.com/en-us/windows/msix/app-installer/installing-windows10-apps-web), including package signing, target-device trust and direct delivery.
+- **S125:** [`/INTEGRITYCHECK` and current Azure Artifact Signing requirement](https://learn.microsoft.com/en-us/cpp/build/reference/integritycheck-require-signature-check?view=msvc-170), rechecked through Microsoft Learn MCP on 28 November 2026. This is a distinct signing/profile prerequisite, not selection of a provider or proof of CIG admission.
+- **S126:** [Creating a resource-only DLL](https://learn.microsoft.com/en-us/cpp/build/creating-a-resource-only-dll?view=msvc-170) and [`/NOENTRY`](https://learn.microsoft.com/en-us/cpp/build/reference/noentry-no-entry-point?view=msvc-170).
+- **S127:** [PE format, image characteristics, resources and certificate table](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format). NevroTick's stricter unsigned resource-only shape is enforced by the linked repository reader; the generic format does not require that profile.

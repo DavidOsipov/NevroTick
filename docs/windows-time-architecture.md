@@ -3602,8 +3602,10 @@ David's explicit decision under OD-04/OD-05. Unstable or inapplicable switches
 cannot satisfy this obligation merely by appearing in `rustflags`.
 
 The [concrete MSIX source profile](plans/windows-msix-store.md#71-concrete-source-inventory-and-manifest-profile)
-binds that work to the existing six-member workspace and the still-missing
-production service/helper roles. Its [Trusted Launch target](plans/windows-msix-store.md#311-trusted-launch-for-the-supported-package-profile)
+and [28 November artifact coverage snapshot](windows-time-development-hardening.md#642-complete-artifact-and-process-coverage)
+bind that work to the current eight-member workspace and the still-missing
+complete production service/helper roles. Historical six-member receipts retain
+their original scope. The [Trusted Launch target](plans/windows-msix-store.md#311-trusted-launch-for-the-supported-package-profile)
 adds catalog-backed executable admission under package identity on supported
 builds (documented minimum 26100). Keep this boundary distinct from CIG image
 loading and helper/IPC authorization. Freeze the SDK/OS matrix and observe each
@@ -3620,6 +3622,7 @@ All product executables retain section 15.1's build protections and section 15.2
 | `clock-broker` | Same compact headless direction, with no networking or child-launch capability added to make a test pass | Clock adapters, authenticated pipes, owned recovery and SCM lifecycle remain usable. A mitigation-triggered exit cannot reset correction budgets or authorize a global clock reset. |
 | `desktop-ui` | Common build/load protections; separately qualify dynamic-code, extension-point and strict-handle policy | Keep Win32k available. Do not impose a general child prohibition without proving approved elevation and other adopted OS-activation flows. Full assistive-technology/IME compatibility belongs to the applicable production UI gate, not UI-M0. |
 | Standalone `admin-helper` | Common protections plus a profile for its exact elevated lifecycle operations | Qualify package/SCM/UAC interactions and installed-package identity. Do not inherit a service's no-child or no-Win32k profile solely because the helper is privileged. |
+| On-demand update retrieval worker | Common build/load protections and the strongest compatible ordinary-user process profile for the selected retrieval/verification work | Bound network/content handling and qualify its actual activation and child requirements. Privileged apply remains the narrow maintenance/helper operation; this row introduces no resident updater service. |
 | MSI custom-action DLL, only if that retained route is revisited | Inspect the DLL's build/load properties and actual installer host separately | A library initializer must not apply process-wide service policy to a Windows Installer host. The standalone-helper result does not qualify an in-process custom action. This ownership rule follows the calling-process scope of the mitigation API. [S29, S103] |
 
 AppContainer/LPAC remains the separate experiment in section 19.4, requiring a
@@ -3634,11 +3637,21 @@ Mitigations establish neither correct UTC nor authority to bypass broker validat
 #### Exact policy semantics
 
 - **Dynamic-code prohibition:** an enforced profile requires `ProhibitDynamicCode=1`, with `AllowThreadOptOut=0` and `AllowRemoteDowngrade=0`. Audit-only observation is not enforcement. A compatibility failure must not silently activate these weakening options; resolve the dependency or document a concrete policy decision. [S95]
-- **CFG and CET activation:** `SetProcessMitigationPolicy` cannot change `EnableControlFlowGuard` or enable initially disabled hardware shadow-stack protection. Record image/creation/host policy separately from runtime setters. The selected `/CETCOMPAT` and `/CETCOMPATSTRICT` image markers require effective enabled/strict and audit-state observations; they do not themselves prove active HSP or select new hardware. Qualify supported non-CET/EHCONT module-admission restrictions against the complete closure. Rust EHCONT generation remains unavailable in the pinned stable profile; linker-only `/GUARD:EHCONT` is not an acceptable substitute for correct compiler metadata. The exact supported/excluded build controls belong to hardening §6.3. [S32, S96, S97]
+- **CFG and CET activation:** `SetProcessMitigationPolicy` cannot change `EnableControlFlowGuard`, `EnableExportSuppression`, `EnableUserShadowStack` or `SetContextIpValidation`. Record image/creation/host policy separately from runtime setters, including CFG export suppression as its own applicability decision. The selected `/CETCOMPAT` and `/CETCOMPATSTRICT` image markers require effective enabled/strict and audit-state observations; they do not themselves prove active HSP or select new hardware. Qualify supported non-CET/EHCONT module-admission restrictions against the complete closure. Rust EHCONT generation remains unavailable in the pinned stable profile; linker-only `/GUARD:EHCONT` is not an acceptable substitute for correct compiler metadata. The exact supported/excluded build controls belong to hardening §6.3. [S32, S96, S97]
 - **Strict CFG:** separately qualify its code-bearing DLL admission rule, including the resource-only DLL exception. Once enabled it cannot be disabled through the setter. It does not prove that every statically linked native object or Rust standard-library path contains checks. [S96, S102]
 - **Image restrictions:** record `NoRemoteImages`, `NoLowMandatoryLabelImages` and `PreferSystem32Images` individually. Low mandatory integrity is not Mark of the Web; System32 preference changes search order and is not a System32-only allowlist. These controls restrict executable images, not ordinary NTP network traffic or arbitrary data-file access. They supplement section 15.2. [S98]
 - **Strict handles:** when setting the policy, the invalid-handle and permanent-enable fields must match. Record actual query results and debugger/verifier presence: Application Verifier can produce the documented non-permanent exception state, which is not evidence of the product's permanent setting. [S99]
 - **Compatibility trials:** use audit mode only where the specific mitigation supports it. Ordinary CFG, extension-point disabling and strict-handle validation have no audit mode; use isolated enforced tests. Record the exact CIG signer mode and its allowed/denied images for the declared delivery profile; Microsoft-only, Store-enabled and project authorization are not interchangeable claims. [S33, S102]
+
+The [complete catalog dispositions](windows-time-development-hardening.md#64-per-process-mitigation-qualification)
+also require explicit decisions for EAF/EAF+, IAF, GDI non-system font
+restriction, Windows-signed module dependency integrity and FSCTL restriction.
+FSCTL policy has documented named-pipe exceptions: use of pipes alone cannot
+justify exclusion. Keep unsupported `ProcessSystemCallFilterPolicy` distinct
+from the unresolved public contract for `ProcessActivationContextTrustPolicy`;
+neither an enum nor an accepted bitmask establishes a supported protection.
+The maximum-compatible requirement applies to every supported relevant control;
+assessment pending is open work, not a passing exclusion.
 
 **RedirectionGuard applicability and qualification, updated 6 November 2026:** evaluate
 `ProcessRedirectionTrustPolicy` separately for the file-owning service and
@@ -3656,7 +3669,9 @@ installer-host rule above.
 
 **Side-channel-policy reserve:** evaluate individual fields of
 `PROCESS_MITIGATION_SIDE_CHANNEL_ISOLATION_POLICY` only for a named role and
-threat. Hardware, scheduler, common-page exceptions and irreversible transitions
+threat: `SmtBranchTargetIsolation`, `IsolateSecurityDomain`, `DisablePageCombine`,
+`SpeculativeStoreBypassDisable` and `RestrictCoreSharing` each need a disposition.
+Hardware, scheduler, common-page exceptions and irreversible transitions
 limit their meaning; readback is not measured protection. The [conditional review](plans/windows11-integration-follow-up.md#6-conditional-mechanisms)
 requires compatible normal operations and timing/resource evidence under existing
 CHECK-16/21. Apply every supported relevant field justified by that threat/role
@@ -3698,17 +3713,26 @@ inform qualification; they supply no NevroTick native pass.
 
 #### Mitigation manifest and evidence
 
-Extend the existing per-binary manifest rather than maintaining a second policy source. Keep the required disposition separate from the observed result.
+Implement this machine-readable role/image authority through the existing
+artifact and verification owners. At the 28 November `a95da288` snapshot,
+[`policy/verification-manifest.toml`](../policy/verification-manifest.toml) records
+verification ownership; it does **not** implement this complete runtime schema.
+Keep one policy authority and separate required disposition from observed result.
+The executable owns process-wide settings; libraries and Rust submodules record
+their actual executable/host and compilation coverage instead of installing
+competing process policies.
 
 | Field group | Required record |
 | --- | --- |
-| Candidate identity | Component/host role, source and artifact SHA-256, complete package/version, declared trust profile and exact directly distributed identity, target, toolchain/linker and selected features/profile |
-| Expected control | Exact PE condition or Windows policy/fields; required, conditional or optional disposition; condition/decision owner; activation owner and phase |
-| Observed control | Requested values, effective query values, enforced/audit-only/unavailable/failed/not-executed state, native error, OS build/architecture, relevant CPU/VM support and instrumentation tools |
-| Coverage | Imports, runtime/delay loads, native/prebuilt/static objects and standard-library coverage; unresolved portions remain explicit |
-| Behavioral evidence | Independent prohibited-operation result and passing legitimate control; startup/SCM/package path exercised, cleanup/recovery result and evidence reference |
+| Candidate identity | Role, executable/code-bearing DLL/resource-only DLL or diagnostic-host kind, actual parent/host and launch path; source revision and source-map digest; target, compiler/linker, profile and resolved features; distinct built, signed, distributed and installed artifact/package identities and SHA-256 values |
+| Expected control | Exact PE condition or Windows API/field values; required control and any explicit OS/CPU/VM/dependency condition; decision owner, evidence and refusal/readiness behavior. Optional enhancement needs an existing owner-authorized basis; unimplemented, unsupported or incompatible required work cannot silently become optional |
+| Activation and support | Compiler/linker, loader/creation, early-runtime or external-policy owner and order; before/after opt-in module boundary; exact documented support contract and observed OS/CPU/VM support. Record justified inapplicable/unsupported/incompatible dispositions separately from a pending assessment or query failure |
+| Observed control | Requested values, setter outcome, query status and effective field values, native error, enforced/audit-only/unavailable/failed/not-executed state; exact binary, account, package/SCM/UAC launch and relevant debugger/verifier/host policy. A support mask or zero-valued failed query is not enforcement |
+| Evidence stage | Separate configured build inputs, implemented startup/source logic, static artifact checks and native/installed qualification, with dated source/artifact-bound receipts. No stage inherits a later stage's pass |
+| Coverage | Normal versus dev/build/optional edges; generated Rust, path patches, host build scripts/procedural macros, native/assembly/prebuilt/std/CRT inputs; static imports and cold/lazy/recovery/shutdown loaded-image identities. Unexamined or unavailable portions remain explicit |
+| Behavioral evidence | Independent prohibited-operation result and passing legitimate control under the exact enforced profile; readiness refusal, startup/SCM/package path, cleanup/recovery and evidence custody. Bind qualification to toolchain, feature, image, provider, activation and support matrix so affected changes invalidate the receipt |
 
-An isolated negative fixture proves its exercised boundary, not complete binary instrumentation or every loaded dependency. Reconcile this record with the delivered SBOM/payload inventory and the existing CHECK-16/18/20/23 evidence. The [development-hardening qualification matrix](windows-time-development-hardening.md#64-per-process-mitigation-qualification) defines the next bounded tests; none is marked passed by this amendment.
+An isolated negative fixture proves its exercised boundary, not complete binary instrumentation or every loaded dependency. Reconcile this record with the delivered SBOM/payload inventory and the existing CHECK-16/18/20/23/26 evidence, retaining CHECK-19's verification-gate validity requirements. The [development-hardening qualification matrix](windows-time-development-hardening.md#64-per-process-mitigation-qualification) and [artifact coverage requirements](windows-time-development-hardening.md#642-complete-artifact-and-process-coverage) define closure at the existing gates; none is marked passed by this amendment.
 
 ## 16. Minimal, accessible user experience
 
@@ -5556,9 +5580,9 @@ The **five Mermaid source blocks** remain the same architecture views, with exac
 
 ### 24.3 Next action
 
-**Current routing, 4 November 2026:** use
+**Current routing, updated 28 November 2026:** use
 [development plan §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-and the latest assigned-task addenda. The six-member workspace and current Core
+and the latest assigned-task addenda. The eight-member workspace and current Core
 continuation are summarized in [section 1](#1-current-state-capsule). The original
 handoff below does not supersede later owner decisions, task order or execution
 holds.

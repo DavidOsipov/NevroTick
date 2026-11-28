@@ -5252,7 +5252,7 @@ At each bounded checkpoint:
 | --- | --- |
 | UI/dependency/licence, [current S0.5 goal](../../tasks/s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui) and [GUI handoff](../../tasks/slint-gui-handoff.md) | Reconcile the implemented v0.4 fixture GUI and original GUI GPL3 graph against the combined candidate. The later [HTML updater checkpoint](../../tasks/slint-gui-handoff.md#html-updater-prototype--25-november-2026) has separate open browser review and pending Rust/Slint fixture work; HTML delivery supplies no Slint implementation credit. Retain exact branch receipts, main's pilots/reaffirmation and the planned P3/P5/P6 hardening handoff; native/backend/critical-text approval and release gaps remain. No additional toolkit selection or legacy Win32 instrumentation prerequisite; live P5 and D1–D3 retain their triggers. Serialize shared graph/schema changes; native/fuzz/storage holds remain. |
 | Domain/core → P2 → S0.4/P4, [S1.4 leap policy](../../tasks/s1.4-leap-policy.md) | Pure checked knowledge/interpretation and offline generation have completed their recorded final host qualification; preserve those receipts and route the current product continuation through section 7. Its [entry table and finite contract](../../tasks/s1.4-leap-policy.md#11-entry-conditions-after-the-current-core-checkpoint) preserve completed predecessor scopes. Route protocol admission and native mapping/recovery to their later owners; do not require all production S1.3/Windows work for static calendar construction. No execution hold is lifted. |
-| Build/CPU, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | The Windows target and exact checker now select the required x86-64-v3 floor under the 6 November owner clarification. Qualify affected artifacts and prepare lower-baseline-compatible launch admission; native CPU/OS/VM compatibility and measured optional-kernel benefits remain open. Coordinate shared inputs with the lint/Core owner and preserve historical receipts. |
+| Build/CPU/hardening, [section 8.1](#81-x64-baseline-and-runtime-optimization-workstream) | The Windows target and exact checker select the required x86-64-v3 floor under the 6 November owner clarification. Apply the [28 November closure queue](../../tasks/build-optimization.md#exploit-hardening-closure--28-november-2026) to actual target/native/prebuilt/generated inputs and per-artifact gates; common flags do not qualify every module. Prepare lower-baseline-compatible launch admission and role-specific source work with W11-W05/W11-W10 and the GUI owner. Native CPU/OS/VM, runtime enforcement and final signed-artifact evidence remain open. Coordinate shared inputs with the lint/Core owner and preserve historical receipts. |
 | Storage, [ST-W01–ST-W07 queue](#imported-hardening-work-queue) | The [10 November ST-W01 card](../../tasks/windows-protected-storage.md#7-st-w01-documentary-card--10-november-2026) completes the bounded documentary handoff with one proposed row, outcomes, ownership, eight planned traces and exact engineering blockers. No executable construction, ST-W02 admission or native pass follows. Other contracts apply before dependent adapters; implementation admission and the storage pause retain their separate gates. |
 | Acquisition/platform, [W11-W01–W11-W10](#85-windows-11-integration-research-and-qualification) | W11-W01 has a settled finite supplier/receiver contract and [partial implementation preparation](../../tasks/windows11-integration.md#426-s21-timestamp-provenance-preparation--5-november-2026). Prepare the actual capture/mapping issuer and justified physical profile, resolve selected SDK/backend questions, and apply [TQ-01–10](../../tasks/windows11-integration.md#timestamp-qualification-matrix--18-november-2026) at the reached owner. Optional packet/hardware timing remains conditional; reuse completed research without a broad survey or native probe. |
 | Catalogue/source/release, [existing catalogue task §8](../../tasks/server-catalogue-and-statistics.md#8-offline-publisher-collector--4-november-2026) | The five-role documentation integration is complete; the later owner-authorized continuation adds a bounded offline Python input stage for R candidates and revalidated semantic diff under `tools/`. Its exact host-fixture/review evidence is separate from product/native qualification. Next prepare explicit operator evidence/approval binding and the relevant C schema, preset/policy and compatibility contracts. OPEN-CAT-02/R-04/OD-03 retains membership and automatic-replacement scope. This adds no prerequisite to Core, format benchmark or public-server probe. Q0/Q-J keeps its separate preparation and open audit findings. |
@@ -5369,6 +5369,23 @@ candidate identity, admission, observations and remaining work. Use
 [optimize-rust-performance] and [qa-performance-resources] when carrying out the
 changed guarantee. Scope stages to the available implementation and fixtures;
 no new product crate, runtime or generic dispatch framework is required.
+
+**Exploit-hardening closure — 28 November 2026:** the
+[existing build queue](../../tasks/build-optimization.md#exploit-hardening-closure--28-november-2026)
+applies [architecture §15.4](../windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
+and [complete artifact/process coverage](../windows-time-development-hardening.md#642-complete-artifact-and-process-coverage)
+to each reached build and delivery boundary. Inventory the eight current
+workspace crates, actual executable/feature dependency closures, standalone and
+generated programs, native and prebuilt dependencies, managed tooling and
+resource-only artifacts against the dated `a95da288` source baseline; refresh
+that inventory when the candidate changes. Host build scripts/proc macros and
+upstream/OS modules need their own applicable treatment. The finite task rows
+own the manifest, native compiler/CRT obligations, appropriate PE gates and final
+candidate evidence. Missing enforcement evidence remains open work under OD-05;
+an exclusion needs a supported platform, toolchain or necessary-feature reason.
+Do not mark every mitigation applicable or every dependency covered merely from
+a Cargo flag. Prepare source changes at their reached owners; Windows execution
+and final signed-package qualification retain separate prerequisites and holds.
 
 | Stage / owner | Next action and observable exit | Existing acceptance mapping |
 | --- | --- | --- |
@@ -5661,6 +5678,17 @@ does not isolate every live secret or establish rollback-resistant storage.
 
 #### Imported hardening work queue
 
+**28 November exploit-hardening closure:** the
+[build closure](../../tasks/build-optimization.md#exploit-hardening-closure--28-november-2026),
+[W11-W05/W11-W10 closure](../../tasks/windows11-integration.md#exploit-hardening-closure--28-november-2026)
+and [GUI closure](../../tasks/slint-gui-handoff.md#exploit-hardening-closure--28-november-2026)
+extend the existing artifact, runtime and package owners to all eligible modules
+and activation routes. Import the applicable row before its dependent change;
+its source-readiness, native/signing prerequisites and stop/re-entry conditions
+remain distinct. Existing CHECK/ST-T owners, current Core ordering, accepted
+deferrals and execution holds remain. Sanitizer checkpoint cadence does not
+postpone mandatory hardening implementation or erase final V1 evidence gaps.
+
 **26 November timestamp contract refinements:** apply the
 [W11-W01 disposition](../../tasks/windows11-integration.md#microsoft-learn-timestamp-refinements--26-november-2026)
 and existing TQ cases before a selected packet adapter. Adapter-mode precedence
@@ -5840,6 +5868,22 @@ This review executed no product or native tests and establishes no implementatio
 default approval, residual-risk acceptance or release qualification.
 
 ### 8.5 Windows 11 integration research and qualification
+
+**Exploit-hardening closure — 28 November 2026:** use the
+[W11-W05/W11-W10 task rows](../../tasks/windows11-integration.md#exploit-hardening-closure--28-november-2026)
+with [the build queue](../../tasks/build-optimization.md#exploit-hardening-closure--28-november-2026)
+and [GUI handoff](../../tasks/slint-gui-handoff.md#exploit-hardening-closure--28-november-2026).
+Assign each required mitigation to its real image, process-creation, startup,
+service or package owner. Record exact feature/module closure, supported OS and
+hardware, configured policy, readback and independent useful/refused behavior;
+source support, an image flag and observed runtime enforcement are different
+evidence. SCM, package/UAC activation and application-created children require
+their actual policy-setting and lifecycle routes. Native observations remain held
+where previously held; profile/manifest and implementation preparation can
+proceed at their existing owner triggers. Final signing, resource-only DLL
+handoff and complete direct-MSIX qualification stay with W11-W10/P6/P7. The
+existing maximum-compatible-hardening requirement is retained, with documented
+compatibility exclusions and unresolved research clearly separated from passes.
 
 **Windows security review intake — 26 November 2026:** consume the
 [W11 §4.41 dispositions](../../tasks/windows11-integration.md#441-windows-security-review-intake--26-november-2026)
@@ -6331,6 +6375,54 @@ tests, dependency installation or native qualification. Verdict: **ready for
 S0.1/R-01 and S1.1 preparation under the subsequent task instruction**; later
 graph, policy, Windows, UI, package and release gates remain open. Revalidate the
 affected review conclusions if their source, contract, skill or phase scope changes.
+
+#### Exploit-hardening documentation reconciliation — 28 November 2026
+
+David requested documentation and task updates following the all-module
+exploit-hardening source review. Three bounded authors updated the canonical
+architecture/hardening, distribution/signing and existing task surfaces; the
+coordinator reconciled this plan and the documentation guide. The nine-file
+candidate is based on `a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`, with reviewed
+tree `ebcd496fcb6044e51c1146204823b527114aefbc` and staged-diff SHA-256
+`2e05f2317681cf7321d580373a430975484bec4eb522f2e7ebe32bf0bb0eed32`.
+This review receipt is the subsequent accounting-only addition.
+
+Fresh reviewer `hardening_docs_independent_review`, with conversation inheritance
+disabled, completed the requested read-only review of all nine changed-file
+diffs, governing instructions/decisions, relevant manifests/startup/build/PE/
+resource/package source and current Microsoft Learn contracts. It confirmed the
+candidate tree, diff hash, matching working/index bytes and whitespace result.
+Its attributed comprehension is preserved:
+
+> The proposed change turns the existing maximum-compatible-hardening requirement into a concrete documentation and task handoff across build, Windows, GUI, signing, and package owners. It distinguishes executable roles, image kinds, feature graphs, activation routes, and supported platform classes; corrects several current-source descriptions; and adds bounded B/W/G work items with prerequisites, independent acceptance, and re-entry conditions. The change preserves current product routing and execution holds and makes no new implementation, native-enforcement, signing, or release claim.
+
+> The inspected source has eight workspace members with different executable dependency closures: the UI, Observe diagnostic, and separate laboratory services do not share one complete runtime composition. UI and laboratory service startup already enforce specific image-loading and strict-handle controls, while Observe and the CNG/TLS entries lack an equivalent sequence. The repository also has a common executable PE reader, a narrower allocation-observer reader, and a separate unsigned resource-only DLL profile. Complete production role composition, a comprehensive machine-readable runtime mitigation record, final signing continuity, and installed enforcement remain open.
+
+**Raw stage verdict:** "READY for documentation publication only."
+**Material findings:** none; no correction required for the reviewed stage.
+This was a scoped documentation/source review, not an exhaustive review of all
+repository or third-party code, binary artifacts or historical raw native receipts.
+No product build/test, native execution, signing or package operation was run.
+
+The reconciliation retains OD-05's strongest supported compatible protections,
+OD-07's v3 floor, complete direct MSIX and supported individual-file signatures,
+deferred signer selection, current Core routing, UI-M0 re-entry and all scoped
+execution holds. It adds the complete role/artifact/feature/activation coverage
+and twelve local B/W/G closure items under existing CHECK/WIN/phase owners;
+it creates no global acceptance IDs. Existing narrow startup implementations,
+the unimplemented complete runtime schema, resource-DLL signing continuity and
+base-versus-ArtworkLab Trusted Launch status are now distinguished explicitly.
+Historical receipts retain their candidate and environment boundaries.
+
+Coordinator checks on the frozen Git tree resolved all 89 added local links,
+including 49 Markdown fragments, and found no duplicate source identifiers in
+the affected hardening/signing/MSIX catalogs. Working bytes matched the nine
+staged Markdown blobs and staged whitespace checks passed. There is no root
+`docs/SHA256SUMS.txt`; no root bundle-integrity claim follows. The receipt-only
+delta receives separate staged inspection before publication. Reopen affected
+review conclusions when source, requirements, toolchain, role/feature graph,
+activation or platform support changes; implementation and final installed
+qualification remain owned work.
 
 #### Dependency and guard review — 23 November 2026
 

@@ -5,6 +5,10 @@ Initial record: 29 October 2026; its executed checks below are historical.
 are configured and admission controls are updated; final-image, startup and
 native qualification remain open. See the [current amendment](#required-v3-and-maximum-compatible-hardening--6-november-2026).
 
+**Current closure queue, 28 November:** the [bounded artifact and coverage work](#exploit-hardening-closure--28-november-2026)
+below imports the source audit at `a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`.
+Earlier build and native receipts retain their original candidate and scope.
+
 David requested heavy x64 build optimization settings, comments in build config,
 and documented Windows issues in the maintained docs and repository skills.
 This is a bounded build-policy task under the existing
@@ -25,6 +29,53 @@ This is a bounded build-policy task under the existing
   native performance, effective mitigations, UI instrumentation and release gates
   remain separate. No faster-code claim, public-network training, tool installation,
   service/clock changes, signing or publication is included.
+
+## Exploit-hardening closure — 28 November 2026
+
+**Scope and authority:** this is a source-audit continuation at
+`a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`, under OD-05/OD-07 and existing
+CHECK-16/18/19/20/23/26. It implements the planning handoff from
+[architecture §15.4](../docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
+and [hardening §6.4](../docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification).
+The review found coverage and qualification gaps; it did not establish a missing
+effective OS protection or an exploitable defect. Build flags, source checks and
+historical native receipts remain different evidence layers.
+
+**Current coverage:** target Rust flags reach the selected rebuilt Windows code,
+including generated Rust and selected path patches. They do not retrofit host
+build scripts/procedural macros, native C/assembly, prebuilt standard libraries/
+CRT or OS providers. The current UI links `nevrotick-ui`; Observe links the
+Engine, wire, time-domain and Windows-native adapter graph. `time-core` and
+`ntp-exchange` have no normal dependency edge into either current workspace
+release binary; `windows-platform` belongs to the separate laboratory services.
+Keep normal, build and dev edges distinct. The general Roughtime-only and combined
+verifier profiles currently supply dependency-lane evidence, not a complete
+Windows link/runtime result. The exact source/configuration and actual final
+images must determine the next matrix.
+
+The five labels below are local work items, not new CHECK IDs. **Source preparation
+is ready when its existing owner reaches the affected slice.** Build, native,
+signing and installed qualification require their existing admitted candidates,
+environment and phase gates. This queue starts no campaign and does not displace
+[development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
+the Windows/fuzz/storage holds or UI-M0 D1–D3.
+
+| Local work / existing owner | Prerequisites and concrete next action | Independent acceptance and finish / re-entry |
+| --- | --- | --- |
+| **B1 — bind every image to a role**; build/dependency owners, CHECK-20/26; W11-W05 owns the policy record | Source-ready from the exact manifests, selected feature graphs and direct build recipes. Implement §15.4's required manifest through the existing artifact/verification owners, covering every current and planned executable and its actual module/build inputs: UI, Observe, both lab services, the CNG/TLS automatic main plus three declared binaries including feature-gated init-probe, allocation observer, generated native-observer helpers, and future production Engine/Broker/helper/updater entry points. Include selected patches/generated Rust, C/assembly, prebuilt std/CRT/providers, managed hosts and the optional resource DLL. Mark missing production composition as planned. | Independently reconcile the roster with Cargo targets/features, direct recipes and emitted/staged payloads; a dev-only edge or host tool cannot count as linked product code. Every row identifies role, image class, activation owner, source/toolchain/features and required versus observed evidence. Finish the source roster with all omissions resolved or a named dependent blocker; reopen affected rows on target, feature, dependency, generated-input or payload changes. No native coverage follows from enumeration. |
+| **B2 — match the PE gate to the artifact**; build/artifact owner, CHECK-19/20/26 | Source-ready after B1 identifies each class. Reconcile [`windows_pe.py`](../scripts/windows_pe.py)'s EXE-only, exact-`0xA00` profile with future independently justified `0x800` static-import profiles and code-bearing DLLs. Resolve [`verify-time-domain-windows-allocation.py`](../scripts/verify-time-domain-windows-allocation.py)'s narrower AMD64/PE32+/DllCharacteristics gate by sharing the appropriate complete reader or explicitly enforcing its narrower diagnostic claim. Preserve the separate resource-only DLL reader. | For each selected profile, independently inspect required load-config/CFG, CET, sections, relocations, import mask and debug/PDB identity beside healthy and deliberately incomplete artifact controls. An eligible `0x800` image must use that declared expectation; no broad mask acceptance or weakened EXE gate. Code DLLs require their own applicable checks; a validated no-code resource DLL gains no executable CFG/CET credit. Finish source enforcement separately from actual emitted-image qualification; re-enter after the checker, profile, linker or final bytes change. |
+| **B3 — close native and prebuilt coverage**; build/security with native dependency owners, CHECK-16/20/26 | Source-ready after B1. Record exact C/assembly flags and emitted-object/library coverage independently of Rust flags. The current UI and service C-entry recipes select strong stack protection and CFGuard; determine whether protected pre-CRT frames are emitted and, if so, how their cookie is initialized before use. Assess supported Spectre protection for sensitive native paths and the exact CRT/library variant, including uncovered prebuilt std/native code. | Use compiler/object/source evidence appropriate to each component; a CFG-positive final EXE or absence of literal `/GS` settles neither whole-graph coverage nor a C-stack defect. Distinguish MSVC `/sdl` and Spectre switches from supported pinned-Clang/Rust mechanisms. Finish with implemented coverage or a concrete supported/incompatible/unavailable disposition, owner and remaining evidence; reopen on compiler, object, library or entry-order changes. Missing coverage remains open required work where applicable. |
+| **B4 — separate diagnostic hosts and children**; existing allocation/native-observer and W11-W08 owners, CHECK-16/19/20/26/27 | Source-ready after B1 identifies each direct/generated executable, managed C#/PowerShell host and compiler/runtime input. Declare which fixed product flags are inherited, which diagnostic-only CPU substitution is already admitted, and which JIT/interop/supervision requirements belong to the host. Keep Observe and all four CNG/TLS entries in their explicit diagnostic roles; absence of the UI/service startup sequence is an applicability/readiness task, not evidence that OS mitigations are disabled. | Independently compare actual host/child recipes and artifacts with each profile; a protected Rust child cannot qualify its CLR/PowerShell observer. Useful observation, bounded cleanup and diagnostic failure must remain distinguishable from product behavior. Finish the declared source/artifact scope without promoting it to shipping qualification; native observation stays held until its existing gate, and changes to host, generated code or child policy invalidate affected evidence. |
+| **B5 — reconcile the final build with installed protection**; build plus W11-W05/W11-W10/S6.4/P6/P7, CHECK-16/18/20/23/26 | Source preparation follows B1–B4; final execution is held on the admitted complete graph, actual packaging/signing choices and applicable native gates. Feed the exact build and artifact identities into the [Windows closure queue](windows11-integration.md#exploit-hardening-closure--28-november-2026), [GUI queue](slint-gui-handoff.md#exploit-hardening-closure--28-november-2026) and existing package/signing owners. Reconcile build, signed, distributed and installed inventories, including supported individual-file signatures and resource-only content identity. | Finish only the evidence layer actually observed. Final closure requires effective per-role policies, healthy operation, required denial and startup/lazy/recovery/shutdown module coverage for exact installed images under real launch owners. Failed, audit-only, unsupported and unexecuted results stay distinct. Re-enter on affected source/feature/compiler/package/signature/OS/hardware/launch changes; no previous fixture result substitutes for the changed candidate. |
+
+When selecting a row, freeze its finite case/work budget in this task and stop on
+its stated exit or concrete prerequisite failure; retry only after the relevant
+input or justified method changes. [OD-22](../docs/nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
+keeps routine sanitizer qualification at coherent module completion and the
+applicable product matrix before V1. Such diagnostics contribute their declared
+instrumented coverage; they neither postpone required startup integration nor
+replace final Windows exploit-protection evidence. No new tool, dependency,
+signing provider or verification campaign is selected here.
 
 ## Candidate and custody
 

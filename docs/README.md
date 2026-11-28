@@ -9,6 +9,25 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Exploit-hardening coverage — 28 November 2026:**
+[Architecture §15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
+and [hardening §6.4.2](windows-time-development-hardening.md#642-complete-artifact-and-process-coverage)
+require a complete artifact, process, module and activation inventory, with
+separate applicability, source implementation and observed enforcement records.
+The dated source review on `a95da288` exposes remaining work; shared Cargo flags,
+PE marks and laboratory readbacks do not qualify every shipping component.
+The [build task](../tasks/build-optimization.md#exploit-hardening-closure--28-november-2026),
+[W11-W05/W11-W10](../tasks/windows11-integration.md#exploit-hardening-closure--28-november-2026)
+and [GUI handoff](../tasks/slint-gui-handoff.md#exploit-hardening-closure--28-november-2026)
+own finite closure work, including native dependencies, startup policy,
+generated/managed tools, resource-only DLL signing and the final complete MSIX.
+[Development §7](plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+retains the current Core order; source preparation proceeds through existing
+owners while Windows, fuzz, storage and signing holds keep their exact scopes.
+OD-22's sanitizer checkpoint cadence does not defer required hardening design or
+implementation until V1. No mitigation or release qualification follows from this
+documentation update.
+
 **Sanitizer checkpoints — 28 November 2026:**
 [OD-22](nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
 places routine sanitizer qualification at coherent module completion and requires

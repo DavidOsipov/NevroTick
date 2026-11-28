@@ -1,6 +1,6 @@
 # Signing the Windows time client: a practical package guide
 
-**Revision:** 1.0 with owner-decision, trust-lifecycle and release-operations amendments; direct-MSIX/no-Store decision 21 November and TUF updater/signing-boundary amendment 25 November 2026
+**Revision:** 1.0 with owner-decision, trust-lifecycle and release-operations amendments; direct-MSIX/no-Store decision 21 November, TUF updater/signing-boundary amendment 25 November and artifact/signing hardening reconciliation 28 November 2026
 
 **Research date:** 28 October 2026  
 **Status:** Preparation guide; Microsoft Store publication rejected. Signing is deferred and unresolved; production signing/trust and native qualification are **not completed**.
@@ -34,7 +34,7 @@ Store-signer admission. Current Core priority and execution holds remain.
 
 David retains provider, publication and exact-candidate release decisions.
 Local/test-signed mechanics, final signing and directly delivered-artifact
-qualification are distinct stages. [Section 6.1](#61-store-msix-trust-and-publication-boundaries)
+qualification are distinct stages. [Section 6.1](#61-direct-msix-trust-and-publication-boundaries)
 owns those trust boundaries; no ready package or signing capability is claimed.
 
 The [release policy](release-policy.md) owns the current support statement,
@@ -213,6 +213,10 @@ package evidence; distinguish observed pass/fail, unknown/offline, not run and
 reasoned non-applicability. A generic `Valid` result, signer display name or
 Microsoft/Store signer class alone does not identify an approved component.
 Certificate renewal must remain possible under the admitted identity policy.
+Join each executable or loaded-image record to its actual role, image kind,
+selected features/native dependency graph, activation route and supported
+OS/hardware/VM profile in architecture §15.4. A shared source crate, signer or
+package cannot transfer one artifact's mitigation evidence to another image.
 
 Name the actual trust profile as well as the signing format. For interim
 self-signed MSI, record approved-key signature verification separately from
@@ -269,6 +273,34 @@ PackageIntegrity, CIG/App Control compatibility, safe loading, protected install
 paths and helper/IPC authorization requirements, with actual launch/load evidence.
 Do not add a custom runtime scanner or ask users to verify detached signatures
 as a substitute for these controls. [S19, S20, S22, S31]
+
+#### Resource-only DLL signing handoff — 28 November 2026
+
+The optional event-resource DLL is an existing independently built artifact,
+not an EXE covered by the shared executable gate. The
+[resource builder](../metadata/build_event_resource.py),
+[unsigned reader](../metadata/event_resource_pe.py) and
+[metadata contract](../metadata/README.md) bind the selected SDK/compiler inputs,
+generated provider identity, exact resources and unsigned DLL bytes. The reader
+requires no code or entry point, no imports/exports, one read-only `.rsrc` section,
+the fixed NX/ASLR/high-entropy profile and no unrelated directories or overlays.
+Certificate-directory data and an individually signed representation are rejected
+by this deliberately unsigned format. The provider is currently unset; the
+optional event-resource archive path and signed-base fixture path are separate.
+This establishes no final signed or installed resource qualification. [S37, S38]
+
+If admitted into the shipping inventory, this PE still requires its individual
+signature as well as the complete package signature. W11-W10/build/packaging and
+W11-W05 retain the CHECK-18/20/23/26 handoff: preserve independently admitted
+unsigned input/receipt identities, then bind the exact returned signed image to
+the same validated resources and no-code invariant under an appropriate signed
+artifact profile. Record permitted signing transformations, actual signature
+source/expected signer, and separate final hashes/lengths. Do not relax the
+unsigned reader to accept arbitrary signed shapes or inherit a pass from an
+EXE-only gate. Reconcile those exact signed bytes through package/archive and
+direct-download readback, then qualify the installed provider/resource path
+without adding executable content. Final signature, installed resolution and
+applicable padding results remain separate observations.
 
 ## 5. Authenticode verification before publishing
 
@@ -477,14 +509,31 @@ separate qualification owners:
   `uap10:Content Enforcement="on"`, protected declared executable/dependency
   content and actual intact/tampered launch observations. No mutable or external
   executable content is admitted. [Plan §3.1](plans/windows-msix-store.md#31-package-integrity-and-sealed-executable-content)
-  owns the detailed contract. [S19]
+  owns the detailed contract. Its §3.1.1 distinguishes the base ScmFixture's
+  Content-on/no-Trusted-Launch profile from ArtworkLab's already authored and
+  archive-checked Content-on/Trusted-Launch-true profile. Exact final signed
+  catalog and installed enforcement remain open. [S19, S39]
 - **Direct-route CIG and other mitigations:** an ordinary publisher signature
-  does not satisfy Microsoft/Store signer classes. Reconcile the exact per-role
+  does not satisfy Microsoft/Store/WHQL signer-class requirements. The runtime
+  `MitigationOptIn` field explicitly admits those three classes; it is not an
+  arbitrary approved-publisher allowlist. Reconcile the exact per-role
   DLL closure, initial/late-load phase, supported policy and effective evidence
   under [plan §3.2](plans/windows-msix-store.md#32-store-compatible-code-integrity-guard)
   and architecture §15.4. Retain the strongest supported compatible setting;
   record concrete incompatibilities and owner dispositions rather than silently
   weakening a role or inheriting an impossible Store-signature assumption. [S20]
+- **Forced image integrity and signer compatibility:** `/INTEGRITYCHECK` sets
+  `IMAGE_DLLCHARACTERISTICS_FORCE_INTEGRITY` for load-time signature checking.
+  Microsoft's current guidance requires Azure Artifact Signing for files linked
+  with it after cross-signing deprecation. This is a separate compatibility
+  assessment for the exact image, signer, target Windows profile and load path;
+  neither ordinary Authenticode nor MSIX catalog trust proves it. Signing through
+  that service also does not itself confer a Microsoft/Store CIG signer class.
+  W11-W10/build/security retain applicability, provider/prerequisite and native
+  admission evidence under CHECK-16/18/20/23/26. SignPath remains a candidate,
+  not selected; this documentation chooses no provider, adds no switch to
+  unsigned fixtures and waives no required release protection. Independent
+  source/resource work continues while the signing decision remains deferred. [S36]
 - **Independent product authorization:** bind package identity, approved release,
   actual installed payload and permitted operation. A valid unrelated signed
   package, including one signed by Microsoft Store, grants no NevroTick
@@ -493,7 +542,11 @@ separate qualification owners:
   verify catalog/manifest, every required individual signature, actual imports,
   SBOM/licence inventory and installed identities. Qualify normal and denied
   activation, cryptography, UI, maintenance and recovery using the final direct
-  artifact. CHECK-16/18/23/26 keep their existing owners.
+  artifact. Include generated/native/prebuilt contributions and actual startup,
+  lazy-load, recovery and shutdown module closure under the precise feature and
+  activation profile. Resource-only DLLs retain their separate §4.1 handoff;
+  C#/CLR, PowerShell and other diagnostic hosts retain separate admission and do
+  not inherit Rust child flags. CHECK-16/18/23/26 keep their existing owners.
 - **Bundled data:** pinned leap/calendar/catalogue input, generator, normalized
   revision/digest and supported coverage travel in the same complete release.
   A checksum alone is not authentication. Section 10's TUF authority applies to
@@ -633,13 +686,15 @@ self-signatures, not unsigned installers supplemented only by detached signature
 | --- | --- | --- |
 | Chrony/source and exact dependency-license position | Maintainer and qualified license reviewer | Open; preserve architecture gates |
 | Complete MSIX, service/capability justification and sealed executable inventory | Package/Windows owner | Selected preparation direction; implementation and native qualification remain open |
-| Explicit package-content enforcement and role-specific direct-route CIG/mitigations | Windows/security verifier | Plan sections 3.1–3.4 and CHECK-16/18/23/26; Store-signer assumptions require disposition, and native controls remain open |
+| Explicit package-content enforcement, Trusted Launch and role/artifact/feature/activation-specific direct-route mitigations | W11-W10/W11-W05, build and GUI/security verifiers | Plan sections 3.1–3.4 and CHECK-16/18/20/23/26: base ScmFixture has Content on without Trusted Launch; ArtworkLab already authors and archive-checks both. Exact signed/catalog/installed enforcement and full eligible module closure remain open |
+| `/INTEGRITYCHECK` signer and loader compatibility | W11-W10/build/security and later signing owner | Section 6.1 records current Microsoft guidance requiring Azure Artifact Signing for this option; exact applicability/prerequisites and actual signer/load results remain open. No provider selection, weaker release profile or source-work block follows |
 | Microsoft Store publication | David Osipov | Rejected under OD-05 §7.9; no account, submission, certification or refusal gate |
 | Protected source/build candidate and final directly delivered package/catalog/payload identity | Build/release verifier | Bind prepared, signed and downloaded identities and SBOM assets; final signing and direct-artifact qualification remain open |
 | Immutable normalized leap calendar/policy and reproducible provenance | Domain/build/release verifier | NV-LP-001 selects the same authenticated complete-release channel; generated data, revision/digest binding and final-artifact evidence remain to be implemented and qualified |
 | Valid/tampered/unsigned/substituted/unrelated-Store-package controls | Release/security verifier | Package trust, CIG and NevroTick role authorization require separate evidence; not executed |
 | Wrong-clock/offline activation and recovery | Windows/release/security verifier | Section 5.1 cases required on the selected artifact; not executed |
 | Every shipped signable artifact, including nonbinary files, plus outer package | Build/package/security verifier | Section 4.1 defines inventory, signing order and expected identities; production provider capability, complete coverage and final delivered-signature preservation are open |
+| Optional event-resource DLL through individual signing, packaging and installed resolution | W11-W10/build/package with W11-W05 | Existing separate unsigned resource-only gate and optional archive route do not admit individually signed bytes. Section 4.1 retains the validated resources/no-code invariant and requires a distinct exact final signed handoff under CHECK-18/20/23/26; not yet qualified |
 | Embedded PE padding checks and complete final-byte binding | Release/security verifier | Every shipped PE requires its embedded result; section 5.2's strict-policy readback and behavioral cases are not executed |
 | Complete MSIX lifecycle on supported Windows, including reset/removal and W32Time restoration | Package/Windows verifier | Native execution remains held; final direct-artifact evidence required before broad release |
 | Exact-candidate direct availability and broad release | David Osipov | Direct MSIX and in-app TUF design selected; actual signer/trust/hosting and qualification unresolved; no publication or released artifact established |
@@ -652,6 +707,13 @@ self-signatures, not unsigned installers supplemented only by detached signature
 **OPEN-11 tracks the selected direct-MSIX route's unresolved signing/trust and qualification.** Signing selection is deferred; source and package preparation continue. MSI remains a later owner choice, and no unsigned/OpenPGP-only exception is introduced. Eventual public distribution requires actual delivered-artifact coverage, installed trust, protection and lifecycle evidence with David's exact-candidate decision. No Store submission or refusal is required. A provider account, certificate screenshot or this guide alone supplies no signing or release pass.
 
 ## 9. Sources and related documents
+
+Primary Microsoft sources for the 28 November artifact/signing reconciliation:
+
+- **S36:** [`/INTEGRITYCHECK` load-time checking and current Azure Artifact Signing requirement](https://learn.microsoft.com/en-us/cpp/build/reference/integritycheck-require-signature-check?view=msvc-170), rechecked through Microsoft Learn MCP. This supplies a distinct signing prerequisite, not provider selection or CIG admission.
+- **S37:** [Resource-only DLL creation](https://learn.microsoft.com/en-us/cpp/build/creating-a-resource-only-dll?view=msvc-170) and [`/NOENTRY`](https://learn.microsoft.com/en-us/cpp/build/reference/noentry-no-entry-point?view=msvc-170).
+- **S38:** [PE format, resource directories and certificate table](https://learn.microsoft.com/en-us/windows/win32/debug/pe-format). The linked repository reader owns the stricter current unsigned shape; the generic format does not impose that project profile.
+- **S39:** [Trusted Launch manifest prerequisites and catalog boundary](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-trustedlaunch-trustedlaunch). The linked MSIX plan records current fixture declarations separately from final installed enforcement.
 
 Primary sources checked for the later 8 November self-signed MSI clarification:
 

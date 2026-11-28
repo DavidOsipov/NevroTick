@@ -13,6 +13,11 @@ GUI source work continues under its own prerequisites; live backend, D1–D3,
 native and security/metric gates remain. [V1 NTP/NTS/Roughtime scope](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
 adds no GPS/PPS/refclock runtime or UI requirement.
 
+**Exploit-hardening closure — 28 November 2026:** the [bounded desktop queue](#exploit-hardening-closure--28-november-2026)
+imports the source audit at `a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`.
+Current startup controls, complete role qualification and final installed
+activation remain separate; historical receipts retain their exact scope.
+
 The [9 November imported-findings repair](codeql-cloud-handoff.md#imported-full-repository-findings--9-november-2026)
 adds process-owned AccessKit subclass custody and standalone actual-module facade
 controls. Reuse that exact source/evidence chain; this memory-safety correction
@@ -957,6 +962,49 @@ caught-payload fault policy, and narrow unwind assertions during a natural edit.
 Their controls remain proposed; they add no current defect, release gate or
 execution exception and do not displace the
 [current development continuation](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent).
+
+### Exploit-hardening closure — 28 November 2026
+
+**Snapshot and owners:** source review at
+`a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`, under S0.5/UI-M0 and the existing
+W11-W05/W11-W10/S6.1/S6.4/P6/P7 owners. Use
+[architecture §15.4](../docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission),
+[hardening §6.4](../docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification),
+the [build closure](build-optimization.md#exploit-hardening-closure--28-november-2026)
+and [Windows closure](windows11-integration.md#exploit-hardening-closure--28-november-2026)
+as the shared contracts. This handoff adds local G labels, not new acceptance IDs
+or a second mitigation manifest.
+
+The current native UI startup requires image policy `0x7`, default DLL search
+`0xA00` and permanent strict handles `0x3` before Winit/software backend
+selection. This is implemented source with scoped historical evidence, not a
+complete process-policy pass. `host_ready` still means fixture-binding readiness.
+The retained elevated, unpackaged run and 39 sampled module paths do not qualify
+ordinary-user installed activation, all lazy/transient loads or mapped-image
+identity. Failed identity observations remain failed. The two debugger pre-entry
+snapshots likewise do not establish healthy final UI operation.
+
+**Disposition:** independent source preparation remains ready under the current
+GUI slice; native and installed/signing qualification remain held on their
+existing prerequisites. [Development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+retains product priority. UI-M0 stays fixture-only: restore D2 before live status,
+real policy or protected commands, and D1/D3 before general-user preview/release
+or their earlier corresponding claims. The rows do not re-enter those deferrals
+or lift Windows/fuzz/storage holds.
+
+| Local work / existing owner | Prerequisites and concrete next action | Independent acceptance and finish / re-entry |
+| --- | --- | --- |
+| **G1 — complete the desktop role and readiness boundary**; S0.5/UI security with W11-W05/W11-W10, WIN-3/WIN-4 and CHECK-16/20/26/27 | Source-ready from the exact Slint/backend/features and build B1/W1 manifest. Add remaining applicable policy/activation/readback obligations to the actual native entry path, keeping required policy admission before backend/untrusted work and the GPL-3.0-only GUI boundary. Separate fixture readiness from future security readiness. Assess GUI-specific ACG, extension-point, Strict CFG/HSP, font, image and child/activation compatibility; keep necessary Win32k and approved OS activation. | Independently trace the real caller and healthy startup beside missing/failed/unknown required-state cases; failure must preserve the typed cause and bounded cleanup without starting protected work or silently weakening the profile. A support mask, successful setter or `host_ready` cannot supply missing effective-state evidence. Finish only the selected source contract; native compatibility stays open. Re-enter on graph/backend, entry-order, required feature or policy changes. |
+| **G2 — qualify ordinary-user installed behavior and module lifetime**; existing native UI/resource QA with W11-W05/W11-W08, CHECK-16/21/22/23/26/27 at the reached gate | Source-ready case preparation follows G1 and the exact artifact profile; native execution is held until its admitted Windows candidate/environment and current UI stage permit it. Bind effective policy, ordinary token, installed image/package and module identities through cold startup, useful work, lazy loads, recovery and shutdown. Include reached CRT/std/OS, COM/WinRT/GDI, IME/font and UIA/provider paths. D1/D2/D3 cases wait for their existing re-entry triggers; current fixture controls keep their smaller scope. | Independent valid operations and harmless forbidden-load/policy controls must succeed or refuse for the intended reason under the actual profile. Record retained heap/handle/GDI/USER/task resources and original cleanup before observer teardown; debugger/Verifier runs retain separate diagnostic state. Paths alone cannot prove loaded bytes, and sampled lists cannot close transient coverage. Finish each admitted slice with its exact observations and residuals; final GUI qualification waits for applicable deferred cases and installed evidence. Re-enter on graph, provider, token, launch, OS or instrumentation changes. |
+| **G3 — join desktop delivery and approved activation**; W11-W10/S6.4/P6/P7 with S0.5 and helper/updater owners, CHECK-16/18/20/23/26; CHECK-14/27 when D2 is reached | Source-ready with build B5/W4 and the existing [desktop delivery](#desktop-delivery-hardening--25-november-2026) and [updater contract](#manual-updater-contract-and-acceptance--25-november-2026). Reconcile the exact UI/generated/native/resource payload with final signatures, package/catalog and intended activation owners. Preserve [base ScmFixture versus ArtworkLab coverage](../docs/plans/windows-msix-store.md#artifact-and-activation-coverage--28-november-2026) and keep the optional unsigned event-resource DLL's [final signed-content handoff](../docs/windows-time-signing-guide.md#resource-only-dll-signing-handoff--28-november-2026) separate. Live helper/updater/backend work retains D2 and its trust/time/storage/recovery prerequisites. | At the existing admitted gates, independently verify ordinary-user packaged launch, required image policy, approved elevation/OS activation and healthy update/recovery against the exact installed candidate. Package trust, CIG signer class and application/helper authority are separate results; no child-policy exception follows merely from needing an updater. Finish source/payload reconciliation without a signing/native claim; final closure requires actual installed outcomes and all supported individual-file signatures. Re-enter on changed package, signer, payload, consent/activation or helper route. |
+
+Record the selected row's finite cases/work budget in this handoff; stop at its
+exit or concrete blocker and retry only after a relevant input or justified
+method changes. Complete applicable sanitizer work at module completion and
+before V1 under OD-22 through its existing owner. Detector/tool-input success
+cannot close GUI instrumentation, healthy installed behavior or shipping-policy
+qualification. No new diagnostic tool, renderer, signing provider, native
+campaign or user-facing mitigation switch is selected by this amendment.
 
 ### Desktop delivery hardening — 25 November 2026
 

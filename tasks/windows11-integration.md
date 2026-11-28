@@ -1,5 +1,10 @@
 # Windows 11 integration: agent task and evidence record
 
+**Exploit-hardening closure — 28 November 2026:** the [finite W11-W05/W11-W10 queue](#exploit-hardening-closure--28-november-2026)
+maps the source audit at `a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b` to role
+manifests, actual activation owners and final installed evidence. Source work
+and held native/signing qualification retain their separate dispositions.
+
 **Current V1 routing — 27 November 2026:** [OD-02](../docs/nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
 defines network-protocol scope: NTP, NTS and Roughtime, with no V1 GPS/PPS/refclock
 or special timing-hardware requirement. Physical-reference qualification is
@@ -1142,6 +1147,50 @@ MSI route. Delayed cleanup must not fabricate Stopped. Pure
 lifecycle traces precede disposable native/service/package observations; no rights
 grant is dismissed because a harmless child-launch test passed. **Mapping:**
 CHECK-1/12/13/15/16/23/27; ST-T03/10/12/17 for affected storage owners.
+
+#### Exploit-hardening closure — 28 November 2026
+
+**Authority and snapshot:** OD-05/OD-07,
+[architecture §15.4](../docs/windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
+and [hardening §6.4](../docs/windows-time-development-hardening.md#64-per-process-mitigation-qualification)
+govern this source-audit continuation at
+`a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`. It refines W11-W05/W11-W10 under
+existing WIN-3/WIN-4 and CHECK-16/18/20/23/26/27; it creates no new global gates.
+The [build queue](build-optimization.md#exploit-hardening-closure--28-november-2026)
+owns artifact/compiler coverage and the [GUI queue](slint-gui-handoff.md#exploit-hardening-closure--28-november-2026)
+owns the ordinary-user desktop profile.
+
+At this snapshot the UI requires image policy `0x7`, DLL search `0xA00` and
+permanent strict handles `0x3` before backend selection. The lab Engine/Broker
+hosts require image `0x7`, System32 search `0x800`, extension-point disable and
+strict handles `0x3` before SCM dispatch. Their error-mode handling is a separate
+diagnostic contract. Observe and the four CNG/TLS entry points do not have an
+equivalent startup sequence; their diagnostic profile/disposition is still
+required. These source facts establish neither the full intended role profile
+nor absence of inherited or default OS protection. Production Engine/Broker/
+helper/updater composition, complete readback and security readiness remain open.
+
+**Disposition:** the finite source rows below are ready when their existing
+phase owner reaches them; actual native/SCM/UAC/package qualification remains
+held on its scoped authorization, environment and admitted candidate. Signing
+and installed-release qualification remain later gates. Current Core work,
+Windows/fuzz/storage holds and UI-M0 D1–D3 retain their scope. The local W labels
+below only group this continuation within W11-W05/W11-W10.
+
+| Local work / existing owner | Prerequisites and concrete next action | Independent acceptance and finish / re-entry |
+| --- | --- | --- |
+| **W1 — complete the role manifest and readiness contract**; W11-W05/security/platform with each executable owner, CHECK-16/20/26/27 | Source-ready from build B1's actual roster and §15.4. For every role, record exact expected field/disposition, applicability reason, activation phase/owner, observed value/status/error, OS/CPU/VM conditions, graph/image identity and behavioral evidence. Bind the approved role to trusted startup and normal-readiness admission. Explicitly disposition CFG export suppression, EAF/EAF+/IAF, GDI font restriction, module dependency integrity, FSCTL restrictions, RedirectionGuard and each of the five side-channel fields as well as the existing required controls. | Independently trace each actual entry point to its required policy/readback and protected-work boundary. Missing/unknown/failed required state denies normal protected work without weaker retry, lost owned recovery or restart loops; healthy ordinary work remains possible. Keep SystemCallFilter unsupported and ActivationContextTrust a semantic/support research gap unless new authoritative evidence resolves them. Named-pipe use alone cannot exclude FSCTL restriction. Finish the source contract with each row implemented or explicitly open/justifiably excluded; re-enter on changed role, provider, platform support or policy semantics. |
+| **W2 — assign creation-time protection to the real launcher**; W11-W05 with W11-W10/package and helper/UI owners, CHECK-16/18/23/26/27 | Source-ready design after W1; native closure held. Identify the actual SCM, package activation or UAC owner for ordinary CFG activation, export suppression and initial hardware shadow-stack/context protection. Separate build/image, creation-time, early-runtime and externally managed settings; include modules loaded before self-opt-in. Preserve existing pre-start provisioning, maintenance and independent-recovery contracts. No replacement service launcher or global policy rewrite is selected. | A late setter, custom-parent fixture or header declaration cannot qualify an SCM/package-created process. At the admitted gate, independently observe effective state under actual first install/start, no-login boot, restart, update/repair and recovery paths beside healthy work and required refusal. HSP hardware classes retain the v3 floor. Finish only a supported actual launch route with exact evidence; an unresolved creation mechanism blocks its dependent profile. Re-enter on launch/provisioning, versioned package path, OS/policy or installed-artifact changes. |
+| **W3 — close policy behavior and loaded-module lifetime**; W11-W05/native QA with W11-W08 and GUI/provider owners, CHECK-16/21/23/26/27 | Source-ready case selection after W1/W2 and build B2–B4; execution held on their actual candidates and existing native gates. Bind running image/token, effective fields and audit state to cold startup, real work, lazy providers, recovery and shutdown. Include CRT/std/native/OS modules, dynamic/delay loads and applicable GUI activation without treating module path strings as mapped-byte identity. Qualify harmless denied operations alongside necessary healthy operations. | Independently reconcile process, backing-file/package and module identities with the exact installed graph; preserve failed/unavailable identity observations. A 39-path UI sample, 11-image service or 28-image UI pre-entry debugger samples, and standalone lab-service readback cannot establish ordinary-user/installed-SCM lifecycle closure. Required-protection failure preserves bounded owned cleanup and no new clock authority. Finish each declared lifecycle/profile case with evidence or a precise blocker; re-enter on changed module graph, policy, token, instrumentation or lifecycle path. |
+| **W4 — join package and signer policy to the installed roles**; W11-W10/S6.4/P6/P7 with W11-W05, CHECK-16/18/20/23/26 | Source-ready reconciliation uses the [direct-MSIX plan](../docs/plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper) and [complete-file signing inventory](../docs/windows-time-signing-guide.md#41-required-signatures-for-the-shipped-inventory); signing/native gates remain held. Preserve distinct base ScmFixture and ArtworkLab profiles: both author Content Enforcement, only ArtworkLab already authors/checks Trusted Launch. Carry the optional unsigned resource-only event DLL into its separate [final-content/signature/installed-resolution handoff](../docs/windows-time-signing-guide.md#resource-only-dll-signing-handoff--28-november-2026). | Independent final package/catalog, per-file signature and installed activation observations must agree with the role manifest and healthy service/UI/helper/updater behavior. Microsoft/Store/WHQL CIG admission is distinct from project-publisher trust; `/INTEGRITYCHECK` needs its own supported signing-route decision and is not selected by this task. Resource-only classification must survive signing/package transformations without inventing executable CFG/CET coverage. Finish at the existing actual-delivery gates; revisit after signer, catalog, package/resource bytes or activation changes. No Store prerequisite, MSI fallback or customer trust-store change is introduced. |
+
+Each selected row records one finite work/case budget here and ends at its stated
+exit or named blocker. Failed feasibility is not retried without a changed input
+or justified method. Expected, implemented, configured, read-back, audit-only,
+behaviorally qualified, unsupported and not-run states must remain distinguishable.
+Use existing admitted verification paths; sanitizer or debugger evidence retains
+its diagnostic scope and does not replace a final installed normal-operation run.
+Historical receipts below are retained without extending their candidate or scope.
 
 #### Service and IPC qualification — 25 November 2026
 

@@ -486,8 +486,8 @@ The trusted build entry point must reject unreviewed environment/configuration o
 | CET shadow stack | Selected `/CETCOMPAT` **and** `/CETCOMPATSTRICT`; require strict enforcement on the supported CPU/OS/VM class | Inspect both extended image bits and effective HSP/strict/audit state. The flags mark compatibility; they do not instrument every module or prove enabled hardware enforcement. Strict mode and non-CET/EHCONT module restrictions are separate policies. [C15, C38, C41] |
 | Jump-table suppression | Stable Rust `jump-tables=no` is selected | Disables generated jump tables in code compiled under the option; it does not eliminate all indirect branches, instrument prebuilt inputs or replace CFG. Inspect the emitted code and retain correctness/resource qualification; no measured security or performance gain is claimed. [C44] |
 | Static-import search | Selected `/DEPENDENTLOADFLAG:0xA00`; require `0x800` for a role whose actual imports permit it | Inspect `DependentLoadFlags` and the complete legitimate/denied-load paths. This is static-import policy, not a universal DLL allowlist or a replacement for runtime loading controls. [C41, C42] |
-| Native stack-buffer protection | Preserve/check native MSVC `/GS` in applicable native compilation | Passing a native option to a Rust link does not instrument Rust functions. [C16] |
-| Native Spectre mitigation | Require applicable `/Qspectre` compilation and compatible libraries through the native owner | This native compiler mitigation has limited pattern coverage and cost; it is not a Rust linker switch. Record the actual threat, native coverage and remaining limitations. [C20] |
+| Native stack-buffer protection | Preserve the selected Clang strong stack protection and require the appropriate supported protection, such as MSVC `/GS`, for each native compilation owner | Inspect emitted protected frames and cookie initialization, including pre-CRT entries. Absence of a literal `/GS` switch in a Clang recipe does not mean absence of protection. Passing a native option to a Rust link does not instrument Rust functions. [C16, C51] |
+| Native Spectre mitigation | Assess sensitive native code and select the applicable supported compiler mitigation and compatible libraries through its native owner | `/Qspectre`, `/Qspectre-load` and `/Qspectre-load-cf` have different contracts and coverage/cost. They are not Rust linker switches or automatically valid pinned-Clang options. Record actual compiler/library coverage and remaining limitations. [C20, C51] |
 
 `0xA00` combines application-directory (`0x200`) and System32 (`0x800`)
 search, preserving prospective protected app-local CRT/DLL imports. The final
@@ -511,7 +511,7 @@ every option name can be combined:
 | `/GUARD:XFG`, `/SAFESEH` | The pinned LLD guard parser does not support XFG; SafeSEH is the x86 mechanism, not the x64 exception model. [C41, C46] |
 | `/GUARD:LONGJMP` as an additional protection | Pinned LLD's `/GUARD:CF` already selects its long-jump handling. Verify actual emitted metadata instead of counting the duplicate switch. [C41] |
 | `/CETIPVALIDATIONRELAXED`, `/CETDYNAMICAPISINPROC` | These advertise relaxed context-IP validation or an in-process dynamic-API allowance; they do not strengthen the selected profile. [C38, C41] |
-| `/INTEGRITYCHECK` | The package/signing owner must resolve its supported per-image signature contract and enable it in the final profile where compatible. The selected MSIX catalog route and unsigned development fixtures do not establish that compatibility. Keep this gate open; package/CIG/trust qualification is not proof of this separate control. [C46] |
+| `/INTEGRITYCHECK` | The package/signing owner must resolve its supported per-image signature contract and enable it in the final profile where compatible. Microsoft's guidance, rechecked 28 November, now requires Azure Artifact Signing for this option's signing path after cross-signing deprecation. This is a separate compatibility/signing gate, not adoption of a provider or permission to change unsigned fixtures. MSIX catalog integrity, ordinary publisher trust and CIG signer-category admission do not establish this control. [C46] |
 
 The v3 CPU floor does not imply CET hardware availability. Record the concrete
 CPU/OS/VM applicability condition, and enforce the strongest supported CET
@@ -522,7 +522,7 @@ Verify three layers: **effective build inputs, emitted images and effective runt
 
 ### 6.4 Per-process mitigation qualification
 
-Use [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) as the canonical role/activation/failure contract and manifest schema. This 29 October refinement incorporates useful specificity from the supplied PDFCraft proposal without adopting its CRT, dependencies or UI architecture. Existing tooling observations remain scoped to their recorded fixture. All application-level cases below are **planned / not executed**.
+Use [architecture section 15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission) as the canonical role/activation/failure contract and manifest schema. This 29 October refinement incorporates useful specificity from the supplied PDFCraft proposal without adopting its CRT, dependencies or UI architecture. Existing tooling observations remain scoped to their recorded fixture. The complete application qualification cases below remain **planned / not executed**; the [28 November snapshot](#642-complete-artifact-and-process-coverage) distinguishes existing narrow startup implementations and historical receipts from that open qualification.
 
 The same startup record owns [effective unattended error behavior](windows-time-architecture.md#1234-privacy-sinks-and-resource-limits),
 separately from mitigation bits. W11-W05 establishes actual process/thread policy
@@ -533,10 +533,12 @@ observation supplies no dump/upload or whole-profile qualification.
 The **6 November owner clarification** makes the strongest applicable supported
 compatible profile mandatory for each delivered role. An unimplemented setter,
 missing observation or failed qualification remains open required work, not an
-optional control. The selected build vector installs no production per-role
-mitigation initializer or effective-state observer; their implementation and
-native acceptance remain open. Use the existing platform adapter and mitigation
-manifest rather than adding a second policy owner. The [MSIX plan sections
+optional control. The selected build vector alone installs no runtime policy.
+Existing UI and laboratory startup guards implement specific controls, while
+complete production role initialization, effective-state observation and native
+acceptance remain open. Extend the existing platform adapter and artifact/
+verification owners with architecture §15.4's machine-readable authority; the
+current verification manifest is not that complete implementation. The [MSIX plan sections
 3.1–3.4](plans/windows-msix-store.md#3-package-trust-and-the-privileged-helper)
 own sealed executable content, explicit `uap10:Content Enforcement="on"` under
 `uap10:PackageIntegrity`, delivery-compatible image admission, role targets and independent
@@ -566,6 +568,32 @@ for engine/broker; preserve required Win32k and approved activation in the UI.
 Unsupported mechanisms or necessary-feature conflicts need a concrete recorded
 applicability decision, not an indiscriminate bitmask or an optional-work label.
 
+**Catalog completion, 28 November 2026:** record the following dispositions
+alongside the existing required controls. "Assess" means required applicability
+and compatibility work; where supported and relevant, the maximum-compatible
+policy requires implementation and qualification. A global list of enabled
+names cannot replace per-role/feature/activation records.
+
+| Mechanism | Required disposition and evidence boundary |
+| --- | --- |
+| CFG export suppression | Assess `EnableExportSuppression` separately from ordinary and Strict CFG. It cannot be changed by `SetProcessMitigationPolicy`; qualify the real creation/host policy and legitimate dynamically resolved exports. A late CFG setter cannot supply it. [C37] |
+| EAF/EAF+ and IAF | Assess export/import filtering against each actual image, provider, debugger and API-interception environment. These are not categorically x86-only exclusions. Qualify exact supported configuration and any audit/enforcement distinction; required legitimate instrumentation can expose a concrete compatibility conflict. [C47] |
+| GDI non-system font restriction | Assess the GDI font policy for the actual role and renderer. The control does not establish protection of every font parser, DirectWrite or software-rendered font path. Preserve adopted font/accessibility behavior at its existing UI gate. [C47] |
+| Module dependency integrity | Assess Windows-signed dependency admission against the actual imported/loaded closure. Its Windows-signature rule is distinct from a project-publisher allowlist or helper authorization. [C47] |
+| FSCTL restriction | Assess `DisallowFsctlSystemCalls` independently of Win32k denial, against the role's real filesystem, package, storage-provider and IPC operations. Microsoft lists exceptions including multiple named-pipe operations and `FSCTL_IS_VOLUME_MOUNTED`; use of named pipes alone is not an incompatibility. Qualify exact field support rather than extrapolating the structure's overall minimum OS to every newer bit. [C48] |
+| Side-channel fields | Give `SmtBranchTargetIsolation`, `IsolateSecurityDomain`, `DisablePageCombine`, `SpeculativeStoreBypassDisable` and `RestrictCoreSharing` separate threat/support dispositions. Hardware, host policy, scheduler/VM guarantees, common-page exceptions and irreversible enablement affect their meaning; a requested/read-back bit is not measured protection. Retain CHECK-16/21 cost and legitimate-operation evidence. [C49] |
+| `ProcessSystemCallFilterPolicy` | Unsupported in the retrieved Microsoft structure contract. Do not implement an arbitrary filter from its enum/structure declaration or count it as protection. Revisit only with an admitted supported contract. [C50] |
+| `ProcessActivationContextTrustPolicy` | Public enum presence is confirmed; the retrieved semantic/activation/support contract remains unresolved. Keep an explicit research disposition and owner; do not invent a setting, claim exclusion is proved, or count it as implemented. [C50] |
+| DEP and heap corruption termination | Preserve their required behavior and exact-image/allocator evidence. DEP is permanent for x64; heap corruption termination is already the documented 64-bit default. A missing application setter alone proves neither is disabled. [C12, C47] |
+| StackPivot, CallerCheck/SimExec and SEHOP/SafeSEH | StackPivot conflicts with enforced ACG; CallerCheck/SimExec have x86 applicability and ACG compatibility limits. The documented SEHOP Exploit Protection setting and SafeSEH linker mechanism are x86-specific; this does not claim that x64 has no exception defenses. Retain the stronger selected compatible controls. [C46, C47] |
+| User pointer authentication | Inapplicable to the selected x64 product; its ARM64 contract belongs to any future architecture assessment. Do not count an enum declaration as x64 coverage. [C55] |
+| Options masks, audit modes and host hardening | An options mask is support metadata and an audit result is observation. Host App Control/Smart App Control, VBS/HVCI, Secure Boot and Defender policies require declared deployment/compatibility evidence; they are not Rust submodule switches or authority to rewrite machine policy. Preserve the separate AppContainer/LPAC and PPL eligibility decisions in architecture §15.4. [C22, C47, C50] |
+
+Use the exact supported OS, SDK/API and ProcessMitigations module contract when
+configuration tables or accepted audit names differ. Establish support and
+enforcement separately; neither a successfully parsed command nor an audit log
+closes a required-policy row. [C47]
+
 For every delivered executable and applicable DLL, inspect the exact final PE
 and load configuration with `dumpbin /headers /loadconfig` or an admitted
 equivalent, including the extended DLL-characteristics debug data. Record CFG
@@ -580,7 +608,7 @@ is required merely to obtain `dumpbin`. [C10, C11, C15, C41, C42]
 Pair effective process-policy queries with independently observed behavior. The inspection tool must identify the exact running binary and launch path; saved registry configuration, a screenshot label or a successful setter is insufficient. Keep the expected profile under trusted build/install ownership. A support mask or unrecognized query result must not turn a missing required setting into a pass. Preserve query status when an observer's convenience API maps selected unsupported/error/terminating statuses to zero. Ordinary CFG, Strict CFG and hardware shadow-stack enforcement are separate observations. The [Chromium/NtCoreLib examples](plans/windows-protected-storage-upstream-lessons-2.md#7-mitigations-need-ordered-startup-and-behavioral-evidence) supply concrete cases, not an admitted observer or final-artifact evidence.
 
 Record compile/link, creation and early-runtime activation separately. Microsoft
-documents that `EnableControlFlowGuard`, `EnableUserShadowStack` and
+documents that `EnableControlFlowGuard`, `EnableExportSuppression`, `EnableUserShadowStack` and
 `SetContextIpValidation` cannot be changed through `SetProcessMitigationPolicy`;
 they cannot all be supplied by a late runtime initializer. Readbacks, image
 metadata and real native behavior must agree on the supported OS/hardware.
@@ -665,6 +693,145 @@ erase required continuity. VBS claims and side-channel-policy fields remain
 [conditional](plans/windows11-integration-follow-up.md#6-conditional-mechanisms);
 neither an API result nor requested-bit readback proves their broader claim.
 
+
+#### 6.4.2 Complete artifact and process coverage
+
+**Source snapshot, 28 November 2026:** the following mapping is bound to
+[`a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`](https://github.com/DavidOsipov/NevroTick/tree/a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b).
+It records source and configuration inspected for the hardening re-audit.
+No new Windows build, installed run or native enforcement result is supplied by
+this amendment. Existing receipts retain their exact source, artifact, account,
+activation and host limits; historical six-member workspace results do not
+qualify the current eight-member graph.
+
+| Evidence stage | What a record can establish | What remains separate |
+| --- | --- | --- |
+| Configured | Effective compiler/linker/feature inputs through the admitted build route | Whether every selected object was rebuilt with them |
+| Implemented | Source-owned initialization, query, refusal and lifecycle paths | Emitted properties and actual OS execution |
+| Static artifact checked | Exact image/package bytes, structural properties and trusted identity continuity | Instruction-complete instrumentation, actual loaded closure and effective runtime enforcement |
+| Native/installed qualified | Independent effective-state and denied/valid behavior for the identified role/artifact/launch/support class | Other feature graphs, hosts, later changed artifacts or unobserved phases |
+
+The [workspace manifest](../Cargo.toml) has eight members. Instrumentation
+belongs to compiled code, PE checks to images, and process policy to the actual
+executable/host. The normal dependency graph is:
+
+| Workspace crate | Current normal executable relationship | Coverage consequence |
+| --- | --- | --- |
+| [`nevrotick-ui`](../crates/nevrotick-ui/Cargo.toml) | Current UI | Own startup profile; generated Slint and toolkit/native callbacks remain part of its closure |
+| [`nevrotick-engine`](../crates/nevrotick-engine/Cargo.toml) | `nevrotick-observe` | Optional KE/Roughtime graphs inherit Observe's actual process, not a future service profile |
+| [`ntp-wire`](../crates/ntp-wire/Cargo.toml) | Observe through Engine | Selected protocol submodules acquire instrumentation through their actual compiled owner |
+| [`time-domain`](../crates/time-domain/Cargo.toml) | Observe through Engine | Same ownership; generated tables and the independent allocation observer are separate inputs/artifacts |
+| [`windows-platform-native`](../crates/windows-platform-native/Cargo.toml) | Observe on Windows and standalone laboratory services | Rebuilt FFI wrappers do not establish protection of Windows/provider implementations |
+| [`time-core`](../crates/time-core/Cargo.toml) | No normal edge into either current workspace release executable | Library checks do not close future production Engine link/runtime coverage |
+| [`ntp-exchange`](../crates/ntp-exchange/Cargo.toml) | No normal edge into either current workspace release executable | Its `time-core` edge is dev-only; future integration needs its own artifact/role evidence |
+| [`windows-platform`](../crates/windows-platform/Cargo.toml) | Standalone laboratory services, neither current workspace release executable | Portable service/privilege contracts do not prove installed SCM, token or ACL behavior |
+
+Thus the current UI does not normally link all eight crates. Under the admitted
+explicit Windows-target route, selected rebuilt target Rust uses the common
+flags, including selected path patches and generated Rust. Membership alone
+does not prove inclusion, compilation or final-image coverage. Record default,
+KE, Roughtime and combined feature graphs separately: the current general
+verifier's Roughtime-only and combined profiles are dependency-lane checks, not
+Windows release links or process qualification. Sources:
+[`verify.py`](../scripts/verify.py),
+[`slint_dependency_profile.py`](../scripts/slint_dependency_profile.py),
+[`verify-engine-analysis.py`](../scripts/verify-engine-analysis.py) and the
+[laboratory service manifest](../tools/windows-service-fixture/Cargo.toml).
+
+**Actual entries and image kinds.** Every executable, code-bearing DLL and
+resource-only DLL needs an appropriate image record. Every process, including a
+diagnostic or shared managed host, needs an explicit compatible role record.
+The a95 source inventory establishes these narrower facts:
+
+| Entry/artifact | Implemented or configured source at this snapshot | Open work |
+| --- | --- | --- |
+| UI `main` → Slint host | Image policy `0x7`, runtime DLL search `0xA00` and permanent strict handles `0x3` before Winit/software backend selection; image/handle owners validate effective state | Complete role policy, normal-user installed launch, legitimate cold/lazy dependencies and production UI gates |
+| `nevrotick-observe` | No equivalent image/DLL/strict-handle startup sequence found | Explicit admitted diagnostic profile and effective-state evidence; this controlled Observe entry is not the production Engine service |
+| Laboratory Engine/Broker | Image `0x7`, System32 runtime search `0x800`, extension-point disabling and strict handles `0x3` before SCM dispatch | Actual installed service activation and complete role composition. Non-test Engine remains inert; Broker supplies read-only clock/deny-all-pipe behavior, with broader composition test-gated |
+| CNG/TLS fixture package | Four possible executable entries: automatic `main` plus three declared binaries, including feature-gated init probe; no equivalent startup sequence | Per-entry compatible fixture profiles; provider observations cannot qualify another process's policies |
+| Windows allocation observer | Full Windows target build vector; local PE gate checks AMD64/PE32+ and selected DLL characteristics | Adopt applicable common structural checks or enforce an explicit narrower diagnostic contract; no implicit full load-config/CET/section/relocation/PDB pass |
+| Tests, examples, generated helpers and managed supervisors | Independent entries and build/host arrangements, including CLR/PowerShell and embedded C# | Record target executable, supervisor/host, compilation and actual launch policy separately; required JIT/interop/child supervision must be assessed before applying service restrictions |
+| Optional event resource DLL | Direct non-Cargo resource build; independent reader requires no code/entry/imports/exports, one read-only resource section, declared NX/ASLR/high-entropy properties and exact resource content | Preserve resource-only invariants and bind accepted unsigned content to final signed image/package and installed resource resolution; do not claim executable CFG/CET instrumentation |
+| Production Engine, Broker, helper and update retrieval worker | Architecture requirements and bounded prototypes/simulations | Complete production composition, creation/early-runtime owners, readiness refusal and final installed qualification |
+
+Source owners are the [UI startup owner](../crates/nevrotick-ui/src/slint_host/startup_image_policy.rs),
+[Observe entry](../crates/nevrotick-engine/src/bin/nevrotick-observe.rs),
+[laboratory service entry](../tools/windows-service-fixture/src/lib.rs) and
+[native owner](../tools/windows-service-fixture/src/native.rs),
+[CNG package](../tools/crypto-cng-lifecycle/Cargo.toml),
+[allocation verifier](../scripts/verify-time-domain-windows-allocation.py),
+[resource builder](../metadata/build_event_resource.py) and
+[resource reader](../metadata/event_resource_pe.py).
+The runtime image mask, runtime DLL-search mask and PE `DependentLoadFlags`
+are different controls. `0x7` requests remote/low-label image denial and System32
+preference; DLL search `0xA00` includes application and System32 directories,
+whereas `0x800` selects System32. An early application call cannot protect
+retroactively against prior loader work. [C22, C42, C52]
+
+**Compilation and loaded-module closure.** Record all selected first-party
+submodules without inventing one setter per submodule. Include the six selected
+path-patch packages, generated Slint Rust/vtables, registry Rust, native C and
+assembly/optimized crypto, supplied Rust standard library, CRT/SDK/static/import
+objects and Windows/provider DLLs. Workspace lint inheritance and target Rust
+flags are different claims: excluded path patches can still be compiled target
+inputs, while build scripts/procedural macros and compiler hosts are host
+executables. Target flags do not retrofit native/prebuilt/host inputs. A mixed
+CFG image can contain uninstrumented objects. [C11, C53]
+
+The current UI and service pre-entry C recipes already request Clang strong
+stack protection and CFGuard. Inspect emitted protected frames and prove
+security-cookie initialization before any such frame executes; a pre-CRT entry
+cannot assume ordinary CRT initialization has already occurred. This conditional
+qualification gap is not a confirmed vulnerability in the fixed CPU selectors.
+The recipes do not explicitly select Spectre mitigation. Assess actual sensitive
+native paths, supported compiler flags and library variants, including the
+distinct MSVC `/sdl` contract, without applying MSVC options blindly to Clang.
+Retain the selected x86-64-v3 product floor and the pre-entry admission boundary.
+Sources: [UI entry](../crates/nevrotick-ui/startup/cpu_entry.c),
+[service entry](../tools/windows-service-fixture/msix/service_entry.c),
+[`verify.py`](../scripts/verify.py) and
+[`cross-link-service-fixture.py`](../scripts/cross-link-service-fixture.py). [C51]
+
+The [common PE reader](../scripts/windows_pe.py) currently admits executables
+and requires `DependentLoadFlags=0xA00`. Extend the existing artifact owner with
+role/image-kind requirements when admitting a compatible `0x800` image or a
+code-bearing DLL; do not weaken the common executable gate globally. Keep the
+resource-only gate separate: `/NOENTRY` alone is not proof of no executable
+content, and its current unsigned fixture reader rejects a signed
+representation. The optional resource archive route and signed-base fixture
+route are distinct; final signing must preserve the resource contract. [C52]
+
+Loaded-image evidence must cover cold startup, first lazy feature/provider use,
+recovery and shutdown for the actual supported role. Include CNG/certificate and
+TLS/storage providers; DNS, clock, SCM and power adapters; and adopted UI GDI,
+COM/UIA, WinRT, IME, font/image and WinSxS paths. Bind path, identity, signature
+class where relevant and independent observation to the exact artifact, account,
+launch and feature graph. A static import list or Rust SBOM alone cannot close
+that set. Historical elevated/unpackaged UI module samples and standalone lab
+readbacks remain scoped observations; failed backing-file identity observations
+remain failed, and static replay supplies no fresh installed enforcement.
+
+**Package-source distinctions.** The base
+[ScmFixture manifest](../tools/windows-service-fixture/msix/AppxManifest.xml)
+authors Content Enforcement on and omits Trusted Launch. The separate
+ArtworkLab generator in [`verify.py`](../scripts/verify.py) already authors
+`TrustedLaunch=true`, and its
+[archive reader](../tools/windows-service-fixture/msix/check_artwork_package.py)
+requires that declaration alongside content enforcement. Neither source result
+proves final catalog coverage, signing or actual supported UI/SCM/helper launch.
+The a95 guarded ArtworkLab checks strengthen source/resource/map/PDB continuity;
+trusted independent digest custody and native installed evidence remain separate.
+Keep `/INTEGRITYCHECK`'s signing gate in §6.3 separate from these package checks
+and from CIG. [C39, C46, C54]
+
+Close this work through the existing architecture CHECK-16/18/20/23/26 and
+CHECK-19 verification-gate ownership, using §15.4's manifest rather than a new
+parallel acceptance catalog. Retain configured, implemented, static and native
+states in each receipt. Sanitizer/tool installation or a diagnostic pass cannot
+supply shipping-policy qualification. Existing module-completion/V1 sanitizer
+cadence, Core priority, UI-M0 re-entry, protected-storage/provider pauses and
+native/installed/fuzz/proof execution gates remain in force; OD-22 does not defer
+mandatory hardening implementation, and this update admits no additional execution.
 
 ### 6.5 Windows x64 optimization policy and evidence limits
 
@@ -1791,6 +1958,20 @@ compiler/linker source support does not establish Windows enforcement:
 - **C44:** Pinned Rust [stable jump-tables documentation](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/src/doc/rustc/src/codegen-options/index.md#jump-tables), [option declaration](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_session/src/options.rs#L2251) and [LLVM attribute lowering](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/attributes.rs#L330).
 - **C45:** Microsoft [/FIXED and relocation generation](https://learn.microsoft.com/en-us/cpp/build/reference/fixed-fixed-base-address?view=msvc-170) and [/LARGEADDRESSAWARE](https://learn.microsoft.com/en-us/cpp/build/reference/largeaddressaware-handle-large-addresses?view=msvc-170). For the selected linker's actual defaults, use C41's pinned driver; its comment explicitly distinguishes observed EXE behavior from Microsoft's `/FIXED` default wording.
 - **C46:** Microsoft [/SAFESEH architecture restriction](https://learn.microsoft.com/en-us/cpp/build/reference/safeseh-image-has-safe-exception-handlers?view=msvc-170) and [/INTEGRITYCHECK signing contract](https://learn.microsoft.com/en-us/cpp/build/reference/integritycheck-require-signature-check?view=msvc-170).
+
+Primary sources for the 28 November artifact/process coverage reconciliation;
+Microsoft Learn semantics are distinct from NevroTick source implementation,
+static artifact evidence and native qualification:
+
+- **C47:** Microsoft [Exploit Protection semantics and compatibility](https://learn.microsoft.com/en-us/defender-endpoint/exploit-protection-reference), [configuration applicability table](https://learn.microsoft.com/en-us/defender-endpoint/customize-exploit-protection), [payload restriction fields](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ns-ntddk-_process_mitigation_payload_restriction_policy), [font restriction fields](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_font_disable_policy) and [current ProcessMitigations cmdlet](https://learn.microsoft.com/en-us/powershell/module/processmitigations/set-processmitigation?view=windowsserver2025-ps). Qualify exact OS/module support when configuration tables and accepted audit names differ.
+- **C48:** Microsoft [system-call-disable policy, distinct Win32k/FSCTL fields and documented FSCTL exceptions](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_system_call_disable_policy).
+- **C49:** Microsoft [side-channel policy fields, hardware/host/scheduler conditions and common-page exceptions](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_side_channel_isolation_policy).
+- **C50:** Microsoft [unsupported system-call-filter structure](https://learn.microsoft.com/en-us/windows-hardware/drivers/ddi/ntddk/ns-ntddk-_process_mitigation_system_call_filter_policy) and [process-mitigation enumeration](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ne-winnt-process_mitigation_policy). An enum entry does not supply the unresolved ActivationContextTrust semantic/support contract.
+- **C51:** Microsoft [security-cookie initialization before protected frames](https://learn.microsoft.com/en-us/cpp/c-runtime-library/reference/security-init-cookie?view=msvc-170), [/sdl](https://learn.microsoft.com/en-us/cpp/build/reference/sdl-enable-additional-security-checks), [/Qspectre-load](https://learn.microsoft.com/en-us/cpp/build/reference/qspectre-load) and [/Qspectre-load-cf](https://learn.microsoft.com/en-us/cpp/build/reference/qspectre-load-cf), with Clang's [compiler argument reference](https://clang.llvm.org/docs/ClangCommandLineReference.html). Actual selected recipes and emitted code remain separate evidence.
+- **C52:** Microsoft [runtime default DLL directories](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-setdefaultdlldirectories), [image-load policy fields](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-process_mitigation_image_load_policy), [/NOENTRY](https://learn.microsoft.com/en-us/cpp/build/reference/noentry-no-entry-point?view=msvc-170) and [resource-only DLL construction](https://learn.microsoft.com/en-us/cpp/build/creating-a-resource-only-dll?view=msvc-170).
+- **C53:** Cargo [target versus host rustflags](https://doc.rust-lang.org/cargo/reference/config.html#buildrustflags) and [workspace package/lint inheritance](https://doc.rust-lang.org/cargo/reference/workspaces.html).
+- **C54:** Microsoft [Trusted Launch manifest and OS/catalog prerequisites](https://learn.microsoft.com/en-us/uwp/schemas/appxpackage/uapmanifestschema/element-trustedlaunch-trustedlaunch).
+- **C55:** Microsoft [ARM64 pointer-authentication context](https://learn.microsoft.com/en-us/visualstudio/debugger/debug-interface-access/idiastackwalkhelper2-getpointerauthenticationmask).
 
 ### Dependency and CI sources
 
