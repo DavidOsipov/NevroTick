@@ -665,8 +665,9 @@ restored and must not be applied again to this tree.
 The imported G1–G3/B1/W1 queue does not put process-wide policy in the About
 callbacks or catalog decoder. G1's remaining desktop-policy source work depends
 on the exact role manifest and native entry owner; G2/G3 keep native, installed,
-activation and signing prerequisites. The actual native startup still checks
-image policy, DLL search and strict handles before backend selection.
+activation and signing prerequisites. The original startup checked image policy,
+DLL search and strict handles; the [G1 source child](#g1-selected-startup-admission--28-november-2026)
+adds dynamic-code prohibition and extension-point disable before backend selection.
 `host_ready` remains fixture-binding readiness. The new documentation selects
 no tool installation or native campaign. The 29 pinned source/helper/fixture
 bytes underlying the source checkpoint below are unchanged by this pull;
@@ -1266,9 +1267,12 @@ as the shared contracts. This handoff adds local G labels, not new acceptance ID
 or a second mitigation manifest.
 
 The current native UI startup requires image policy `0x7`, default DLL search
-`0xA00` and permanent strict handles `0x3` before Winit/software backend
-selection. This is implemented source with scoped historical evidence, not a
-complete process-policy pass. `host_ready` still means fixture-binding readiness.
+`0xA00`, permanent strict handles `0x3`, dynamic-code prohibition without
+thread opt-out or remote downgrade, and disabled legacy extension points before
+Winit/software backend selection. The [G1 card](#g1-selected-startup-admission--28-november-2026)
+separates this implemented source from its current checks and historical evidence;
+complete process-policy qualification remains open. `host_ready` still means
+fixture-binding readiness.
 The retained elevated, unpackaged run and 39 sampled module paths do not qualify
 ordinary-user installed activation, all lazy/transient loads or mapped-image
 identity. Failed identity observations remain failed. The two debugger pre-entry
@@ -1295,6 +1299,132 @@ before V1 under OD-22 through its existing owner. Detector/tool-input success
 cannot close GUI instrumentation, healthy installed behavior or shipping-policy
 qualification. No new diagnostic tool, renderer, signing provider, native
 campaign or user-facing mitigation switch is selected by this amendment.
+
+### G1 selected startup admission — 28 November 2026
+
+At `ef446b9`, the selected next source child connects dynamic-code prohibition
+and legacy extension-point disabling to the actual `create_native` path before
+backend selection. This follows architecture §15.4 and the existing G1/W1 role
+owner; complete creation-time, module, installed and native compatibility
+qualification remains open. The code-owned selected UI profile joins existing
+image `0x7`, DLL search `0xA00` and strict handles `0x3` with these two checks.
+No external runtime policy file or complete-security-readiness claim is added.
+
+Independent plan review corrected the initial whole-word dynamic-code proposal:
+require `ProhibitDynamicCode=1` and both weakening fields zero, preserving an
+inherited audit bit. Known mask is `0xF`, requested flags are
+`1 | (initial & 8)`; inherited `1` and `9` need no setter. Tighten any other
+recognized initial word once, then require the requested bits, no `0x6` weakening
+bits and no reserved bits. Newly observed additional audit is permitted; losing
+inherited audit refuses. Extension-point flags require `1`, with known mask `1`.
+Reserved initial flags, native failures and insufficient readback refuse without
+weaker retry or rollback of prior tightening. These are field contracts, not
+observed OS enforcement. The Microsoft structure and setter contracts were read
+through MS Learn MCP; IME/accessibility/provider compatibility is still unqualified.
+
+`implement-native-ui`, `implement-slint`, `implement-rust-contracts` and
+`security-native-ui` own the actual startup/typed-error chain. A private admission
+transition runs the five checks and only then invokes the backend factory once;
+the real Windows entry consumes it. Contract/positive/negative/boundary controls
+cover inherited and tightened policies, audit retention, weakening/reserved
+flags, each native failure, each sequencing refusal with zero backend calls,
+healthy creation and unchanged backend failure. Original error causes survive
+the real `HostError` projection. `host_ready` retains fixture meaning.
+
+Budget from this record: 60 minutes total including source, focused component
+checks and independent review; two causal repair rounds. One component cohort
+and one final source/format checkpoint use the pinned compiler, bounded private
+outputs, one CPU, 30-second command wall/15-second CPU and 1-GiB AS. First perform
+one cache/resource preflight for a selected configured MSVC compiler/Clippy row;
+if viable, retain its existing per-command and filesystem limits. Missing current
+row admission leaves that check incomplete; no automatic tool installation or
+local P5 GNU test-build retry is authorized. Hosted full UI execution and actual
+Windows/native/final-package evidence retain their existing owners and gates.
+The two new security owners enter the existing manifest; 90% line/95% per-file
+mutation obligations remain open until their actual campaigns are admitted.
+
+The single cache/resource preflight found retired prior UI targets, an available
+pinned compiler/vendor/SDK, about 4.1 GiB root reserve and 7.5 GiB available RAM.
+An initial assessment that an absent warm cache alone precluded the row was too
+strong: roomy D scratch supports one cold configured UI MSVC compiler/Clippy
+selection within a 900-second aggregate bound, jobs 4, unchanged per-command
+limits, 4 GiB filesystem reserves and a 1 GiB memory floor. This consumes the
+same G1 budget, adds no GNU UI build retry and grants no native evidence.
+
+Development closeout before the owner's evidence cleanup: the actual startup
+policy module passed 26 confined component controls, and its receiving source
+checker passed 27 controls after repairing formatting-sensitive fixture anchors.
+Independent source review found no remaining issue in this child. The configured
+MSVC attempt remains **incomplete**: its original 900-second aggregate deadline
+expired during the cold UI compiler row; compiler success and the following
+Clippy row were not observed. Prerequisite repairs and temporary tool placement
+did not reset that deadline. No renewed run is scheduled by this record.
+
+David subsequently requested deletion of the retained evidence and unused
+worktrees. The raw G1 logs, snapshots and transient targets are retired under that
+authorization; the observations above are historical attribution, not reusable
+raw qualification evidence. Source changes and source recovery remain preserved.
+Actual Windows enforcement/compatibility, complete role admission and the
+applicable coverage, mutation, native and package gates remain open.
+
+#### Post-cleanup combined commit checkpoint
+
+David requested continued development and a verified commit/push after cleanup.
+The changed prerequisite is approximately 18.5 GiB available on Linux ext4,
+compared with the original 4.1 GiB reserve; use Linux scratch for the combined
+candidate instead of the retired D: target. Preserve the expired 900-second G1
+attempt as incomplete. One additional combined checkpoint has a fixed
+1,200-second execution budget, including admission and all selected commands;
+the two allocations total 2,100 seconds, without resetting earlier consumption.
+At most one causal repair/refreeze is allowed within the remaining allocation.
+
+Freeze the complete proposed index through a private alternate index, preserving
+the live index and all source work. Re-admit the configured source, tools, vendor
+and feature graphs before selected UI MSVC all-target compiler/Clippy checks and
+Engine KE all-target compiler/Clippy plus four original-authentication library
+controls. Repeat the bounded startup component and receiving-source controls
+because their raw receipts were retired. Keep the configured per-command limits,
+4 GiB root/scratch reserve and 1 GiB available-memory floor. This selection adds
+no full GNU UI test-build retry, Windows execution, release-link or metric claim.
+Cleanup skill checks and source review cover their separate changed inputs.
+
+#### Combined checkpoint results — 28 November 2026
+
+The complete proposed source tree was materialized and checked from an alternate
+index after fast-forwarding to `57dd279`. The first capture
+`cb624800811228c43b1f9d44f450bc77f958cdf4` passed format, all 26 actual startup
+component controls, 27 receiving-source controls, all 68 skill validations, both
+full configured dependency projections, UI MSVC all-target compiler/Clippy and
+KE GNU all-target compilation. KE Clippy then refused the new private fixture
+expectation's by-value parameter (`needless_pass_by_value`). This first failure
+is retained; it was not a runtime assertion failure.
+
+The one permitted causal repair derives `Clone, Copy` for that immutable
+expectation. It contains copied values and immutable borrows, with no resource
+or authority transfer. Fresh source review accepted the repair. The repaired
+capture `2e0ffaf59090dfa186ac530e11ef2c0260eb459d` passed format, both dependency
+projections, explicit `engine-ke-association` all-target compiler/Clippy and all
+four named original-authentication library cases, including the genuine
+loopback first/terminal ancestry control. Each named invocation executed exactly
+one test, with no failures or ignored cases. Complete source, vendor and tool
+bookends passed for both captures. The UI/component/checker/skill results remain
+bound to their unchanged inputs; only the KE fixture changed in the 838-input
+product map. Final documentation reconciliation requires fresh source-map and
+complete-index comparison before commit.
+
+The successful continuation records **355.237 seconds cumulative** within the
+same 1,200-second allocation, including the first failed attempt and its repair;
+its elapsed value must not be added to the earlier 204.592-second observation.
+The prior expired 900-second G1 allocation remains separately incomplete.
+New raw rows and summaries are in
+`/tmp/nevrotick-final-candidate-iqk0j101/{check-results,repair-results}/`.
+The first summary's SHA-256 is
+`760d150d7a03870933d96b7ca30f641255552e2b46dc941165a7904cb0e9a698`;
+the successful continuation's is
+`b6fddde23c8c78721408269fe150c4a712f3f42f3e6ad4a8285ef3a42ca127b9`.
+These are selected development checks, not a full GNU UI rerun, linked Windows
+artifact, native enforcement/compatibility, per-file coverage/mutation or release
+qualification. The complete hosted successor checkpoint remains required.
 
 ### Desktop delivery hardening — 25 November 2026
 

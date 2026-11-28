@@ -1,4 +1,4 @@
 interface:
-  display_name: "WSL disk cleanup"
-  short_description: "Reclaim WSL space while preserving work and live data"
-  default_prompt: "Use $wsl-cleanup to measure WSL storage, identify concrete cleanup candidates, perform only the authorized removals, and verify recovered space and preserved work and services."
+  display_name: "WSL and Windows disk cleanup"
+  short_description: "Clean WSL/C:/D: artifacts and worktrees without losing work"
+  default_prompt: "Use $wsl-cleanup to measure Linux and the requested mounted Windows artifact roots, find evidence and unused Git worktrees, preserve source changes and live inputs, perform the authorized removals, and verify real space recovery and remaining protected data."

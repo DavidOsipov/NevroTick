@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-only
-//! Desktop UI image-load, strict-handle and DLL search policies before Slint.
+//! Fixed desktop UI startup policies before Slint/backend work.
 //!
 //! The mitigation guard checks effective flags after any tightening. The
 //! search policy sets the process default for later DLL loads. Pre-entry
 //! images and searches with explicit loader flags are outside that default.
 
 use std::fmt;
+
+/// Required dynamic-code and legacy extension-point policy readback.
+mod restricted_execution;
+pub use restricted_execution::{RestrictedExecutionPolicy, RestrictedExecutionPolicyError};
+/// One mandatory transition before the actual native backend factory.
+mod admission;
+#[cfg(windows)]
+pub(super) use admission::StartupAdmissionError;
+#[cfg(windows)]
+pub(super) use admission::before_backend;
 
 /// Permanent strict-handle admission has its own fixed policy and outcome.
 mod strict_handles;
@@ -192,10 +202,23 @@ pub(super) fn enforce_strict_handles() -> Result<(), StrictHandlePolicyError> {
     strict_handles::enforce_with(&mut windows::StrictHandlePolicyCalls)
 }
 
+/// Enforce one of the two fixed restricted-execution policies on this process.
+///
+/// # Errors
+/// Preserve the first query, tightening or effective-state refusal. This does
+/// not qualify native dependency compatibility or complete role readiness.
+#[cfg(windows)]
+fn enforce_restricted(
+    policy: RestrictedExecutionPolicy,
+) -> Result<(), RestrictedExecutionPolicyError> {
+    restricted_execution::enforce_with(&mut windows::RestrictedExecutionPolicyCalls::new(policy))
+}
+
 /// Narrow Kernel32 adapters for the UI process's startup policies.
 #[cfg(windows)]
 mod windows {
     use super::PolicyCalls;
+    use super::restricted_execution::{PolicyCalls as RestrictedCalls, RestrictedExecutionPolicy};
     use std::{ffi::c_void, mem::size_of};
     use windows_sys::Win32::Foundation::{GetLastError, HANDLE};
     use windows_sys::Win32::System::LibraryLoader::{LOAD_LIBRARY_FLAGS, SetDefaultDllDirectories};
@@ -379,6 +402,98 @@ mod windows {
             };
             if status == 0 {
                 // SAFETY: Read the failed setter's error on this same thread.
+                return Err(unsafe { GetLastError() });
+            }
+            Ok(())
+        }
+    }
+
+    /// Exact DWORD union layout shared by the two selected execution policies.
+    #[repr(C)]
+    struct NativeRestrictedExecutionPolicy {
+        /// SDK bitfields are checked by the fixed policy owner after query.
+        flags: u32,
+    }
+
+    /// Closed policy choice for current-process calls; never a caller handle or ID.
+    pub(super) struct RestrictedExecutionPolicyCalls {
+        /// One code-owned policy retained through query, setter and readback.
+        policy: RestrictedExecutionPolicy,
+    }
+
+    impl RestrictedExecutionPolicyCalls {
+        /// Select only one of the UI role's two declared policy kinds.
+        pub(super) const fn new(policy: RestrictedExecutionPolicy) -> Self {
+            Self { policy }
+        }
+
+        /// Return the SDK enumeration value, not an untrusted numeric selector.
+        const fn native_kind(&self) -> i32 {
+            match self.policy {
+                RestrictedExecutionPolicy::DynamicCode => 2,
+                RestrictedExecutionPolicy::ExtensionPoints => 6,
+            }
+        }
+    }
+
+    impl RestrictedCalls for RestrictedExecutionPolicyCalls {
+        /// Preserve the same policy identity in admission and all native calls.
+        fn policy(&self) -> RestrictedExecutionPolicy {
+            self.policy
+        }
+
+        /// Read one initialized DWORD from this process using its exact policy kind.
+        ///
+        /// # Errors
+        /// Return the query's original same-thread Win32 error.
+        #[expect(
+            unsafe_code,
+            reason = "Query a fixed current-process policy with its exact DWORD buffer"
+        )]
+        fn read(&mut self) -> Result<u32, u32> {
+            let mut policy: NativeRestrictedExecutionPolicy =
+                NativeRestrictedExecutionPolicy { flags: 0 };
+            // SAFETY: The returned current-process pseudohandle is borrowed,
+            // valid for this synchronous query and must not be closed.
+            let process: HANDLE = unsafe { GetCurrentProcess() };
+            // SAFETY: The closed policy kind selects exactly this initialized,
+            // aligned DWORD layout. The writable output lives through the call.
+            let status: i32 = unsafe {
+                GetProcessMitigationPolicy(
+                    process,
+                    self.native_kind(),
+                    (&raw mut policy).cast::<c_void>(),
+                    size_of::<NativeRestrictedExecutionPolicy>(),
+                )
+            };
+            if status == 0 {
+                // SAFETY: Capture the failed query's error before another API.
+                return Err(unsafe { GetLastError() });
+            }
+            Ok(policy.flags)
+        }
+
+        /// Apply the fixed owner's checked flags to this process only.
+        ///
+        /// # Errors
+        /// Return the original setter failure without a weaker retry.
+        #[expect(
+            unsafe_code,
+            reason = "Set a fixed current-process policy with its exact DWORD buffer"
+        )]
+        fn apply(&mut self, flags: u32) -> Result<(), u32> {
+            let policy: NativeRestrictedExecutionPolicy = NativeRestrictedExecutionPolicy { flags };
+            // SAFETY: The closed kind and initialized DWORD layout agree; this
+            // read-only input remains live throughout the synchronous setter.
+            let status: i32 = unsafe {
+                SetProcessMitigationPolicy(
+                    self.native_kind(),
+                    (&raw const policy).cast::<c_void>(),
+                    size_of::<NativeRestrictedExecutionPolicy>(),
+                )
+            };
+            if status == 0 {
+                // SAFETY: Capture the failed setter's error on this same thread.
                 return Err(unsafe { GetLastError() });
             }
             Ok(())

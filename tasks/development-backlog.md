@@ -101,8 +101,9 @@ is implemented and development-checked. Follow its
 independent basis readback and verification source/storage integration, then
 current candidate-specific graph, full roster and complete physical stock19
 capture under a reviewed budget. Earlier registration, combined captures and
-metric receipts retain their original candidates. CI-EF-01 records the current
-explicit KE profile's pre-existing Clippy blocker and its bounded repair exit.
+metric receipts retain their original candidates. CI-EF-01's fixture repair
+passed selected local explicit-feature compiler/Clippy and authentication
+controls; its complete hosted successor checkpoint remains required.
 The [physical-reference trial is HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026);
 no admitted reference/evidence route is identified and no recurring inventory or
 purchase inquiry follows. Independent physical calibration, read-side mapping

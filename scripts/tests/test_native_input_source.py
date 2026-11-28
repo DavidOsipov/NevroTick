@@ -9,6 +9,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import native_input_source as n
 
 ROOT = Path(__file__).resolve().parents[2]
+BACKEND_ROUTE: str = '''    startup_image_policy::before_backend(|| {
+        slint::BackendSelector::new()
+            .backend_name("winit".into())
+            .renderer_name("software".into())
+            .select()
+    })
+    .map_err(HostError::from)?
+    .map_err(HostError::Platform)?;
+'''
+IMAGE_GUARD: str = '''    calls
+        .image_load()
+        .map_err(StartupAdmissionError::ImageLoad)?;'''
+DLL_GUARD: str = '''    calls
+        .dll_search()
+        .map_err(StartupAdmissionError::DllSearch)?;'''
+STRICT_GUARD: str = '''    calls
+        .strict_handles()
+        .map_err(StartupAdmissionError::StrictHandle)?;'''
+DYNAMIC_GUARD: str = '''    calls
+        .dynamic_code()
+        .map_err(StartupAdmissionError::RestrictedExecution)?;'''
+EXTENSION_GUARD: str = '''    calls
+        .extension_points()
+        .map_err(StartupAdmissionError::RestrictedExecution)?;'''
 
 
 class NativeInputSourceControls(unittest.TestCase):
@@ -35,8 +59,10 @@ class NativeInputSourceControls(unittest.TestCase):
         self.change(files, n.INPUT, '    if allowed {', '    // no executable change\n    if allowed {')
         self.assertEqual(n.check(files), [])
 
-    def test_each_required_current_source_is_independently_required(self):
-        for path in (n.MAIN, n.HOST, n.INPUT, n.RAW):
+    def test_each_required_current_source_is_independently_required(self) -> None:
+        path: str
+        files: dict[str, str]
+        for path in (n.MAIN, n.HOST, n.INPUT, n.RAW, n.POLICY, n.ADMISSION):
             files = copy.deepcopy(self.files)
             del files[path]
             with self.subTest(path=path):
@@ -70,82 +96,201 @@ class NativeInputSourceControls(unittest.TestCase):
             with self.subTest(new=new):
                 self.rejected(n.HOST, 'create_native()?.run().map_err(HostError::Platform)', new)
 
-    def test_explicit_backend_renderer_and_selection_success_precede_create(self):
+    def test_explicit_backend_renderer_and_selection_success_precede_create(self) -> None:
+        old: str
+        new: str
         for old, new in (
             ('.backend_name("winit".into())', '.backend_name("qt".into())'),
             ('.renderer_name("software".into())', '.renderer_name("skia".into())'),
-            ('.map_err(HostError::Platform)?;\n    let host = create()?;',
-             '.ok();\n    let host = create()?;'),
+            ('.map_err(HostError::Platform)?;\n    let host: SlintHost = create()?;',
+             '.ok();\n    let host: SlintHost = create()?;'),
             ('    slint::BackendSelector::new()', '    let unused = || slint::BackendSelector::new()'),
-            ('    let host = create()?;\n    native_input::install',
-             '    let host = create()?;\n    if false { slint::BackendSelector::new().select().map_err(HostError::Platform)?; }\n    native_input::install'),
+            ('    let host: SlintHost = create()?;\n    native_input::install',
+             '    let host: SlintHost = create()?;\n    if false { slint::BackendSelector::new().select().map_err(HostError::Platform)?; }\n    native_input::install'),
         ):
             with self.subTest(new=new):
                 self.rejected(n.HOST, old, new)
+        files: dict[str, str] = copy.deepcopy(self.files)
+        self.change(files, n.HOST, BACKEND_ROUTE, '')
+        self.change(files, n.HOST, '    let host: SlintHost = create()?;',
+                    '    let host: SlintHost = create()?;\n' + BACKEND_ROUTE)
+        self.assertTrue(n.check(files))
+
+    def assert_guard_custody(self, guard: str, call: str) -> None:
+        replacement: str
+        files: dict[str, str]
+        replacements: tuple[str, ...] = (
+            '',
+            '    let _ = ' + call + ';',
+            '    if false {\n' + guard + '\n    }',
+            '    let unused = || -> Result<(), StartupAdmissionError> {\n'
+            + guard + '\n        Ok(())\n    };',
+        )
+        for replacement in replacements:
+            files = copy.deepcopy(self.files)
+            self.change(files, n.ADMISSION, guard, replacement)
+            with self.subTest(replacement=replacement):
+                self.assertEqual(n.check(files), ['native input reviewed startup admission contract'])
         files = copy.deepcopy(self.files)
-        selector = '''    slint::BackendSelector::new()
+        self.change(files, n.ADMISSION, guard, '')
+        self.change(files, n.ADMISSION, '    Ok(factory())',
+                    '    let backend: T = factory();\n' + guard + '\n    Ok(backend)')
+        self.assertEqual(n.check(files), ['native input reviewed startup admission contract'])
+
+    def test_required_image_policy_precedes_backend_and_propagates_refusal(self) -> None:
+        self.assert_guard_custody(IMAGE_GUARD, 'calls.image_load()')
+
+    def test_fixed_dll_search_precedes_backend_and_propagates_refusal(self) -> None:
+        self.assert_guard_custody(DLL_GUARD, 'calls.dll_search()')
+
+    def test_missing_strict_handle_startup_guard_is_rejected(self) -> None:
+        files: dict[str, str] = copy.deepcopy(self.files)
+        # This specimen also represents an older caller with no guard at all.
+        self.change(files, n.ADMISSION, STRICT_GUARD, '')
+        self.assertEqual(n.check(files), ['native input reviewed startup admission contract'])
+
+    def test_strict_handles_precede_backend_and_propagate_refusal(self) -> None:
+        self.assert_guard_custody(STRICT_GUARD, 'calls.strict_handles()')
+
+    def test_dynamic_code_precedes_backend_and_propagates_refusal(self) -> None:
+        self.assert_guard_custody(DYNAMIC_GUARD, 'calls.dynamic_code()')
+
+    def test_extension_points_precede_backend_and_propagate_refusal(self) -> None:
+        self.assert_guard_custody(EXTENSION_GUARD, 'calls.extension_points()')
+
+    def test_backend_must_use_the_actual_admission_factory_and_both_refusals(self) -> None:
+        unguarded: str = '''    slint::BackendSelector::new()
         .backend_name("winit".into())
         .renderer_name("software".into())
         .select()
         .map_err(HostError::Platform)?;
 '''
-        self.change(files, n.HOST, selector, '')
-        self.change(files, n.HOST, '    let host = create()?;', '    let host = create()?;\n' + selector)
-        self.assertTrue(n.check(files))
-
-    def test_required_image_policy_precedes_backend_and_propagates_refusal(self):
-        guard = '    startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;'
-        for replacement in ('', '    let _ = startup_image_policy::enforce();',
-                            '    if false {\n' + guard + '\n    }'):
-            files = copy.deepcopy(self.files)
-            self.change(files, n.HOST, guard, replacement)
-            with self.subTest(replacement=replacement):
-                self.assertEqual(n.check(files), ['native input closed create_native body'])
-        files = copy.deepcopy(self.files)
-        self.change(files, n.HOST, guard, '')
-        self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
-        self.assertEqual(n.check(files), ['native input closed create_native body'])
-
-    def test_fixed_dll_search_precedes_backend_and_propagates_refusal(self):
-        guard = ('    startup_image_policy::configure_default_dll_search()'
-                 '.map_err(HostError::DllSearchPolicy)?;')
-        for replacement in ('', '    let _ = startup_image_policy::configure_default_dll_search();'):
-            files = copy.deepcopy(self.files)
-            self.change(files, n.HOST, guard, replacement)
-            with self.subTest(replacement=replacement):
-                self.assertEqual(n.check(files), ['native input closed create_native body'])
-        files = copy.deepcopy(self.files)
-        self.change(files, n.HOST, guard, '')
-        self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
-        self.assertEqual(n.check(files), ['native input closed create_native body'])
-
-    def test_missing_strict_handle_startup_guard_is_rejected(self) -> None:
-        files: dict[str, str] = copy.deepcopy(self.files)
-        guard: str = ('    startup_image_policy::enforce_strict_handles()'
-                      '.map_err(HostError::StrictHandlePolicy)?;')
-        # This specimen also represents an older caller with no guard at all.
-        files[n.HOST] = files[n.HOST].replace(guard, '')
-        self.assertEqual(n.check(files), ['native input closed create_native body'])
-
-    def test_strict_handles_precede_backend_and_propagate_refusal(self) -> None:
-        guard: str = ('    startup_image_policy::enforce_strict_handles()'
-                      '.map_err(HostError::StrictHandlePolicy)?;')
         replacements: tuple[str, ...] = (
-            '    let _ = startup_image_policy::enforce_strict_handles();',
-            '    if false {\n' + guard + '\n    }',
-            '    let unused = || startup_image_policy::enforce_strict_handles();',
+            unguarded,
+            '    let _ = startup_image_policy::before_backend(|| ());\n' + unguarded,
+            '    if false {\n' + BACKEND_ROUTE + '    }\n' + unguarded,
+            '    let unused = || -> Result<(), HostError> {\n'
+            + BACKEND_ROUTE + '        Ok(())\n    };\n' + unguarded,
         )
-        files: dict[str, str]
         replacement: str
         for replacement in replacements:
-            files = copy.deepcopy(self.files)
-            self.change(files, n.HOST, guard, replacement)
             with self.subTest(replacement=replacement):
-                self.assertEqual(n.check(files), ['native input closed create_native body'])
-        files = copy.deepcopy(self.files)
-        self.change(files, n.HOST, guard, '')
-        self.change(files, n.HOST, '    let host = create()?;', guard + '\n    let host = create()?;')
-        self.assertEqual(n.check(files), ['native input closed create_native body'])
+                self.rejected(n.HOST, BACKEND_ROUTE, replacement)
+        self.rejected(n.HOST, '    .map_err(HostError::from)?',
+                      '    .map_err(HostError::from).unwrap_or(Ok(()))')
+
+    def test_each_adjacent_guard_reordering_is_rejected(self) -> None:
+        guards: tuple[str, ...] = (
+            IMAGE_GUARD, DLL_GUARD, STRICT_GUARD, DYNAMIC_GUARD, EXTENSION_GUARD,
+        )
+        earlier: str
+        later: str
+        for earlier, later in zip(guards, guards[1:]):
+            with self.subTest(earlier=earlier, later=later):
+                self.rejected(n.ADMISSION, earlier + '\n' + later, later + '\n' + earlier)
+
+    def test_native_bridge_must_call_each_real_guard_and_the_correct_policy(self) -> None:
+        native_calls: tuple[str, ...] = (
+            'super::enforce()',
+            'super::configure_default_dll_search()',
+            'super::enforce_strict_handles()',
+            'super::enforce_restricted(super::RestrictedExecutionPolicy::DynamicCode)',
+            'super::enforce_restricted(super::RestrictedExecutionPolicy::ExtensionPoints)',
+        )
+        call: str
+        for call in native_calls:
+            with self.subTest(call=call):
+                self.rejected(n.ADMISSION, call, 'Ok(())')
+        self.rejected(n.ADMISSION, native_calls[3], native_calls[4])
+        self.rejected(n.ADMISSION, native_calls[4], native_calls[3])
+        self.rejected(n.ADMISSION, 'before_backend_with(&mut NativeCalls, factory)',
+                      'Ok(factory())')
+        self.rejected(n.ADMISSION, '#[cfg(windows)]\nimpl StartupCalls for NativeCalls',
+                      '#[cfg(test)]\nimpl StartupCalls for NativeCalls')
+
+    def test_startup_module_and_export_cannot_be_redirected_or_test_only(self) -> None:
+        cases: tuple[tuple[str, str, str, str], ...] = (
+            (n.HOST, '#[cfg(any(windows, test))]\nmod startup_image_policy;',
+             '#[cfg(test)]\nmod startup_image_policy;',
+             'native input current startup policy module'),
+            (n.HOST, '#[cfg(any(windows, test))]\nmod startup_image_policy;',
+             '#[path = "bypass.rs"]\n#[cfg(any(windows, test))]\nmod startup_image_policy;',
+             'native input current startup policy module'),
+            (n.POLICY, 'mod admission;', '#[cfg(test)]\nmod admission;',
+             'native input current startup admission module'),
+            (n.POLICY, 'mod admission;', '#[path = "bypass.rs"]\nmod admission;',
+             'native input current startup admission module'),
+            (n.POLICY, '#[cfg(windows)]\npub(super) use admission::before_backend;',
+             '#[cfg(test)]\npub(super) use admission::before_backend;',
+             'native input current startup admission route'),
+            (n.POLICY, 'pub(super) use admission::before_backend;',
+             'pub(super) use other::before_backend;',
+             'native input current startup admission route'),
+        )
+        path: str
+        old: str
+        new: str
+        error: str
+        files: dict[str, str]
+        for path, old, new, error in cases:
+            files = copy.deepcopy(self.files)
+            self.change(files, path, old, new)
+            with self.subTest(path=path, new=new):
+                self.assertIn(error, n.check(files))
+        attribute: str
+        signature: str
+        for path, signature, error in (
+            (n.HOST, '#[cfg(any(windows, test))]\nmod startup_image_policy;',
+             'native input current startup policy module'),
+            (n.POLICY, 'mod admission;', 'native input current startup admission module'),
+            (n.POLICY, '#[cfg(windows)]\npub(super) use admission::before_backend;',
+             'native input current startup admission route'),
+        ):
+            for attribute in ('#[cfg(any())]', '#[cfg_attr(windows, cfg(any()))]'):
+                files = copy.deepcopy(self.files)
+                self.change(files, path, signature, attribute + '\n' + signature)
+                with self.subTest(path=path, attribute=attribute):
+                    self.assertIn(error, n.check(files))
+        for path in (n.HOST, n.POLICY):
+            files = copy.deepcopy(self.files)
+            files[path] = '#![cfg(any())]\n' + files[path]
+            with self.subTest(inner_cfg=path):
+                self.assertIn('native input current startup source cfg', n.check(files))
+
+    def test_startup_guard_witnesses_cannot_come_from_comments_literals_or_test_modules(self) -> None:
+        original: str = self.files[n.ADMISSION]
+        decoys: tuple[str, ...] = (
+            '/*\n' + original + '\n*/',
+            'const DECOY: &str = "before_backend_with(&mut NativeCalls, factory)";',
+            '#[cfg(test)]\nmod decoy {\n' + original + '\n}',
+        )
+        decoy: str
+        files: dict[str, str]
+        for decoy in decoys:
+            files = copy.deepcopy(self.files)
+            files[n.ADMISSION] = decoy
+            with self.subTest(decoy=decoy):
+                self.assertTrue(n.check(files))
+        self.rejected(n.ADMISSION, '#[cfg(windows)]\npub(crate) fn before_backend',
+                      '#[cfg(any())]\n#[cfg(windows)]\npub(crate) fn before_backend')
+
+    def test_startup_comment_and_whitespace_changes_preserve_production_contract(self) -> None:
+        files: dict[str, str] = copy.deepcopy(self.files)
+        self.change(files, n.ADMISSION, 'super::enforce()',
+                    'super /* reviewed */ :: enforce ( )')
+        self.change(files, n.POLICY, 'pub(super) use admission::before_backend;',
+                    'pub ( super ) use admission :: before_backend ;')
+        self.assertEqual(n.check(files), [])
+
+    def test_startup_owner_unsupported_literal_syntax_fails_before_token_admission(self) -> None:
+        path: str
+        files: dict[str, str]
+        for path in (n.POLICY, n.ADMISSION):
+            files = copy.deepcopy(self.files)
+            files[path] += '\nfn hidden() { let quote = r#"quoted text"#; }'
+            with self.subTest(path=path):
+                self.assertEqual(n.check(files),
+                                 ['native input unsupported startup-owner literal syntax'])
 
     def test_hook_must_install_on_same_host_before_observers_and_show(self):
         hook = '    native_input::install(host.window.window());'
@@ -165,11 +310,13 @@ class NativeInputSourceControls(unittest.TestCase):
         self.rejected(n.HOST, '#[cfg(any(windows, test))]\nmod native_input;',
                       '#[cfg(test)]\nmod native_input;')
 
-    def test_fixture_constructor_installs_no_native_hook_or_observer(self):
-        anchor = '    let sources = SourceDrafts::fixture().map_err(HostError::Fixture)?;'
+    def test_fixture_constructor_installs_no_native_hook_or_observer(self) -> None:
+        anchor: str = '    let sources = SourceDrafts::fixture().map_err(HostError::Fixture)?;'
+        call: str
         for call in ('native_input::install(window.window());', 'native_workflow::install(&window, &state)?;',
                      'startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;',
                      'startup_image_policy::configure_default_dll_search().map_err(HostError::DllSearchPolicy)?;',
+                     'startup_image_policy::before_backend(|| ())?;',
                      'slint::BackendSelector::new().select()?;', 'window.show()?;'):
             with self.subTest(call=call):
                 self.rejected(n.HOST, anchor, '    ' + call + '\n' + anchor)

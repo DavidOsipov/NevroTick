@@ -1,6 +1,6 @@
 ---
 name: "wsl-cleanup"
-description: "Analyze WSL disk usage and perform authorized cleanup of history, toolchains, caches, worktrees, verification artifacts and unused Docker data while preserving working checkouts and live services."
+description: "Find and clean authorized WSL and mounted Windows C:/D: evidence, caches and Git worktrees; measure real space recovery while preserving source changes, installed tools and live services."
 ---
 
 # WSL disk cleanup
@@ -16,6 +16,14 @@ existing path/category approvals and exclusions; do not ask again for an already
 authorized action. Resolve only material ambiguity, such as unused Docker data
 versus the running database, after presenting concrete paths, sizes and effects.
 Past cleanup receipts and this skill grant no new deletion authority.
+
+Treat an explicit request to remove historical evidence as authority to retire
+those receipts, raw logs and replay artifacts; do not keep them all merely
+because an earlier task required retention. Preserve actual source work, current
+execution inputs and installed tools separately. Record which qualification
+inputs are now unavailable; removed receipts cannot support later evidence reuse.
+If the scope includes all evidence, settle current writers before retiring the
+approved completed outputs too. Never turn their removal into a qualification pass.
 
 Resolve the checkout root and inspect applicable AGENTS instructions. Inventory
 affected repositories, including nested `.git` directories/files and registered
@@ -63,6 +71,14 @@ are possible contributors. Final filesystem deltas determine actual recovery.
 
 ## Classify candidates by their real owner
 
+For relocated evidence, mounted Windows drives, sparse receipt images or dirty
+worktrees, apply [cross-filesystem evidence and worktree retirement](references/evidence-and-worktrees.md).
+Discovery must cover the requested roots, including small evidence directories
+and removable siblings inside mixed tool/evidence bundles. Checking only the
+largest directories does not finish an all-evidence cleanup. Turn the inventory
+into exact removable boundaries and execute the authorized subset; unresolved
+inputs need a concrete preservation reason and next observation.
+
 | Candidate | Required distinction |
 | --- | --- |
 | npm temporary downloads, VSIX downloads, compiler/package caches | Regeneratable content versus active installations, downloads and open files |
@@ -96,6 +112,14 @@ Use one mutation owner. Read-only workers may inventory independent scopes.
 After a deletion failure or unexpected identity/reference change, stop that target,
 report the partial result and reassess; do not escalate to broader force/removal.
 
+An owned historical evidence tree may contain deliberately read-only inputs.
+After preserving the first failure, recheck the exact boundary, owner, filesystem,
+consumers and already removed subset. If the remaining disposable directories
+belong to this user, a scoped owner-permission repair can complete the authorized
+removal. Do not follow links, change installed-tool permissions, clear protection
+on live inputs, take ownership, or escalate privileges to force completion.
+Resume from the completed-path ledger; do not restart a broad deletion blindly.
+
 ### Git worktrees
 
 Use `git worktree list --porcelain` per owning repository. Distinguish the main
@@ -108,8 +132,9 @@ independent Git metadata still require their own disposition. For a reconstructe
 copy, compare the complete index and actual file bytes and modes with the retained
 commit, and account for untracked files, refs and reflogs.
 
-Use Git's native removal for exact linked paths; use force only when the authorized
-scope includes discarding their local changes and artifacts. Before removing the
+Use Git's native removal for exact linked paths. Force requires authorization to
+remove the contents, with verified source recovery unless source discard itself
+is authorized. Do not force away unpreserved changes or live/locked work. Before removing the
 last reference to a detached commit, preserve an agreed recovery ref or establish
 another retained ref. Verify the exact remaining registrations and the main
 checkout's HEAD, status and index. Before acting on a claim that work is pushed,

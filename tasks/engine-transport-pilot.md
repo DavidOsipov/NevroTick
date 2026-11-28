@@ -32940,6 +32940,31 @@ checkpoint on its exact successor. Existing admission, isolation, budgets
 and execution holds still govern that work. This documentation reconciliation
 changes no Rust source and supplies no new execution or metric result.
 
+**Source repair prepared — 28 November 2026:** the pending fixture groups the
+independently selected peer, source definition, first-commit window and optional
+component bracket in a private `LoopbackFirstExpectation`. The helper now has
+five arguments; its extracted ancestry assertion retains the original
+conditional position, both expected component brackets, absent full brackets
+and same-association/different-exchange checks. Other branches and terminal,
+join, resource and cleanup assertions remain unchanged. This implements the
+bounded repair without lowering the lint limits. The combined post-cleanup
+[G1/KE checkpoint](slint-gui-handoff.md#post-cleanup-combined-commit-checkpoint)
+owns fresh format, explicit-feature all-target compiler/Clippy and four focused
+original-authentication controls. Source inspection is not their execution;
+the complete hosted successor checkpoint remains required.
+
+**Selected local repair checks passed — 28 November 2026:** the combined
+[G1/KE result](slint-gui-handoff.md#combined-checkpoint-results--28-november-2026)
+retains the initial `needless_pass_by_value` refusal on the new expectation.
+Deriving `Clone, Copy` for its immutable values/borrows resolved that final lint
+without suppressions. The repaired candidate passed explicit-feature all-target
+compiler/Clippy and the four named authentication library controls; the genuine
+loopback first/terminal case reaches the changed helper. Fresh complete source,
+vendor and tool bookends passed. This closes the observed local CI-EF-01 lint
+repair check; a complete hosted successor run remains pending. Full receiving
+stock19 capture, source/storage integration, current metrics and native/product
+qualification remain with the existing continuation above.
+
 ###### Calculate each original joined ordinary receipt
 
 S2.1/W11-W01 and CHECK-7/11/21/24/25/27. The normally retired managed

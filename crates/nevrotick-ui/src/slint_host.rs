@@ -54,13 +54,14 @@ mod shell_workflow;
 #[cfg(any(windows, test))]
 mod startup_image_policy;
 /// Real native host error projection remains separate from standalone policy tests.
-#[cfg(all(windows, test))]
+#[cfg(test)]
 mod startup_policy_error_tests;
 #[cfg(windows)]
 pub use native_workflow::NativeHostError;
 #[cfg(any(windows, test))]
 pub use startup_image_policy::{
-    DllSearchPolicyError, ImageLoadPolicyError, StrictHandlePolicyError,
+    DllSearchPolicyError, ImageLoadPolicyError, RestrictedExecutionPolicy,
+    RestrictedExecutionPolicyError, StrictHandlePolicyError,
 };
 /// Source/editor projection and callbacks; no backend effect paths.
 mod source_workflow;
@@ -151,6 +152,9 @@ pub enum HostError {
     /// The Windows process could not establish permanent strict-handle checks.
     #[cfg(windows)]
     StrictHandlePolicy(StrictHandlePolicyError),
+    /// The process could not establish required restricted-execution policy.
+    #[cfg(any(windows, test))]
+    RestrictedExecutionPolicy(RestrictedExecutionPolicyError),
 }
 
 impl fmt::Display for HostError {
@@ -168,6 +172,8 @@ impl fmt::Display for HostError {
             Self::DllSearchPolicy(error) => fmt::Display::fmt(error, formatter),
             #[cfg(windows)]
             Self::StrictHandlePolicy(error) => fmt::Display::fmt(error, formatter),
+            #[cfg(any(windows, test))]
+            Self::RestrictedExecutionPolicy(error) => fmt::Display::fmt(error, formatter),
         }
     }
 }
@@ -187,6 +193,24 @@ impl std::error::Error for HostError {
             Self::DllSearchPolicy(error) => Some(error),
             #[cfg(windows)]
             Self::StrictHandlePolicy(error) => Some(error),
+            #[cfg(any(windows, test))]
+            Self::RestrictedExecutionPolicy(error) => Some(error),
+        }
+    }
+}
+
+#[cfg(windows)]
+impl From<startup_image_policy::StartupAdmissionError> for HostError {
+    /// Preserve the first fixed startup stage and its original typed cause.
+    fn from(error: startup_image_policy::StartupAdmissionError) -> Self {
+        use startup_image_policy::StartupAdmissionError;
+        match error {
+            StartupAdmissionError::ImageLoad(cause) => Self::ImageLoadPolicy(cause),
+            StartupAdmissionError::DllSearch(cause) => Self::DllSearchPolicy(cause),
+            StartupAdmissionError::StrictHandle(cause) => Self::StrictHandlePolicy(cause),
+            StartupAdmissionError::RestrictedExecution(cause) => {
+                Self::RestrictedExecutionPolicy(cause)
+            }
         }
     }
 }
@@ -584,15 +608,15 @@ pub fn create() -> Result<SlintHost, HostError> {
 /// backend selection and installation of observers.
 #[cfg(windows)]
 pub fn create_native() -> Result<SlintHost, HostError> {
-    startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;
-    startup_image_policy::configure_default_dll_search().map_err(HostError::DllSearchPolicy)?;
-    startup_image_policy::enforce_strict_handles().map_err(HostError::StrictHandlePolicy)?;
-    slint::BackendSelector::new()
-        .backend_name("winit".into())
-        .renderer_name("software".into())
-        .select()
-        .map_err(HostError::Platform)?;
-    let host = create()?;
+    startup_image_policy::before_backend(|| {
+        slint::BackendSelector::new()
+            .backend_name("winit".into())
+            .renderer_name("software".into())
+            .select()
+    })
+    .map_err(HostError::from)?
+    .map_err(HostError::Platform)?;
+    let host: SlintHost = create()?;
     native_input::install(host.window.window());
     native_workflow::install(&host.window, &host.state).map_err(HostError::Native)?;
     Ok(host)

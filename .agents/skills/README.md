@@ -48,7 +48,7 @@ and evidence, with shared decisions and integration reconciled centrally.
 | Audit logical data/state chains or trace Rust inputs and secrets to effects | [qa-data-flow-analysis](testing/qa-data-flow-analysis/SKILL.md) |
 | Independently audit commits/ranges with parallel logic, security and QA specialists plus a fresh judge | [qa-independent-commit-audit](testing/qa-independent-commit-audit/SKILL.md) |
 | Assess or change Cargo dependencies | [dependency-updates](environment/dependency-updates/SKILL.md) |
-| Analyze WSL storage or clean authorized caches, artifacts and unused Docker data | [wsl-cleanup](environment/wsl-cleanup/SKILL.md) |
+| Find WSL and mounted C:/D: leftovers; clean authorized evidence, caches and Git worktrees | [wsl-cleanup](environment/wsl-cleanup/SKILL.md) |
 | Configure or manage an owned Windows Sandbox from Windows/WSL and collect disposable-lab evidence | [manage-windows-sandbox](environment/manage-windows-sandbox/SKILL.md), with selective operations, configuration, resource, winapp, evidence and troubleshooting references |
 | Diagnose a specific compiler, borrow/drop or Send/Sync mechanism; use qualified Windows UIA commands | [Selected upstream specialists](upstream/README.md) |
 

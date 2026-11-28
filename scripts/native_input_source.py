@@ -18,6 +18,9 @@ MAIN = BASE + "main.rs"
 HOST = BASE + "slint_host.rs"
 INPUT = BASE + "slint_host/native_input.rs"
 RAW = BASE + "ui_drafts.rs"
+POLICY: str = BASE + "slint_host/startup_image_policy.rs"
+ADMISSION: str = BASE + "slint_host/startup_image_policy/admission.rs"
+REQUIRED: frozenset[str] = frozenset({MAIN, HOST, INPUT, RAW, POLICY, ADMISSION})
 MAX_FILES = 256
 MAX_FILE_BYTES = 1_048_576
 MAX_TOTAL_BYTES = 8_388_608
@@ -25,6 +28,9 @@ MAX_TOTAL_BYTES = 8_388_608
 # This retains the exact reviewed stateless function set, imports, cfgs and cap;
 # it intentionally fails closed on alternate syntax until independently reviewed.
 INPUT_PRODUCTION_TOKENS_SHA256 = "e3afe117f4b5ef1ee13cfeb9be376aa5c3da67c88e6d31ed50523c394a87cba8"
+# Bind the real transition, native bridge and fixed policy choices together.
+# Tests and comments cannot supply a production guard or a backend invocation.
+ADMISSION_PRODUCTION_TOKENS_SHA256: str = "34fe3f14405492bf1acaa6f3bcbe1ec46c2f17e550e563fee6bdd06629b81af4"
 
 
 def read_sources(root: Path) -> dict[str, str]:
@@ -51,7 +57,7 @@ def tokens(text: str) -> list[str]:
 def check(files: dict[str, str]) -> list[str]:
     """Return fixed redacted faults; no raw source string becomes diagnostics."""
     errors = []
-    if not {MAIN, HOST, INPUT, RAW}.issubset(files):
+    if not REQUIRED.issubset(files):
         return ["native input required source missing"]
     if (len(files) > MAX_FILES or any(not isinstance(text, str) for text in files.values())
             or any(len(text.encode()) > MAX_FILE_BYTES for text in files.values())
@@ -61,15 +67,17 @@ def check(files: dict[str, str]) -> list[str]:
         # The inherited lexer supports ordinary strings, not raw strings or a
         # double-quote character literal. Reject those forms in every possible
         # hook owner BEFORE using it, including files later masked as test-only.
-        hook_candidates = {path for path, text in files.items()
-                           if "on_winit_window_event" in text}
+        hook_candidates: set[str] = {path for path, text in files.items()
+                                     if "on_winit_window_event" in text}
         unsupported = re.compile(r"\b(?:br|cr|r)\#*\"|'(?:\\)?\"'")
         if any(unsupported.search(files[path]) for path in hook_candidates):
             return ["native input unsupported hook-owner literal syntax"]
+        if any(unsupported.search(files[path]) for path in (POLICY, ADMISSION)):
+            return ["native input unsupported startup-owner literal syntax"]
         # Admission above still bounds every file; hook-free unrelated files
         # cannot contain this literal setter identifier and need no Rust scan.
         selected = {path: source.without_test_items(text) for path, text in files.items()
-                    if path in {MAIN, HOST, INPUT, RAW} or path in hook_candidates}
+                    if path in REQUIRED or path in hook_candidates}
         clean = {path: source.inert_source(text) for path, text in selected.items()}
 
         def attributes_before(text, start):
@@ -115,15 +123,15 @@ def check(files: dict[str, str]) -> list[str]:
         exact(MAIN, "main", "nevrotick_ui::slint_host::run_native()", windows=True)
         exact(HOST, "run_native", "create_native()?.run().map_err(HostError::Platform)", windows=True)
         exact(HOST, "create_native", '''
-            startup_image_policy::enforce().map_err(HostError::ImageLoadPolicy)?;
-            startup_image_policy::configure_default_dll_search().map_err(HostError::DllSearchPolicy)?;
-            startup_image_policy::enforce_strict_handles().map_err(HostError::StrictHandlePolicy)?;
-            slint::BackendSelector::new()
-                .backend_name("winit".into())
-                .renderer_name("software".into())
-                .select()
-                .map_err(HostError::Platform)?;
-            let host = create()?;
+            startup_image_policy::before_backend(|| {
+                slint::BackendSelector::new()
+                    .backend_name("winit".into())
+                    .renderer_name("software".into())
+                    .select()
+            })
+            .map_err(HostError::from)?
+            .map_err(HostError::Platform)?;
+            let host: SlintHost = create()?;
             native_input::install(host.window.window());
             native_workflow::install(&host.window, &host.state).map_err(HostError::Native)?;
             Ok(host)
@@ -132,6 +140,32 @@ def check(files: dict[str, str]) -> list[str]:
         if (len(modules) != 1 or attributes_before(clean[HOST], modules[0].start())
                 != ["#[cfg(any(windows,test))]"]):
             errors.append("native input private platform module")
+        policy_modules: list[re.Match[str]] = list(re.finditer(
+            r'\bmod\s+startup_image_policy\s*;', clean[HOST]))
+        if (len(policy_modules) != 1
+                or attributes_before(clean[HOST], policy_modules[0].start())
+                != ["#[cfg(any(windows,test))]"]):
+            errors.append("native input current startup policy module")
+        admission_modules: list[re.Match[str]] = list(re.finditer(
+            r'\bmod\s+admission\s*;', clean[POLICY]))
+        if (len(admission_modules) != 1
+                or attributes_before(clean[POLICY], admission_modules[0].start()) != []):
+            errors.append("native input current startup admission module")
+        admission_routes: list[re.Match[str]] = list(re.finditer(
+            r'\bpub\s*\(\s*super\s*\)\s+use\s+admission\s*::\s*before_backend\s*;',
+            clean[POLICY]))
+        if (len(admission_routes) != 1
+                or attributes_before(clean[POLICY], admission_routes[0].start())
+                != ["#[cfg(windows)]"]
+                or len(re.findall(r'\bbefore_backend\b', clean[POLICY])) != 1):
+            errors.append("native input current startup admission route")
+        if any(re.search(r'#!\s*\[\s*cfg(?:_attr)?\b', clean[path])
+               for path in (HOST, POLICY)):
+            errors.append("native input current startup source cfg")
+        admission_digest: str = hashlib.sha256(
+            "\n".join(tokens(selected[ADMISSION])).encode()).hexdigest()
+        if admission_digest != ADMISSION_PRODUCTION_TOKENS_SHA256:
+            errors.append("native input reviewed startup admission contract")
         fixture = source.inert_source(function(HOST, "create"))
         if re.search(r'\b(?:native_input|native_workflow|startup_image_policy|BackendSelector|on_winit_window_event)\b|\.\s*(?:show|run)\s*\(', fixture):
             errors.append("native input fixture initialization")

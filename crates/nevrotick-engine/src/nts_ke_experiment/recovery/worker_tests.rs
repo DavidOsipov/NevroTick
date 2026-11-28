@@ -2641,13 +2641,15 @@ fn run_managed_loopback_observing<T: Send>(
             result,
             scenario.successor,
             scenario.sends_nak,
-            remote,
-            &fixture.expected,
-            &(original_origin..=before_successor_commit),
+            LoopbackFirstExpectation {
+                remote,
+                configuration: &fixture.expected,
+                commit_window: &(original_origin..=before_successor_commit),
+                authentication_bracket: scenario
+                    .component_authentication_bracket
+                    .then_some([original_origin; 2]),
+            },
             first_endpoints,
-            scenario
-                .component_authentication_bracket
-                .then_some([original_origin; 2]),
         )?;
         verify(report.as_ref(), peer_result?)
     })?;
@@ -4158,6 +4160,20 @@ fn assert_peer_quality(receipt: &crate::ManagedProtectedReceipt, expected: (u8, 
 #[cfg(any(windows, target_os = "linux"))]
 const FIRST_DELETION_QUALITY: (u8, i8, u32, u32) = (6, -25, 0x9a12_3456, 0xe0b0_c0d0);
 
+/// Independently selected identity, timing and authentication facts for the first leg.
+#[cfg(any(windows, target_os = "linux"))]
+#[derive(Clone, Copy)]
+struct LoopbackFirstExpectation<'a> {
+    /// Original peer selected before the real exchange starts.
+    remote: std::net::SocketAddr,
+    /// Original source definition that must survive into the first receipt.
+    configuration: &'a crate::SourceConfigurationSnapshot,
+    /// Independent interval bracketing the first commit before successor release.
+    commit_window: &'a std::ops::RangeInclusive<Instant>,
+    /// Synthetic component bracket attached to both receipts of the same KE leg.
+    authentication_bracket: Option<[Instant; 2]>,
+}
+
 /// Inspect the first genuine receipt beside the independently expected terminal facts.
 /// # Errors
 /// Preserve unexpected operation failures and refuse absent or mismatched custody.
@@ -4168,12 +4184,15 @@ fn assert_joined_loopback_successor(
     result: Result<ReceivedInvocation, RunFailed>,
     successor: LoopbackSuccessor,
     sends_nak: bool,
-    remote: std::net::SocketAddr,
-    expected: &crate::SourceConfigurationSnapshot,
-    first_commit_window: &std::ops::RangeInclusive<Instant>,
+    first: LoopbackFirstExpectation<'_>,
     first_endpoints: Result<(std::net::SocketAddr, std::net::SocketAddr), Failure>,
-    expected_authentication_bracket: Option<[Instant; 2]>,
 ) -> Result<Option<ManagedProtectedReport>, Failure> {
+    let LoopbackFirstExpectation {
+        remote,
+        configuration: expected,
+        commit_window: first_commit_window,
+        authentication_bracket: expected_authentication_bracket,
+    } = first;
     match (successor, result) {
         (
             LoopbackSuccessor::ApplyOrdinary
@@ -4207,23 +4226,7 @@ fn assert_joined_loopback_successor(
                 first_commit_window,
             )?;
             if let Some(expected_bracket) = expected_authentication_bracket {
-                let first_receipt: &crate::ManagedProtectedReceipt =
-                    report.first().ok_or(Failure::Control)?;
-                let ManagedProtectedTerminal::Ordinary(terminal_receipt) = report.terminal() else {
-                    return Err(Failure::Control);
-                };
-                assert_eq!(
-                    first_receipt.component_authentication_bracket(),
-                    Some(expected_bracket)
-                );
-                assert_eq!(
-                    terminal_receipt.component_authentication_bracket(),
-                    Some(expected_bracket)
-                );
-                assert_eq!(first_receipt.full_authentication_bracket(), None);
-                assert_eq!(terminal_receipt.full_authentication_bracket(), None);
-                assert!(first_receipt.same_ke_association(terminal_receipt));
-                assert!(!first_receipt.same_exchange(terminal_receipt));
+                assert_loopback_authentication_ancestry(&report, expected_bracket)?;
             }
             let nak: Option<Instant> = report.first_nak_at();
             assert_loopback_work(&report, ordinary, sends_nak);
@@ -4285,6 +4288,37 @@ fn assert_joined_loopback_successor(
         (_, Err(RunFailed::Operation(failure))) => Err(failure.primary),
         _ => Err(Failure::Control),
     }
+}
+
+/// Preserve one KE component's bracket across its two distinct ordinary exchanges.
+/// # Errors
+/// Refuse a missing first receipt or a terminal that is not the expected ordinary leg.
+/// # Panics
+/// Fail if either bracket changes, a full bracket is invented or ancestry is lost.
+#[cfg(any(windows, target_os = "linux"))]
+fn assert_loopback_authentication_ancestry(
+    report: &ManagedProtectedReport,
+    expected_bracket: [Instant; 2],
+) -> Result<(), Failure> {
+    use crate::ManagedProtectedTerminal;
+
+    let first_receipt: &crate::ManagedProtectedReceipt = report.first().ok_or(Failure::Control)?;
+    let ManagedProtectedTerminal::Ordinary(terminal_receipt) = report.terminal() else {
+        return Err(Failure::Control);
+    };
+    assert_eq!(
+        first_receipt.component_authentication_bracket(),
+        Some(expected_bracket)
+    );
+    assert_eq!(
+        terminal_receipt.component_authentication_bracket(),
+        Some(expected_bracket)
+    );
+    assert_eq!(first_receipt.full_authentication_bracket(), None);
+    assert_eq!(terminal_receipt.full_authentication_bracket(), None);
+    assert!(first_receipt.same_ke_association(terminal_receipt));
+    assert!(!first_receipt.same_exchange(terminal_receipt));
+    Ok(())
 }
 
 /// Inspect the original first receipt independently of the terminal disposition.
