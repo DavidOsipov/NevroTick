@@ -5,8 +5,11 @@ This is a continuation guide, not a second implementation plan. The
 [S0.5 task](s0.5-ui-comparison.md) owns candidate history and evidence.
 Remote review: [PR10](https://github.com/DavidOsipov/NevroTick/pull/10).
 
-**Current scheduling — 27 November 2026:** [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
-selects the [original joined-receipt source child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026).
+**Current scheduling — 28 November 2026:** [development §7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent)
+records the original joined-receipt handoff as implemented with selected
+development checks. Follow the existing
+[current receiving qualification continuation](engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026)
+for its next action and candidate-specific prerequisites.
 Physical-reference qualification is [HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026),
 with no recurring hardware inventory or procurement on resumption. Independent
 GUI source work continues under its own prerequisites; live backend, D1–D3,
@@ -27,8 +30,12 @@ critical-file metric or release qualification.
 ## Read first
 
 Read the current checkout's `AGENTS.md` and [documentation guide](../docs/README.md),
-then S0.5's active goal, [current native/text2 integration](s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
-and [hardening handoff](s0.5-ui-comparison.md#planned-hardening-gui-readiness-review--6-november-2026).
+then [S0.5's active goal](s0.5-ui-comparison.md#active-goal--finish-the-complete-slint-gui),
+[current text identity and approval routing](#current-text-identity-and-approval-routing--28-november-2026)
+and the [current hardening handoff](#exploit-hardening-closure--28-november-2026).
+The [native/text2 cohort](s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
+and [6 November hardening review](s0.5-ui-comparison.md#planned-hardening-gui-readiness-review--6-november-2026)
+retain their historical evidence and the assignments reconciled there.
 Consult the [v0.4 reference](../docs/nevrotick-design-v0.4/README.md),
 [GUI source guide](../crates/nevrotick-ui/ui/README.md),
 [input audit](../docs/nevrotick-gui-input-admission-audit.md),
@@ -960,12 +967,26 @@ The following bullets retain the historical PR-preparation environment:
 | Localization | Strict original UTF-8 JSON, duplicate/unknown-field rejection, closed schema, canonical bounded CBOR, Unicode/emoji policy, typed placeholders, literal sinks and atomic catalog publication. Missing/blank/orphan consumer checks run before Cargo. Catalogs cannot choose actions, severity, permissions, routes or URIs. |
 | Dependencies/tooling | One pinned graph and schema3 admission policy; Windows-only Winit/AccessKit/WinRT/Shell features, narrow Linux software test profile, reviewed local `spin_on` and AccessKit patches, guarded verifier/captures and negative checker controls. No new Core runtime or broad execution exception. |
 
-**Candidate text identities — 27 November:** schema 2, text contract 4, English
-revision 4 and informational GUI build 2; 525 active messages. The
+### Current text identity and approval routing — 28 November 2026
+
+**Source readback:** `eaffa0463f2f083c2e3141bb13c07b94e6e7e276`. The
 [protected contract](../crates/nevrotick-ui/src/localization/contract.rs) and
-[English catalog](../crates/nevrotick-ui/locales/en.json) carry the exact current
-roster and identity. Current fingerprint:
+[English catalog](../crates/nevrotick-ui/locales/en.json) select schema 2,
+text contract 5, English catalog revision 5 and informational GUI build 2,
+with 539 active messages and fingerprint
+`973058fb8f1d923f20b06e66e0ba6406230af8575ea5b109cb94339de7e4547d`.
+The [28 November About source checkpoint](#continue-the-about-check-outcomes--28-november-2026)
+records the added updater meanings and their bounded evidence.
+Re-read the code-owned contract, catalog and bootstrap bytes before preparing
+a locale or critical-content approval bundle; this dated snapshot cannot qualify
+changed inputs. Production `REVIEWS` remains empty. Compatibility, source checks
+and historical bundles grant no semantic approval or native/product qualification.
+
+**Historical candidate text identities — 27 November 2026:** schema 2,
+text contract 4, English revision 4 and informational GUI build 2;
+525 active messages, with fingerprint
 `8636c6e87302c241efa7060644df0734491f1bc96cd36acc3a61771749bc0c69`.
+These identities and their receipts apply only to that earlier candidate.
 The [earlier text2 cohort](s0.5-ui-comparison.md#current-nativetext2-integration--gui30-and-later)
 retains its historical 509 active IDs, 596 stable ordinals, 87 inactive identities,
 426 immutable output rows and fingerprint
@@ -1063,7 +1084,8 @@ receipts retain the old graph and cannot qualify later candidates.
    The historical private bundle at
    `/tmp/nevrotick-localization-contract-v2/human-review-v1/` covers the former
    contract 2 roster of 509 active meanings, 87 inactive identities and eight
-   separate bootstrap words. It is insufficient for current contract 3 approval,
+   separate bootstrap words. It is insufficient for approval of the
+   [current text contract](#current-text-identity-and-approval-routing--28-november-2026),
    and its availability in the next cloud is not guaranteed. At the existing
    critical-content approval gate, prepare and verify a bundle against the
    [current protected contract](../crates/nevrotick-ui/src/localization/contract.rs),
@@ -1383,8 +1405,8 @@ debugger coverage of the changed Shell/FFI paths remains pending.
 
 1. Resume from the actual checkout and
    [development section 7](../docs/plans/development-plan.md#7-next-executable-task-for-a-development-agent),
-   whose current source child connects the consume-once admission handoff for
-   original joined receipts after the completed laboratory timing pair.
+   then follow the implemented receiving handoff's
+   [current qualification continuation](engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026).
    Physical-reference qualification stays HELD/BLOCKED under the W11 changed-input
    re-entry rule; no device inventory or procurement is a GUI-source prerequisite.
    PR10 and the numerical checkpoint above
