@@ -49,9 +49,13 @@ parser inputs, Loom for instrumented schedules, Kani for finite properties after
 Lockbud for compiler-compatible static lock screening, or cargo-vet for actual
 dependency-review obligations. Name a concrete missing observation before adding
 a lane; tool controls and product harness execution are distinct plan items.
-For a concrete address, initialization, race or leak question, use
-[sanitizer selection](../references/sanitizers.md); plan detector controls
-separately from semantic oracle checks and native resource measurements.
+At coherent module completion and before V1 release, use
+[sanitizer qualification](../qa-sanitizer-qualification/SKILL.md) to assign the
+applicable matrix and checkpoint owner. Plan detector controls separately from
+actual product instrumentation/execution, semantic checks and native resource
+measurements. Routine local edits need no sanitizer campaign; an earlier bounded
+diagnosis or prerequisite needs a named question. Schedule missing or invalidated
+required rows and retain justified evidence reuse; holds remain incomplete.
 For uncertain source-to-sink paths, use
 [CodeQL data-flow analysis](../references/codeql-data-flow.md) and retain database,
 query-model and native/process coverage gaps in the same plan.

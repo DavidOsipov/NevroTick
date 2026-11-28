@@ -1017,6 +1017,73 @@ Measure declared workloads after warm-up and after each repeated lifecycle/quies
 
 Keep corruption instrumentation separate from representative performance measurements: full PageHeap changes memory usage and timing. Retain CHECK-21's one-hour baseline and 72-hour reconnect/fault soak on named hardware for the applicable product stage; neither a short instrumented run nor nextest's process/output `leak-timeout` replaces those observations. No application leak/soak result exists merely because the tool controls passed.
 
+#### 9.5.3 Sanitizer qualification at module completion and before V1
+
+[OD-22](nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence),
+accepted 28 November 2026, places routine sanitizer campaigns at coherent module
+completion. Declare that checkpoint, actual consumer paths, independent cases
+and finite work budget in the existing module task. Finish the coherent change,
+then freeze and qualify its applicable affected lanes through
+[qa-sanitizer-qualification](../.agents/skills/testing/qa-sanitizer-qualification/SKILL.md).
+Focused behavioral tests and cheap checks continue during implementation; name
+the concrete diagnostic question or admission prerequisite for any earlier run.
+Do not repeat a full campaign per edit or move a due gate by renaming the slice.
+
+Before V1 release, the existing P7 owner must reconcile the complete applicable
+matrix across shipped components and relevant configurations. Derive scope from
+actual source, generated code, dependency/native graph, allocators and execution
+paths; an installed tool list or a pure-Rust top-level crate is insufficient.
+
+| Family | Applicability question and required boundary |
+| --- | --- |
+| ASan | Which reached code, allocators and native boundaries require address/lifetime checking? Identify instrumented and uninstrumented modules and the supported target/runtime. |
+| LSan | Which exercised allocation lifecycles can leave unreachable memory? Verify enabled leak detection; reachable retained state, handles and task/permit ownership still require §9.5.2. |
+| TSan | Which actual shared-memory paths have concurrent access? Inspect native/helper/dependency threads and synchronization visibility; a current-thread event loop alone cannot exclude them. |
+| MSan | Which paths can consume uninitialized values, including FFI output? Establish adequate standard-library and native/dependency instrumentation; fixed `no_std` controls cannot qualify the product graph. |
+| Native C/C++ UBSan | Which C/C++ source in the real build/FFI/dependency graph needs the selected undefined-behavior checks? Linking its runtime supplies no missing Rust instrumentation. |
+
+For each component/family row, record the defect question, supported target and
+profile, exact instrumented graph, healthy/fault controls, product cases,
+candidate/evidence identity, disposition and remaining owner/next condition.
+Use planned, executed with result, qualified evidence reused, blocked/incomplete,
+N/A with applicability evidence, or deferred by a cited accepted decision.
+N/A needs evidence that the mechanism does not apply to the actual language,
+target or execution scope. Demonstrated upstream lack of a native mechanism on
+the target may justify that bounded mechanism N/A, while its underlying memory,
+initialization, concurrency or resource requirement retains an owner, named
+alternative evidence and remaining gaps. It is no clean detector result.
+Missing local installation, admission, instrumentation or permission for an
+otherwise applicable supported profile remains blocked/incomplete. An explicit
+accepted requirement for an unsupported mechanism stays open for its owner to
+resolve; do not waive it. All applicable obligations must be complete before V1
+release unless David explicitly decides an exception.
+
+Keep detector admission, detector operation and product execution separate.
+The [standalone checker](../TOOLING.md#standalone-sanitizer-detector-controls)
+admits fixed controls; it is not an arbitrary application runner. Require the
+selected detector's expected diagnosis and intended fault site plus a repaired
+healthy control. Semantic assertion failure, generic crash or exit code alone
+does not establish detector operation. Product evidence additionally needs the
+actual instrumented consumer paths and independently expected valid/refused
+behavior. Preserve first failures, raw diagnostics, selected/reached cases,
+timeouts, exclusions and cleanup outcomes.
+
+Use separate admitted ASan, TSan and MSan configurations and owned outputs;
+supported ASan/LSan integration may share execution while retaining both claims.
+Record compiler/runtime/target, effective flags/options, standard-library/native
+instrumentation and the mapping to the shipping source/configuration. Preserve
+the shipping compiler, CPU/hardening profile and guarded resource limits.
+Reuse controls or product results only through immutable evidence references,
+exact relevant tested/current identities and justified unchanged validity under
+the [testing contract](../.agents/skills/testing/CONTRACT.md#execution-efficiency).
+Rerun invalidated observations and preserve required fresh/full checkpoint work.
+
+GNU/Linux evidence does not qualify Windows heap, handle, FFI or lifecycle
+behavior. Preserve §§9.5.1–9.5.2, Miri/Loom's distinct scope, required native
+Windows observations and all current Windows/fuzz/storage/UI holds. Android
+HWASan remains conditional future scope. This policy adds no executable lane,
+installation, formal-proof work or current product qualification claim.
+
 ### 9.6 Bounded use of Miri, Loom and Kani
 
 | Tool | Good initial question | Claim boundary |

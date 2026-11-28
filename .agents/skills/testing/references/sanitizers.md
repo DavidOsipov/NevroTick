@@ -4,7 +4,10 @@ Formal/Kani proof work and pending proof admission/metadata repairs are deferred
 until after V1 under [OD-10 §14.1](../../../../docs/nevrotick-owner-decisions.md#141-first-release-deferral--6-november-2026).
 The tool capabilities below create no pre-V1 proof execution or acceptance gate.
 
-Use for a concrete address, initialization, aliasing, race or leak question.
+Use through [sanitizer qualification](../qa-sanitizer-qualification/SKILL.md)
+at coherent module completion, before V1 release or for a named immediate
+address, initialization, aliasing, race or leak diagnosis. Routine local edits
+retain focused checks; the full applicable V1 matrix belongs before release.
 Read the [testing contract](../CONTRACT.md); use the existing
 [configured analysis](configured-tooling.md#additional-rust-analysis) and
 [Windows memory workflow](windows-memory.md). Existing Miri, fuzzing, Loom,
@@ -15,12 +18,12 @@ this reference creates no new runner lane, installation or per-edit campaign.
 
 | Tool | Useful question | Admission and evidence limits |
 | --- | --- | --- |
-| ASan | Does reached code access memory out of bounds, after free or outside a valid lifetime? | Keep the admitted portable fuzz profile. Instrument the selected code and identify native/allocator gaps; an uninstrumented DLL is not automatically covered. |
-| LSan | Are unreachable allocations leaked on the exercised lifecycle? | Linux ASan normally includes leak detection; verify the emitted runtime, options and a real leak control. Reachable caches/retained owners and Windows handles need separate measurements. |
+| [ASan](../qa-sanitizer-qualification/references/asan.md) | Does reached code access memory out of bounds, after free or outside a valid lifetime? | Keep the admitted portable fuzz profile. Instrument the selected code and identify native/allocator gaps; an uninstrumented DLL is not automatically covered. |
+| [LSan](../qa-sanitizer-qualification/references/lsan.md) | Are unreachable allocations leaked on the exercised lifecycle? | Linux ASan normally includes leak detection; verify the emitted runtime, options and a real leak control. Reachable caches/retained owners and Windows handles need separate measurements. |
 | Miri | Does portable Rust violate initialization, alignment, validity, provenance or aliasing rules? | Reuse the admitted Miri toolchain/sysroot and focused tests. It complements ASan; unsupported Win32/FFI calls and unexplored executions remain outside its evidence. |
-| TSan | Does an exercised concurrent execution contain a data race? | Qualify a supported target and visibility of relevant code/synchronization. Rust documents gaps for atomic fences and assembly synchronization. Keep Loom for bounded modeled schedules and Lockbud for compatible static screening; TSan does not prove higher-level protocol correctness. |
-| MSan | Is uninitialized memory consumed on a reached path? | Qualify instrumentation across the standard library and native/dependency graph. Missing instrumentation can invalidate reports; add this lane for a named initialization gap rather than treating it as the next default. |
-| UBSan | Does compiled native C/C++ code violate selected language rules? | Instrument the actual C/C++ source and link a compatible runtime. Rust has no documented standard UBSan sanitizer mode; linking the runtime adds no missing checks to Rust code. Preserve Rust-specific Miri and checked-arithmetic tests. |
+| [TSan](../qa-sanitizer-qualification/references/tsan.md) | Does an exercised concurrent execution contain a data race? | Qualify a supported target and visibility of relevant code/synchronization. Rust documents gaps for atomic fences and assembly synchronization. Keep Loom for bounded modeled schedules and Lockbud for compatible static screening; TSan does not prove higher-level protocol correctness. |
+| [MSan](../qa-sanitizer-qualification/references/msan.md) | Is uninitialized memory consumed on a reached path? | Qualify instrumentation across the standard library and native/dependency graph. Missing instrumentation can invalidate reports; select for actual initialization-sensitive paths and account for applicable gaps at module/V1 checkpoints. |
+| [UBSan](../qa-sanitizer-qualification/references/ubsan.md) | Does compiled native C/C++ code violate selected language rules? | Instrument the actual C/C++ source and link a compatible runtime. Rust has no documented standard UBSan sanitizer mode; linking the runtime adds no missing checks to Rust code. Preserve Rust-specific Miri and checked-arithmetic tests. |
 | HWASan | Does a future Android ARM64 native path contain address/lifetime errors? | Qualify the exact Rust/NDK/runtime/ABI/device combination when Android work is active. HWASan and hardware MTE/memtag have different requirements; neither is a current Windows gate. |
 | Application Verifier / PageHeap | Does the actual Windows process misuse observed heaps, handles or native APIs? | Follow the existing per-image checks, intended token, allocator/API coverage, debugger capture and restoration. Measure allocation, handle and GUI-object retention separately. |
 
@@ -70,6 +73,12 @@ Replay retained counterexamples at the real entry point before claiming a fix.
   rebuilding/instrumenting `std` is particularly important for MSan/TSan.
   Mixed Rust/C/C++ builds need compatible compiler runtimes. An option such as
   `-Zexternal-clangrt` is a qualified integration choice, not a universal recipe.
+- Rust 1.100 documents dedicated `gnuasan`, `gnumsan` and `gnutsan` targets
+  with instrumented standard libraries. Treat these as candidate build routes:
+  verify exact installed artifacts, runtime and controls before adoption; they
+  do not change existing analysis pins or qualify native dependencies. Rust's
+  target sanitizer support fields describe code generation support even when
+  supporting libraries are not distributed.
 - Keep separate analysis compiler pins and the shipping compiler/profile.
   Preserve the guarded runner's complete flag vector and mitigation policy;
   ad-hoc `RUSTFLAGS` can replace configured protections. The existing ASan
@@ -88,7 +97,12 @@ Replay retained counterexamples at the real entry point before claiming a fix.
 
 ## Sources
 
-Checked **31 October 2026**; research is not qualification of a repository lane.
+Initial research checked **31 October 2026**; qualification routing and version
+evidence amended **28 November 2026**. Research is not qualification of a
+repository lane.
 The [source register](../SOURCES.md#sanitizer-selection-and-controls--31-october-2026)
 retains the primary Rust, LLVM, Android and Windows sources and the immutable
 Windows target snapshot. Verify rolling guidance against the selected compiler.
+The [28 November amendment](../SOURCES.md#sanitizer-qualification-manuals--28-november-2026)
+pins Rust 1.100, LLVM, cargo-fuzz and Miri sources and records current Microsoft
+guidance for the five conditional manuals.

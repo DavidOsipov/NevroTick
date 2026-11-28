@@ -34,10 +34,16 @@ Tool controls, PageHeap success and process exit cannot substitute for required
 product cleanup or sustained-resource evidence; instrumentation changes the
 performance measurement conditions.
 
-For sanitizer claims, reconcile [the selected mechanism's evidence](../references/sanitizers.md):
-actual instrumented scope, detector-specific controls and diagnostic, semantic
-oracle results, raw/accepted/reached counts when fuzzing and remaining native gaps.
-An assertion-only control cannot establish ASan detection or general leak freedom.
+At module completion and before V1 release, reconcile
+[sanitizer qualification](../qa-sanitizer-qualification/SKILL.md): applicable
+families, actual instrumented product graph and execution, detector-specific
+controls/diagnostics, semantic results, raw/accepted/reached fuzz counts and native
+gaps. V1 needs the complete applicable matrix for the integrated candidate and
+shipped configurations. Reuse earlier evidence only with an explicit identity and
+validity argument; execute missing/invalidated required rows and preserve fresh
+checkpoint duties. Fixed detector fixtures or assertion-only controls cannot
+establish product ASan coverage or general leak freedom. Unsupported, held or
+unqualified required execution remains incomplete, not N/A or a release pass.
 
 For whole-system stabilization or explicit acceptance require direct [black-box inspection](../qa-black-box-acceptance/SKILL.md) of representative actual inputs/outputs on the frozen integrated candidate. Review source-derived claims and independent findings separately from runtime evidence.
 

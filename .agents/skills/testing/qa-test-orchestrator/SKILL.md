@@ -25,6 +25,14 @@ Maintain [context continuity](../qa-context-checkpoint/SKILL.md) for multi-worke
 
 For repeated/multi-profile campaigns, reconcile the [campaign budget](../references/campaign-budget.md) across workers, repaired candidates and fault/supervisor runs. Preserve actual consumption and first failures rather than resetting totals after a retry.
 
+At coherent module completion or pre-V1 qualification, assign one
+[sanitizer owner](../qa-sanitizer-qualification/SKILL.md) to the applicable matrix,
+application-profile admission and evidence reconciliation. Dispatch only selected
+compatible configurations with exclusive output ownership and a shared finite
+budget; workers must not duplicate all-tool campaigns. Routine edits retain
+focused checks, with earlier sanitizer work limited to a named diagnostic or
+prerequisite need. A held applicable row stays incomplete under its existing owner.
+
 Assign optional analysis by the missing guarantee through
 [test planning](../qa-test-planning/SKILL.md) and the configured guide's six
 analysis lanes; do not dispatch every analyzer on each file. A data-flow worker

@@ -995,6 +995,17 @@ persisted state and installed payload. Malformed/unauthorized/stale/tampered
 neighbors must fail without protected effects while valid controls remain usable.
 Reconcile CHECK-1–27, applicable AC-01–26, applicable ST-T cases, critical-file
 gates, native accessibility/authority/lifecycle and baseline/soak evidence.
+
+Under [OD-22](../docs/nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence),
+complete the [applicable sanitizer matrix](../docs/windows-time-development-hardening.md#953-sanitizer-qualification-at-module-completion-and-before-v1)
+before V1 using [qa-sanitizer-qualification](../.agents/skills/testing/qa-sanitizer-qualification/SKILL.md).
+Reconcile ASan, LSan, TSan, MSan and native C/C++ UBSan across actual shipped
+components/graphs and relevant configurations. Existing module owners qualify
+coherent completion and retain product-reaching evidence; P7 verifies exact
+candidate coverage, immutable evidence reuse and evidenced N/A. Missing product
+instrumentation, required native evidence or held applicable execution remains
+incomplete. Detector fixtures supply no product pass or execution-hold waiver.
+
 Include V1 RGT-C01 and applicable TA-W/TA-C evidence from the existing
 time-assurance task. Its revised V1 schedule supplies no implementation pass and
 does not move the conditional Khronos/Ananke reserve or Chrony replacement into V1.

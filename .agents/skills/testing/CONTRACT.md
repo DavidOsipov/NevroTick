@@ -18,7 +18,7 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
 - Before execution inspect actual Cargo manifests, selected features/targets, test discovery, runner/tool versions, setup, effects. Assume no Cargo workspace/Windows runner/optional tool. Initial repository documentation-only; verify current state before relying on observation.
 - When selecting configured compiler, lint, runner, scanner or artifact commands, use [configured tool execution](references/configured-tooling.md). Apply only the checks needed for the changed guarantee; retain tool-admission, application execution and native/package evidence as separate layers.
 - Select Miri, cargo-fuzz, Loom, Lockbud or cargo-vet only for a named evidence gap and admitted source/harness/graph. Kani/formal work is deferred until after V1 under the product-specific policy below. Respect separate analysis compilers, bounds, assumptions and store custody. Successful tool controls do not execute an application gate.
-- For sanitizer or memory-detection claims, use [sanitizer selection and controls](references/sanitizers.md). Separate semantic assertions from detector-specific faults; retain exact instrumentation/platform coverage and independent resource-lifecycle evidence.
+- For sanitizer or memory-detection claims, use [sanitizer qualification](qa-sanitizer-qualification/SKILL.md) and its [shared controls](references/sanitizers.md). Separate detector admission, actual product instrumentation/execution, semantic assertions and native resource-lifecycle evidence; fixed detector fixtures do not qualify the application graph.
 - Native heap/handle/FFI or resource-lifecycle changes require an explicit coverage decision through [Windows memory diagnostics](references/windows-memory.md). Select reached Application Verifier/PageHeap checks and CDB fault capture where applicable; measure retained allocations, handles, GUI objects and tasks separately. Own per-image configuration and restoration, run the candidate with its intended token, and report missing coverage or restoration as incomplete. A clean debugger exit proves neither absence of faults nor absence of leaks.
 - For uncertain Rust data propagation, use [qa-data-flow-analysis](qa-data-flow-analysis/SKILL.md) and its [CodeQL reference](references/codeql-data-flow.md). Tie paths to actual extracted source/target/features and query/model identity; challenge reachable healthy/faulty controls. AST/CFG, query compilation and empty results prove no complete data-flow or authorization claim. Local MCP use leaves hosted CodeQL deferral unchanged.
 - Choose smallest claim-proving environment. Distinguish pure simulation, host Rust execution, cross-compilation, real Windows services/IPC/FFI, native UIA/Narrator, clean-machine package evidence. Mocks/successful Windows-target compilation do not prove Windows enforcement.
@@ -44,6 +44,14 @@ Use for testing, verification, fixtures, qualification reports. User request/rep
   [regression selection](qa-regression-selection/SKILL.md). Run required expensive
   qualification at its declared checkpoints, including applicable full phase,
   final and release gates; never move a checkpoint to avoid a missing/failing gate.
+- Under [OD-22](../../../docs/nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence),
+  routine sanitizer qualification belongs at coherent module completion, not each
+  local edit. A named immediate diagnosis or prerequisite can justify earlier
+  bounded work. Before V1 release, reconcile and complete the applicable product
+  matrix across shipped components and relevant configurations through
+  [sanitizer qualification](qa-sanitizer-qualification/SKILL.md). Use separate
+  compatible profiles; held or uninstrumented required rows remain incomplete.
+  This cadence lifts no execution hold and permits no unsupported N/A decision.
 - Reuse valid evidence with a recorded evidence reference and exact tested/current
   identities for the relevant source/callers, generated/platform/package inputs,
   configuration, locked feature/target graph, fixtures, tool/runner, environment

@@ -2655,3 +2655,134 @@ root documentation checksum manifest is absent. Product/Rust/native/fuzz/formal
 execution and unchanged-checker regression campaigns are inapplicable to this
 documentation milestone. Existing product QA and post-V1 obligations remain with
 their current owners.
+
+## Sanitizer checkpoint guidance — 28 November 2026
+
+### Scope, authority and implementation
+
+David requested sanitizer research through relevant available MCPs and reusable
+skills, with routine use at coherent module finalization and complete applicable
+qualification before V1. [OD-22](../../docs/nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
+records that cadence; [hardening §9.5.3](../../docs/windows-time-development-hardening.md#953-sanitizer-qualification-at-module-completion-and-before-v1)
+owns applicability and evidence duties. Existing module tasks retain execution
+records, with the current P7 parent reconciling release evidence.
+
+Initial source research inspected `172d03517123e6c4947fc94074b9b15a17dddc61`.
+The fresh checkout had advanced to `36849ebfc58ae0af1df5ee778b9d163b65acf492`;
+the coordinator inspected GitHub's one-commit comparison and preserved all 37
+intervening changed files, including Roughtime routing and the tool-pin refresh.
+That later commit is the implementation base. No product source, Cargo manifests,
+lockfile, toolchain, runner policy or workflow configuration is changed here.
+
+The original [qa-sanitizer-qualification](../skills/testing/qa-sanitizer-qualification/SKILL.md)
+leaf owns shared checkpoint, graph-admission, controls, bounds and outcome rules.
+Five conditional ASan/LSan/TSan/MSan/native UBSan manuals supply mechanism-specific
+requirements. Separate leaves would duplicate those shared decisions and obscure
+the complete applicability matrix. The existing sanitizer reference remains the
+shared selection/control owner. Discovery, local provenance, testing contract,
+planning/orchestration/final-qualification and canonical phase routes are updated.
+Root `AGENTS.md`, imported skills and checker implementation remain unchanged.
+
+Three specialists independently researched Rust/toolchains, native Windows and
+repository structure, then edited disjoint assigned files. Research used GitHub,
+Context7, Microsoft Learn search/full-page retrieval, public code search and
+primary documentation. DeepWiki returned an unavailable-tool error; no DeepWiki
+answer is claimed. The [dated source register](../skills/testing/SOURCES.md#sanitizer-qualification-manuals--28-november-2026)
+retains immutable upstream pins and source disagreements. Research or the
+historical fixed detector fixtures supplies no current application qualification.
+
+### Independent review and causal correction
+
+Fresh reviewer `sanitizer_guidance_judge` inspected all 23 normative changed/new
+files and primary sources against the implementation base. It found one P2
+workflow defect: the initial TSan manual allowed N/A only without relevant
+shared-memory concurrency, which could create a permanent unsupported native
+Windows TSan prerequisite. The coordinator corrected the skill, TSan/LSan/MSan
+manuals and canonical policy to distinguish evidenced mechanism/target N/A from
+missing admission, instrumentation or permission for a supported profile.
+Underlying native requirements retain their owners, alternative evidence and
+gaps; an explicitly required unsupported mechanism remains open for owner
+resolution. The same reviewer rechecked the affected delta: **finding closed;
+no new issue found**. This was source review, not product execution.
+
+### Fresh instruction-use exercises
+
+Each worker used `fork_turns: "none"` and the inherited model without an override.
+Prompts supplied synthetic facts and the candidate guidance, without grading
+criteria, expected answers, research returns or this task record. The coordinator
+froze a separate rubric before each dispatch and graded actual decisions, useful
+next actions and truthful evidence claims. Shared filesystem access was contextual
+separation, not physical isolation. Workers reported no hidden-material exposure;
+incidental adjacent repository text and truncated broad reads were disclosed.
+
+| Exercise identity | SHA-256 |
+| --- | --- |
+| First task, six independent situations A–F | `ced81d80cabc1c507dfe7bcdbcedd4eecd21c15160ecb471498d7a4a39b345cc` |
+| First withheld rubric | `31456b5b2bf91d3705b29b4cb3f49587402b5191d19193deec5c0ab042ed34ed` |
+| Initial coordinator read by first worker | `2c496459dcabbf34df3c40d1cb45c88cf6ec8c9d7cb4206d3f4a8fe13908dea1` |
+| Shared reference, unchanged across both exercises | `1a370f2fefa5131d27d04087f0c293efe32ce10844bfd2cf58de678998fa96dd` |
+| Follow-up task, three target-applicability situations | `407ddef16f20221a561c3a6d1db43ddee0a8f515b9b4345611c1c90892a036f5` |
+| Follow-up withheld rubric | `fa197f548c0fb3749214a8e118a9e66882588b5cf3a83787afc13118baa882d1` |
+| Corrected coordinator read by follow-up worker | `36407ce66e9a498863e26f1e7711d601ccb592fa4dfb40bee46139fe553465f9` |
+
+`sanitizer_instruction_use` completed the first six-case source-only exercise
+before the applicability correction. Its decisions met the bounded timing,
+control/product distinction, scope and evidence-reuse criteria:
+
+| Synthetic situation | Observed decision and independent expectation |
+| --- | --- |
+| A: incomplete module, routine local edit, no immediate diagnostic need | Retained focused ordinary checks and scheduled routine sanitizer qualification at the declared coherent checkpoint; rejected repeated all-profile work. |
+| B: completed allocation-owning Rust/native adapter, helper threads, partial initialization and held Windows run | Considered all five defect families, recognized missing product/std/native instrumentation and helper concurrency, and retained held native evidence as incomplete. The later target-specific exercise separately tests which mechanisms the actual platform supports. |
+| C: V1 draft citing old fixtures, changed graph/compiler and a cross-build | Rejected product/native qualification and unavailable-as-N/A claims; required current applicable evidence and preserved the hold. |
+| D: inspected dependency-free, allocation-free safe component with no native translation units | Accepted bounded native UBSan N/A, preserved ordinary semantic checks and did not extrapolate the exclusion to native product neighbors. |
+| E: 300 callbacks, 12 accepted inputs, two reached operations and semantic assertion exit 77 | Retained input/oracle/propagation evidence; rejected ASan detection and 100% coverage claims without a detector diagnosis or measurement denominator. |
+| F: unchanged validated relevant identities, adequate prior results, no fresh-run duty | Accepted scoped qualified evidence reuse and avoided a redundant campaign; no whole-product claim. |
+
+After the correction, fresh `sanitizer_target_instruction_use` completed three
+new decision cases. It accepted evidenced native TSan N/A on an unsupported
+Windows target while keeping native lifecycle evidence open; classified a
+supported Linux TSan profile lacking admission/instrumentation as incomplete;
+and retained an explicitly required unsupported pairing for its owner's decision
+instead of silently replacing it with a draft alternative. **All three decisions
+met the prewritten criteria.** Neither worker ran code, tests, detector faults,
+installations or native probes. These are nine hypothetical instruction-use
+cases, not sanitizer tests, an old/new benchmark or measured defect reduction.
+
+### Candidate verification and publication custody
+
+The final 23-file normative change set before this record has manifest SHA-256
+`8bba1634ab700c353083ab87a19f5576f71cb8033225f8f56db9332924eb4b1c`.
+The manifest hashes sorted UTF-8 repository-relative paths, NUL, each file's
+lowercase SHA-256, then newline; it excludes this bookkeeping file. The final
+Git tree/commit additionally binds the record and every unchanged repository
+input. The intended live inventory is **68 skills, 41 testing leaves and 12
+locally authored workflows**; historical receipts retain their earlier counts.
+
+The unchanged package checker passed with **68 skills**, metadata, UI prompts,
+local links and inventories; direct enumeration confirmed **41 QA leaves and
+12 local originals**. The global skill-creator quick validator also returned
+`Skill is valid!`. All **36 changed outside-pack local links, including 15
+anchors**, and tracked/new-file whitespace checks passed. `AGENTS.md` remains
+unchanged at **32,671 bytes**. No root documentation checksum manifest is present.
+All 23 normative files were unchanged before and after validation.
+
+The repository checker ran only after positive and negative isolation controls:
+read-only candidate/runtime, no home/credentials or procfs, cleared allowlisted
+environment, non-root UID without capabilities, an 8 MiB writable scratch mount,
+and architecture-checked seccomp denying network/socket, io_uring and child/thread
+creation. A private-network-namespace probe failed at NETLINK_ROUTE setup; the
+successful alternative retained the network namespace while enforcing syscall
+denial and admitting no socket descriptors. Limits were 10 CPU seconds, 20 wall
+seconds, 512 MiB address space, 32 descriptors, 1 MiB file size and 256 KiB output.
+The initial external wrapper/control/filter SHA-256 identities were respectively
+`29c1aafea6abff6b17f6dcbcfec996749ae9b763bae331834588067068c590b0`,
+`07449e9f98e506ead6a9a622dac8fe9774c38a47ab1521e79c5ee025aade8d06`,
+and `3ad041876b0fe552383b8e97df91d338f958da78a42ab66624c2ef8f90600cfe`.
+These temporary validation helpers are outside the repository and add no product
+runner. Unchanged-checker regressions and unrelated product campaigns were not run.
+
+Publication uses the complete intended index with the record included, verified
+against materialized bytes/modes and the resulting Git tree. Recheck that complete
+candidate with the same controlled package checker and preserve concurrent main
+changes through an expected-head update. The commit/tree and tool receipt bind
+that final custody; this record supplies no product/native/fuzz/formal pass.

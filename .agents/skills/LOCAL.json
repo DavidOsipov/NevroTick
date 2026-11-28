@@ -56,6 +56,11 @@
       "name": "implement-windows-service",
       "target": "implementation/implement-windows-service/SKILL.md",
       "origin": "locally-authored"
+    },
+    {
+      "name": "qa-sanitizer-qualification",
+      "target": "testing/qa-sanitizer-qualification/SKILL.md",
+      "origin": "locally-authored"
     }
   ]
 }

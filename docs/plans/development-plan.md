@@ -632,6 +632,17 @@ expensive qualification; full gates remain at their declared exits. Do not impos
 a full campaign on every edit, repeat blocked attempts without changed cause,
 or waive gates through renamed scope. Preserve existing evidence/acceptance rules.
 
+Apply [OD-22](../nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
+through [qa-sanitizer-qualification]: routine sanitizer execution follows coherent
+module completion and candidate freeze. Keep focused development checks and any
+named early diagnostic/admission prerequisite. The existing module task records
+applicable affected families, actual instrumented consumers, controls, evidence
+and gaps; P7 reconciles the complete applicable V1 matrix. Reuse qualified evidence
+only with immutable references and justified unchanged identities. Missing tools,
+product instrumentation or held required execution stays incomplete, not N/A.
+This schedules qualification without changing section 7's ready source work or
+lifting any execution hold.
+
 ### Common requirements for every phase
 
 - The development coordinator reads [plan-code-change], maps lifecycle/phase
@@ -680,7 +691,7 @@ and again at closeout when relevant evidence has changed.
 | **P4 — real Windows discipline** | [security-windows-privileges], [security-local-ipc], [security-protocol-inputs], [security-privacy-logging], [security-build-deployment] for takeover/restoration; [security-crypto-secrets] for newly connected recovery/cache paths; service adapter, Chrony accounting, Windows evidence and Windows-memory references. | [qa-integration-tests], [qa-contract-tests], [qa-state-concurrency-lifecycle], [qa-fault-recovery], [qa-security-boundaries], [qa-model-based-testing], [qa-e2e-tests], [qa-performance-resources]. Use [qa-package-artifacts] for installed handover/lifecycle effects. |
 | **P5 — production UI** | [implement-native-ui], [implement-slint], [security-native-ui], [security-local-ipc], [security-privacy-logging]; [security-windows-privileges] for helper flows; [evolve-data-contracts] for live snapshot/settings compatibility; design/brand references and D1–D3 re-entry rules. | [qa-component-tests], [qa-contract-tests], [qa-integration-tests], [qa-e2e-tests], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-performance-resources], [qa-security-boundaries]. Restore full requirements at their triggers; none are retroactive UI-M0 blockers. |
 | **P6 — hardened complete package** | [maintain-windows-metadata], [security-build-deployment], [security-windows-privileges], [security-local-ipc], [security-crypto-secrets], [dependency-updates], [evolve-data-contracts] for version/migration/rollback; [security-privacy-logging] for packaged event resources; signing and mitigation authorities. | [qa-package-artifacts], [qa-security-boundaries], [qa-integration-tests], [qa-e2e-tests], [qa-fault-recovery], [qa-state-concurrency-lifecycle], [qa-static-checks], [qa-performance-resources], [qa-black-box-acceptance]. |
-| **P7 — exact release candidate** | [security-build-deployment] and the affected security owners; [qa-test-orchestrator] reconciles the full matrix. Re-read changed contracts/decisions, not the whole pack indiscriminately. | [qa-coverage-gap-analysis], [qa-regression-selection], [qa-mutation-testing], [qa-static-checks], [qa-e2e-tests], [qa-package-artifacts], [qa-performance-resources], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-black-box-acceptance], [qa-independent-review], [qa-final-qualification]. Reuse unchanged qualified evidence with an explicit identity argument. |
+| **P7 — exact release candidate** | [security-build-deployment] and the affected security owners; [qa-test-orchestrator] reconciles the full matrix. Re-read changed contracts/decisions, not the whole pack indiscriminately. | [qa-coverage-gap-analysis], [qa-regression-selection], [qa-mutation-testing], [qa-static-checks], [qa-sanitizer-qualification], [qa-e2e-tests], [qa-package-artifacts], [qa-performance-resources], [qa-accessibility], [qa-visual-dpi], [qa-i18n-localization], [qa-black-box-acceptance], [qa-independent-review], [qa-final-qualification]. Reuse unchanged qualified evidence with an explicit identity argument. |
 
 UI-M0 history stays on its existing task; the selected Slint migration uses the
 existing [S0.5 amendment](../../tasks/s0.5-ui-comparison.md#ordered-work-and-observable-exits): [implement-native-ui], section 3 Rust/contracts,
@@ -700,6 +711,7 @@ tool on every change.
 | Measured bottleneck or explicit optimization | [optimize-rust-performance] with [qa-performance-resources]; benchmark/profiler measurement reference. |
 | CPU baseline admission or runtime feature dispatch | [implement-cpu-dispatch]; [optimize-rust-performance] for measured path selection. Preserve x86-64-v3 and qualify actual process/OS admission. |
 | Unknown producer-to-consumer/effect path | [qa-data-flow-analysis]; its CodeQL reference when the source path cannot otherwise be established. Tool extraction coverage limits remain explicit. |
+| Coherent module completion, V1 release reconciliation or a named early sanitizer diagnostic/prerequisite | [qa-sanitizer-qualification] and only its applicable manuals; use [hardening §9.5.3](../windows-time-development-hardening.md#953-sanitizer-qualification-at-module-completion-and-before-v1). Keep ordinary development checks, separate instrumented builds, detector/product evidence and existing execution holds. |
 | A failure, regression or disputed result | [qa-failure-triage]; [qa-system-stabilization] only for a bounded multi-defect convergence effort. Preserve first failure and healthy control. |
 | Useful independent development slices, multiple delegated owners or interrupted work | [plan-code-change] and [development delegation](#development-delegation); [qa-subagent-dispatch]/[qa-context-checkpoint] as triggered. One record, exclusive mutable ownership and integrated acceptance. |
 | Wire/persistence/version/units/validation acceptance changes | [evolve-data-contracts] with [qa-contract-tests], including old/new consumer and interrupted-migration cases. |
@@ -1248,6 +1260,16 @@ to first delivery; proxy-specific cases retain their later SOCKS owners and
 activation criteria. Reuse earlier
 evidence only while its relevant state is unchanged; rerun affected observations
 after invalidating changes. Required missing evidence is incomplete, not N/A.
+
+Complete the [OD-22 sanitizer matrix](../windows-time-development-hardening.md#953-sanitizer-qualification-at-module-completion-and-before-v1)
+through [qa-sanitizer-qualification] before V1 release. Reconcile ASan, LSan,
+TSan, MSan and native C/C++ UBSan for the actual shipped components/graphs and
+relevant profiles, with evidenced applicability, product-reaching cases and
+candidate-specific results or justified immutable evidence reuse. Standalone
+detector controls do not qualify a product graph. Retain required Windows memory,
+handle/FFI and resource-lifecycle evidence separately; an unavailable/held
+applicable row keeps the gate open. Use existing module records and this release
+parent, without a parallel campaign plan or implied hold lift.
 
 Reconcile V1 RGT-C01 and the applicable TA-W/TA-C evidence in the
 [time-assurance task](../../tasks/time-assurance-integration.md) alongside the
@@ -6480,6 +6502,7 @@ this documentation-only change.
 [qa-pre-commit]: ../../.agents/skills/testing/qa-pre-commit/SKILL.md
 [qa-property-based-testing]: ../../.agents/skills/testing/qa-property-based-testing/SKILL.md
 [qa-regression-selection]: ../../.agents/skills/testing/qa-regression-selection/SKILL.md
+[qa-sanitizer-qualification]: ../../.agents/skills/testing/qa-sanitizer-qualification/SKILL.md
 [qa-security-boundaries]: ../../.agents/skills/testing/qa-security-boundaries/SKILL.md
 [qa-state-concurrency-lifecycle]: ../../.agents/skills/testing/qa-state-concurrency-lifecycle/SKILL.md
 [qa-static-checks]: ../../.agents/skills/testing/qa-static-checks/SKILL.md

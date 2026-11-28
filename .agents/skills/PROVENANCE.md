@@ -91,6 +91,13 @@ it vendors no upstream skill, framework code, fonts, brand assets or runtime.
 `LOCAL.json` registers this separate original leaf. These references neither
 assign Slint's licence to the skill nor clear the application's dependency graph.
 
+The original local [qa-sanitizer-qualification](testing/qa-sanitizer-qualification/SKILL.md)
+workflow, added 28 November 2026, coordinates module and pre-V1 qualification
+under OD-22. Its five conditional manuals are locally authored guidance; the
+[testing source register](testing/SOURCES.md) retains primary Rust, LLVM,
+Rust Fuzz, Miri and Microsoft research. No upstream skill, detector runtime or
+product implementation was imported. `LOCAL.json` registers this original leaf.
+
 ## Contract-review amendment — 30 October 2026
 
 The [critical architecture assessment](../../docs/supporting-reviews/architecture-contract-review.md)

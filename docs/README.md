@@ -9,6 +9,15 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Sanitizer checkpoints — 28 November 2026:**
+[OD-22](nevrotick-owner-decisions.md#26-od-22--sanitizer-qualification-cadence)
+places routine sanitizer qualification at coherent module completion and requires
+the complete applicable matrix before V1 release. The
+[sanitizer skill](../.agents/skills/testing/qa-sanitizer-qualification/SKILL.md)
+coordinates five conditional mechanism manuals; existing module tasks and P7 own
+the evidence. Detector fixtures are not product qualification, and existing
+execution holds retain their scope.
+
 **V1 network scope and current routing — 27 November 2026:**
 [OD-02](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
 includes NTP/NTS and Roughtime bootstrap in V1, with no PPS/GNSS/refclock product
