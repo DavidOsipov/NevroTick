@@ -238,6 +238,8 @@ class CombinedPackageTests(unittest.TestCase):
 
     def test_guarded_archive_joins_both_original_service_roles(self) -> None:
         role_receipt: Path = self.root / "cross-artwork-roles.json"
+        images: dict[str, bytes]
+        role_report: dict[str, object]
         images, _, role_report = write_guarded_role_export(self.root / "cross-artwork-roles-artifacts")
         service_source: str = "tools/windows-service-fixture/msix/service_entry.c"
         service_sources: dict[str, str] = {**GUARDED_ROLE_SOURCES, service_source: "a" * 64}
@@ -265,7 +267,7 @@ class CombinedPackageTests(unittest.TestCase):
         link_map: Path = self.root / "ui.map"
         link_map.write_bytes(mapping)
         image_pin: str = sha256(gui).hexdigest()
-        ui_report = {
+        ui_report: dict[str, object] = {
             "status": "passed", "native_windows_execution": "not performed",
             "dependency_profile": "default",
             "source_sha256": ui_sources,
@@ -309,11 +311,13 @@ class CombinedPackageTests(unittest.TestCase):
                             b"the original UI map and the UI source digest")
 
         original_archive: bytes = self.package.read_bytes()
-        crossed = {**role_report, "source_sha256": {**service_sources, "Cargo.lock": "0" * 64}}
+        crossed: dict[str, object] = {**role_report, "source_sha256": {**service_sources, "Cargo.lock": "0" * 64}}
         crossed_bytes: bytes = json.dumps(crossed).encode("utf-8")
         role_receipt.write_bytes(crossed_bytes)
         with self.subTest(service_source="Cargo.lock"):
-            result = self.run_reader(guarded=write_receipt(ui_report, sha256(crossed_bytes).hexdigest()))
+            result: subprocess.CompletedProcess[bytes] = self.run_reader(
+                guarded=write_receipt(ui_report, sha256(crossed_bytes).hexdigest()),
+            )
             self.assertEqual(self.package.read_bytes(), original_archive)
             self.assert_refusal(result, b"guarded service link evidence refused")
 
@@ -327,6 +331,7 @@ class CombinedPackageTests(unittest.TestCase):
                             b"guarded service link evidence refused")
         incomplete_ui: dict[str, str] = ui_sources.copy()
         del incomplete_ui[shared]
+        altered_sources: dict[str, str]
         for altered_sources in (incomplete_ui, {**incomplete_ui, service_source: service_sources[service_source]}):
             with self.subTest(ui_source_count=len(altered_sources)):
                 altered_report: dict[str, object] = {**ui_report, "source_sha256": altered_sources}
@@ -335,6 +340,8 @@ class CombinedPackageTests(unittest.TestCase):
                 self.assert_refusal(result, b"guarded UI source map SHA-256 differs")
         role_receipt.write_bytes(role_bytes)
 
+        field: str
+        replacement: object
         for field, replacement in (
             ("strings", {"FileDescription": "Altered description", "OriginalFilename": UI}),
             ("fixed", [*_FIXED[:9], True, *_FIXED[10:]]),
@@ -345,12 +352,14 @@ class CombinedPackageTests(unittest.TestCase):
             ("image_sha256", "0" * 64),
         ):
             with self.subTest(resource_field=field, replacement=replacement):
-                altered = deepcopy(ui_report)
+                altered: dict[str, object] = deepcopy(ui_report)
                 altered["ui_versioninfo"][field] = replacement
                 self.assert_refusal(self.run_reader(guarded=write_receipt(altered)),
                                     b"guarded UI resource facts differ from the archived PE")
 
         guarded = write_receipt(ui_report)
+        service: str
+        original: bytes
         for service, original in images.items():
             with self.subTest(service=service):
                 self.data[service] = original + b"\0"

@@ -77,6 +77,137 @@ instrumented coverage; they neither postpone required startup integration nor
 replace final Windows exploit-protection evidence. No new tool, dependency,
 signing provider or verification campaign is selected here.
 
+### B1 first source child — bind the current Windows export pair
+
+After the `e89066b` pull, the selected independent source child binds the existing
+`verify.py::export_windows_artifacts` UI/Observe assignments through the existing
+verification manifest. `plan-code-change`, `security-build-deployment`,
+`evolve-data-contracts`, `qa-contract-tests` and `qa-static-checks` own the source
+and checks. The strict configuration reader and direct exporter share one closed
+section validator. An alternate source checkout must use its own declaration.
+Role names, target/entry references and required features must agree with the
+selected Cargo target; unknown, duplicate, substituted or malformed rows refuse.
+
+This first child covers the current workspace release export pair only. The
+remaining B1 image roster, per-image/module graphs and full W1 runtime schema
+are still open. A fixed pending-qualification state cannot be changed into an
+observed/enforced claim. The Rust entry reference does not qualify pre-CRT C,
+toolchain or loader execution; its separate owner remains explicit. No native
+mitigation setter, target flag, receipt field, signing or package route changes.
+
+Independent plan review required validation from the helper's `source`, preservation
+of the existing receipt shape and a precise failure boundary: before PE/PDB reads
+or payload/public-output creation. An outer private staging directory may already
+exist and keeps its existing cleanup contract. Healthy sealed PE/PDB export must
+remain useful beside missing/duplicate/unknown role, incorrect target/entry/
+feature, role substitution and false-qualification controls.
+
+Budget: one focused isolated Python checkpoint over the new role controls and
+existing Windows export/publication controls, with two causal repair passes and
+one final independent source review. Keep actual failures and consumed runs.
+These inert source/artifact controls need no Rust build or Windows execution;
+the existing WSL-root reserve and earlier UI compiler allocation failure still
+block the separate Rust checkpoint. No native, coverage, mutation, sanitizer,
+installed or release pass follows from this child.
+
+**Source checkpoint:** the shared strict reader now returns immutable checked
+UI/Observe records from the supplied checkout. The exporter reconciles both
+records before opening either PE/PDB pair; original receipt keys, complete-pair
+admission and publication behavior remain. The record explicitly limits entry
+coverage to the Rust source and leaves complete-role qualification pending.
+Fresh independent source review found no material issue in this child.
+
+The first isolated Python cohort passed 76 role, strict-policy and existing
+export/publication tests in 2.359 seconds. The additional 48 product-admission
+tests reached three diagnostic assertions whose expected older guard was now
+preceded by the mandatory role check. All three malformed inputs were refused.
+The repair assigns the specific new source/entry diagnostic only to those
+faults, retains the original diagnostics elsewhere and pairs restoration with
+healthy admission. The final frozen cohort passed all 124 tests in 8.603 seconds.
+Syntax and whitespace checks passed; no cast, suppression or additional tool was
+introduced. These runs used inert artifact bytes and executed no Windows image.
+
+The exact source/control receipt is
+`~/.local/share/nevrotick/b1-export-role-bindings-20261128.mcqrhid4/receipt.json`,
+SHA-256 `49eec60b8422517212e84e4ade7e9e92f2b4fd5816058e5351a57543a8420ca1`.
+It retains the initial failures, final logs, twelve source/input pins, the patch
+and the new untracked control file. This is partial B1 enforcement for the two
+existing exports. The remaining image roster and module attribution, W1/G1,
+actual artifact/native/installed qualification and applicable metric/sanitizer
+checkpoints remain open. Changed verifier/manifest inputs require re-admission
+of dependent current-candidate recipes; earlier hash bindings are historical.
+
+### B1/B2 allocation-observer pair admission — 28 November 2026
+
+The next independent source child covers the existing test-only allocation
+observer, not a new product executable. Its role is a console diagnostic emitted
+by `verify-time-domain-windows-allocation.py::build` from
+`policy/time-domain-windows-allocation-observer.rs` and the admitted `time-domain`
+library/dependency artifacts. The fixed basename is `NevroTick-<uuid>.exe` with
+matching PDB; activation belongs only to that script's explicit native lane and
+its generated bounded ordinary-user supervisor. Debug, release and verify-release
+retain the admitted compiler/std, exact `ENV.MSVC_FLAGS` (`0xA00` loader profile,
+CFG/CET and v3) and existing profile flags. No runtime or shipping-role qualification
+is claimed. This identifies the artifact needed for B2; the complete B1
+machine-readable image/module roster remains open.
+
+| Stage / skills | Required change and useful/refused observation | Evidence / remaining owner |
+| --- | --- | --- |
+| Scope and independent plan review; `plan-code-change`, `security-build-deployment`; B1/B2, CHECK-19/20/26 | Trace the actual build-export and native-staging calls. Existing full target flags justify the unchanged shared console-EXE `0xA00` reader. | Independent scouts agree the class is source-ready. No shared PE-mask relaxation or Windows execution is needed for this source child. |
+| Producer/consumer evolution; `evolve-data-contracts`, contract enforcement | Admit one bounded EXE/PDB snapshot pair through `windows_pe.py` before retaining either artifact; retain the admitted bytes/hashes and matching GUID/age. Native admission must recheck both original artifacts before creating its Windows directory or dispatching. | Outer build/native evidence advances to schema 2. Schema-1 receipts remain historical and cannot authorize the new native consumer; allocator counter JSON retains its separate schema 1. |
+| Focused controls; `qa-contract-tests`, `qa-test-planning`, `qa-static-checks` | Independent complete PE/PDB healthy controls beside the old 160-byte header, missing CFG/CET/relocations/loader protection, wrong subsystem/RWX, missing/swapped/stale symbols. Observe refusal before retention or native staging. | One focused RED/GREEN cohort plus one final existing allocation/PE regression checkpoint, at most two causal repair rounds and one fresh source review. No compiler, native, fuzz, mutation or sanitizer execution is selected. |
+
+The existing shared reader bounds and source/tool admission stay mandatory.
+Static declarations and matching symbols establish neither effective OS policy
+nor absence of allocator faults. Actual emitted-image and supported-Windows
+qualification, complete B1 module attribution and affected metric gates remain
+with their existing owners. This budget is independent of the closed P5 UI
+checkpoint and does not reopen its test-build retries. Symbol generation is
+configured but actual PDB filename/page-size evidence is unavailable in the
+retained old artifacts; a new pair must pass the fixed default reader profile.
+
+**Source checkpoint:** the actual build now admits the full console EXE/PDB
+pair through the unchanged shared reader before retaining either file. It writes
+the admitted snapshots and records both hashes plus CodeView/PDB GUID and age.
+Native admission rechecks the original pair and frozen record before creating
+its Windows directory, then stages only the admitted executable bytes under its
+new name. Original symbols remain retained on Linux and are checked again at
+final readback. TerminalServerAware remains optional. Shared PE/PDB and immediate
+control sources are now included in the explicit initial/snapshot/bookend input
+map; the independent reviewer caught and resolved the initial reader-pin omission.
+
+The admitted RED specimen showed the old header-only reader accepting a 160-byte
+flag-bearing file despite the new complete-artifact expectation. The focused
+cohort then passed 25 controls. The first broader run reached 124 tests with two
+sparse-file fixture setup errors at the harness's 64-MiB file ceiling; this was
+not a product refusal or a pass. The corrected harness permits 128 MiB for those
+known boundary specimens while retaining 512-MiB AS, 90-second CPU, 120-second
+wall, one CPU, read-only source and credential-free/network-isolated execution.
+No product/compiler resource limit changed. A direct native-receiver case also
+reproduced an untyped `RuntimeError` on a cyclic artifact path; the receiving
+guard now returns `Incomplete` before staging.
+
+The final combined allocation/PE/Windows-export controls passed **126 tests in
+10.346 seconds**. They include actual native-receiver refusal before directory
+creation/dispatch and both normal staging and post-admission replacement of the
+original EXE/PDB paths. Dispatch is mocked; no Windows program was executed.
+Afterward, two explicit declaration annotations were added. Their normalized
+executable AST matches the retained tested source; syntax/whitespace and source
+identity were refreshed, and independent review confirmed the annotation-only
+delta. This justifies reuse of those behavioral observations, not new runtime
+validation from types. No mypy/compiler/coverage/mutation result is claimed.
+
+The source/patch/log/identity receipt is
+`~/.local/share/nevrotick/b2-allocation-pair-20261128-x_rsxm6l/receipt.json`, SHA-256
+`cef20326e9ebe2d70f41eb826d653fa3072736b9c5c5fb46690d9f5eafa39982`.
+It preserves setup failures, REDs, both final attempts and the pre-annotation
+tested runner. Fresh independent final source review found no remaining scoped
+material issue. The finite source/checkpoint budget is consumed. This completes
+this B2 allocation-admission source child; actual new MSVC emission, PDB naming/
+page-size and supported-Windows outcomes remain unqualified. Complete B1
+machine-readable image/module attribution, other B2 profiles and all applicable
+native, metric, sanitizer, signing and installed-product gates remain open.
+
 ## Candidate and custody
 
 Initial HEAD: `bd78e324f697ae9492e9c567b5234d408e5eb636`, with concurrent staged,

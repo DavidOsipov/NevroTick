@@ -27775,6 +27775,30 @@ Product signing and installed Windows qualification remain open.
 | `suite.log` | `768a7b4c47e1c1cb9f70d55899d1eb167c0d4b5a9ef16e2c04ed6a654cfdbdc5` |
 | `suite-before.sha256` and `suite-after.sha256` | `5ac8fad520257abecec4f74dfb7a32eb7674bd7b26237e13d755d27e24b37241` |
 
+###### Restore source-visible Python types after the a95da28 review
+
+W11-W10/S6.4 and CHECK-25/26. Finding **QA-A95-S01** is repaired in
+the guarded ArtworkLab reader and its existing fixture. The decoder's
+results use the existing `VersionInfo` and `UiExecutionManifest` records.
+The fixture restores its dictionary declarations, names the subprocess
+result type and makes the affected tuple and loop bindings explicit.
+No casts, typing suppressions, payload normalization or new runtime tests
+were introduced.
+
+Focused source inspection, syntax compilation and whitespace checks passed.
+A standard-library AST comparison with `a95da288` found the executable
+structure unchanged after removing local annotations and the two added
+imports of existing decoder type declarations. This checks the correction's
+scope; it is not a whole-file mypy result. These two files are outside the
+configured selected-helper typing lane.
+
+The source-static receipt is
+`~/.local/share/nevrotick/artwork-local-types-20261128.nwjja6k1/static-checks.json`.
+It retains both old and new source hashes and the observed check results.
+The historical 241-test and archive-replay receipts keep their original
+source identities. No new runtime, native, signing or installed-package
+qualification is claimed for this annotation-only correction.
+
 #### Separate the recovery census from confirmed job retirement
 
 S0.6/W11-W05 and CHECK-25/26/27. The original `DeploymentJob` takes two

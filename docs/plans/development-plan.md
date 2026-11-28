@@ -1051,6 +1051,12 @@ The [HTML updater checkpoint](../../tasks/slint-gui-handoff.md#html-updater-prot
 records delivered offline presentation with browser review still open; the
 Rust/Slint fixture and production UP-UI acceptance remain separate pending work.
 
+The [28 November About outcome continuation](../../tasks/slint-gui-handoff.md#continue-the-about-check-outcomes--28-november-2026)
+advances the independent fixture child of UP-UI-09 / AC-26. Its code separates
+no eligible update from unavailable and externally managed checks; current
+compiler/callback execution, native observations and live P5 remain open under
+the task's recorded prerequisites.
+
 **Default toolkit — 5 November 2026:** [OD-13](../nevrotick-owner-decisions.md#17-od-13--slint-as-the-default-ui-toolkit)
 selects Rust/Slint and incorporates the accepted local fixture migration and
 separate original GUI GPL-3.0-only scope. The measured winit/software/Fluent

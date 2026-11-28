@@ -8,11 +8,53 @@ import json
 import struct
 import tempfile
 import unittest
+import hashlib
+from types import ModuleType, SimpleNamespace
+from typing import Callable
+from unittest.mock import MagicMock, patch
 
 ROOT = Path(__file__).resolve().parents[2]
 SPEC = importlib.util.spec_from_file_location("allocation_observation_test", ROOT / "scripts/verify-time-domain-windows-allocation.py")
 MODULE = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(MODULE)
+PE_SPEC: importlib.machinery.ModuleSpec | None = importlib.util.spec_from_file_location(
+    "allocation_independent_pe_fixtures", Path(__file__).with_name("test_windows_pe.py"))
+if PE_SPEC is None or PE_SPEC.loader is None:
+    raise RuntimeError("Independent PE/PDB fixture module is unavailable.")
+PE_FIXTURES: ModuleType = importlib.util.module_from_spec(PE_SPEC)
+PE_SPEC.loader.exec_module(PE_FIXTURES)
+
+
+def observer_files(directory: Path, *, name: str = "observer.exe", flags: int = 0x4160) -> Path:
+    """Encode complete inert PE/PDB bytes independently of the production reader."""
+    image: Path = directory / name
+    data: bytearray = PE_FIXTURES._image(3, pdb_path=image.with_suffix(".pdb").name)
+    struct.pack_into("<H", data, 0x98 + 70, flags)
+    image.write_bytes(data)
+    image.with_suffix(".pdb").write_bytes(PE_FIXTURES._pdb())
+    return image
+
+
+def observer_build_receipt(directory: Path) -> tuple[Path, Path]:
+    """Freeze a synthetic build record for actual native receiving controls."""
+    image: Path = observer_files(directory, name="NevroTick-" + "0" * 32 + ".exe")
+    pair: MODULE.ObserverPair = MODULE.observer_pair(image)
+    inputs: dict[str, str] = {"Cargo.lock": "a" * 64}
+    built: dict[str, object] = {
+        "schema_version": 2, "status": "passed", "lane": "build",
+        "purpose": "test_only_time_domain_allocator_requests",
+        "product_source_sha256": inputs, "candidate_sha256": MODULE.canonical_digest(inputs),
+        "extra_inputs_sha256": {name: MODULE.PRODUCT.sha256(ROOT / name) for name in MODULE.EXTRA_INPUTS},
+        "profile": "release", "direct_profile_flags": MODULE.profile_flags("release"),
+        "direct_target_flags": MODULE.ENV.MSVC_FLAGS,
+        "lanes": [{"lane": name, "failure": None, "exit_code": 0} for name in (
+            "boundary-control", "compiler-version", "observer-format", "library-build",
+            "sealed-dependency-boundary", "observer-clippy", "observer-link")],
+        "artifact": MODULE.observer_pair_record(image, pair),
+    }
+    receipt: Path = directory / "build.json"
+    receipt.write_text(json.dumps(built))
+    return receipt, image
 
 
 def snapshot(alloc=0, dealloc=0, live=100, peak=None, zeroed=0, realloc=0):
@@ -308,19 +350,221 @@ class AllocationAdmissionTests(unittest.TestCase):
 
     def test_pe_flags_require_only_adopted_protections_and_report_terminal_server_awareness(self):
         with tempfile.TemporaryDirectory() as temporary:
-            image = Path(temporary) / "observer.exe"
-            data = bytearray(64 + 96)
-            data[:2] = b"MZ"; struct.pack_into("<I", data, 60, 64)
-            data[64:68] = b"PE\0\0"; struct.pack_into("<H", data, 68, 0x8664)
-            struct.pack_into("<H", data, 88, 0x20b)
-            for flags in (0x4160, 0xc160):
-                struct.pack_into("<H", data, 158, flags); image.write_bytes(data)
-                result = MODULE.pe_header(image)
-                self.assertEqual(result["dll_characteristics"], flags)
-                self.assertEqual(result["terminal_server_aware_observed"], bool(flags & 0x8000))
+            image: Path
+            flags: int
+            for flags in (0x4160, 0xC160):
+                image = observer_files(Path(temporary), flags=flags)
+                result: MODULE.ObserverPair = MODULE.observer_pair(image)
+                self.assertEqual(result.pe["dll_characteristics"], flags)
+                self.assertEqual(result.pe["terminal_server_aware_observed"], bool(flags & 0x8000))
+            data: bytearray = bytearray(image.read_bytes())
+            missing: int
             for missing in (0x4000, 0x100, 0x40, 0x20):
-                struct.pack_into("<H", data, 158, 0x4160 & ~missing); image.write_bytes(data)
-                with self.subTest(missing=missing), self.assertRaises(MODULE.Incomplete): MODULE.pe_header(image)
+                struct.pack_into("<H", data, 0x98 + 70, 0x4160 & ~missing)
+                image.write_bytes(data)
+                with self.subTest(missing=missing), self.assertRaises(MODULE.Incomplete):
+                    MODULE.observer_pair(image)
+
+    def test_header_only_observer_cannot_establish_complete_artifact_admission(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            image: Path = Path(temporary) / "observer.exe"
+            data: bytearray = bytearray(160)
+            data[:2] = b"MZ"
+            struct.pack_into("<I", data, 60, 64)
+            data[64:68] = b"PE\0\0"
+            struct.pack_into("<H", data, 68, 0x8664)
+            struct.pack_into("<H", data, 88, 0x20b)
+            struct.pack_into("<H", data, 158, 0x4160)
+            image.write_bytes(data)
+            with self.assertRaises(MODULE.Incomplete):
+                MODULE.observer_pair(image)
+
+    def test_observer_refuses_incomplete_static_declarations_before_retaining_either_file(self):
+        change: str
+        for change in ("relocations", "cfg", "cet", "loader", "subsystem", "writable_code"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root: Path = Path(temporary)
+                image: Path = observer_files(root)
+                data: bytearray = bytearray(image.read_bytes())
+                if change == "relocations": struct.pack_into("<II", data, 0x98 + 112 + 5 * 8, 0, 0)
+                if change == "cfg": struct.pack_into("<I", data, 0x240 + 144, 0)
+                if change == "cet": struct.pack_into("<I", data, 0x340, 0)
+                if change == "loader": struct.pack_into("<H", data, 0x240 + 78, 0x800)
+                if change == "subsystem": struct.pack_into("<H", data, 0x98 + 68, 2)
+                if change == "writable_code": struct.pack_into("<I", data, 0x188 + 36, 0xE0000020)
+                image.write_bytes(data)
+                output: Path = root / "retained"
+                output.mkdir()
+                sentinel: Path = output / "existing.txt"
+                sentinel.write_bytes(b"preserve")
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.retain_observer_pair(image, output)
+                self.assertEqual(sorted(p.name for p in output.iterdir()), ["existing.txt"])
+                self.assertEqual(sentinel.read_bytes(), b"preserve")
+
+    def test_observer_requires_matching_symbols_and_retains_the_admitted_snapshots(self):
+        change: str
+        for change in ("missing", "guid", "age", "basename"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root: Path = Path(temporary)
+                image: Path = observer_files(root)
+                symbols: Path = image.with_suffix(".pdb")
+                if change == "missing": symbols.unlink()
+                if change == "guid": symbols.write_bytes(PE_FIXTURES._pdb(guid=b"x" * 16))
+                if change == "age": symbols.write_bytes(PE_FIXTURES._pdb(age=2))
+                if change == "basename": symbols.rename(root / "other.pdb")
+                output: Path = root / "retained"
+                output.mkdir()
+                with self.assertRaises(MODULE.Incomplete):
+                    MODULE.retain_observer_pair(image, output)
+                self.assertEqual(list(output.iterdir()), [])
+        with tempfile.TemporaryDirectory() as temporary:
+            root: Path = Path(temporary)
+            image: Path = observer_files(root)
+            expected_image: bytes = image.read_bytes()
+            expected_symbols: bytes = image.with_suffix(".pdb").read_bytes()
+            output: Path = root / "retained"
+            output.mkdir()
+            record: dict[str, object] = MODULE.retain_observer_pair(image, output)
+            self.assertEqual((output / "observer.exe").read_bytes(), expected_image)
+            self.assertEqual((output / "observer.pdb").read_bytes(), expected_symbols)
+            self.assertEqual(record["sha256"], hashlib.sha256(expected_image).hexdigest())
+            self.assertEqual(record["symbols"]["sha256"], hashlib.sha256(expected_symbols).hexdigest())
+            self.assertEqual(record["symbols"]["identity"]["guid"], "12345678-9abc-def0-1234-56789abcdef0")
+            self.assertEqual(record["symbols"]["identity"]["age"], 1)
+            self.assertEqual(record["pe"]["dependent_load_flags"], 0xA00)
+            self.assertEqual(record["pe"]["extended_dll_characteristics"], 3)
+
+    def test_retention_uses_sealed_bytes_after_original_paths_change(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root: Path = Path(temporary)
+            image: Path = observer_files(root)
+            sealed: MODULE.ObserverPair = MODULE.observer_pair(image)
+            output: Path = root / "retained"
+            output.mkdir()
+            def replace_after_admission(path: Path) -> MODULE.ObserverPair:
+                self.assertEqual(path, image)
+                image.write_bytes(b"changed executable")
+                image.with_suffix(".pdb").write_bytes(b"changed symbols")
+                return sealed
+            with patch.object(MODULE, "observer_pair", side_effect=replace_after_admission):
+                record: dict[str, object] = MODULE.retain_observer_pair(image, output)
+            self.assertEqual((output / image.name).read_bytes(), sealed.image[0])
+            self.assertEqual((output / image.with_suffix(".pdb").name).read_bytes(), sealed.symbols[0])
+            self.assertEqual(record["sha256"], sealed.image[1])
+            self.assertEqual(record["symbols"]["sha256"], sealed.symbols[1])
+
+    def test_native_refuses_old_or_changed_pair_before_windows_staging_or_dispatch(self):
+        change: str
+        for change in ("old_schema", "schema_float", "missing_record", "missing_symbols", "symbol_path", "symbol_digest",
+                       "symbol_identity", "pe_record", "pdb_bytes", "thin_image", "path_loop"):
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
+                root: Path = Path(temporary)
+                receipt: Path
+                image: Path
+                receipt, image = observer_build_receipt(root)
+                built: dict[str, object] = json.loads(receipt.read_text())
+                if change == "old_schema": built["schema_version"] = 1
+                if change == "schema_float": built["schema_version"] = 2.0
+                if change == "missing_record": del built["artifact"]
+                if change == "missing_symbols": del built["artifact"]["symbols"]
+                if change == "symbol_path": built["artifact"]["symbols"]["path"] = str(root / "other.pdb")
+                if change == "symbol_digest": built["artifact"]["symbols"]["sha256"] = "b" * 64
+                if change == "symbol_identity": built["artifact"]["symbols"]["identity"]["age"] = True
+                if change == "pe_record": built["artifact"]["pe"]["dependent_load_flags"] = 0x800
+                if change == "pdb_bytes": image.with_suffix(".pdb").write_bytes(PE_FIXTURES._pdb(age=2))
+                if change == "thin_image": image.write_bytes(image.read_bytes()[:160])
+                if change == "path_loop":
+                    loop: Path = root / "loop"
+                    loop.symlink_to(loop)
+                    built["artifact"]["path"] = str(loop / image.name)
+                receipt.write_text(json.dumps(built))
+                native: Path = root / "windows"
+                args: SimpleNamespace = SimpleNamespace(build_receipt=receipt, native_dir=native)
+                dispatch: MagicMock
+                with (patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, {"Cargo.lock": "a" * 64})),
+                      patch.object(MODULE, "windows_path", return_value="X:\\owned"),
+                      patch.object(MODULE.ENV, "run") as dispatch,
+                      self.assertRaises(MODULE.Incomplete)):
+                    MODULE.native(args, {})
+                self.assertFalse(native.exists())
+                dispatch.assert_not_called()
+
+    def test_changed_pair_reader_invalidates_receipt_before_native_effects(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root: Path = Path(temporary)
+            receipt: Path
+            image: Path
+            receipt, image = observer_build_receipt(root)
+            snapshot: Path = root / "source"
+            name: str
+            for name in sorted(set(MODULE.EXTRA_INPUTS) | {"scripts/windows_pe.py"}):
+                destination: Path = snapshot / name
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes((ROOT / name).read_bytes())
+            reader: Path = snapshot / "scripts/windows_pe.py"
+            reader.write_bytes(reader.read_bytes() + b"\n# changed validation-owner bytes\n")
+            native: Path = root / "windows"
+            args: SimpleNamespace = SimpleNamespace(build_receipt=receipt, native_dir=native)
+            original_hash: Callable[[Path], str] = MODULE.PRODUCT.sha256
+            def digest(path: Path) -> str:
+                return "f" * 64 if str(path).endswith("/powershell.exe") else original_hash(path)
+            dispatch: MagicMock
+            with (patch.object(MODULE, "ROOT", snapshot),
+                  patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, {"Cargo.lock": "a" * 64})),
+                  patch.object(MODULE, "windows_path", return_value="X:\\owned"),
+                  patch.object(MODULE.PRODUCT, "sha256", side_effect=digest),
+                  patch.object(MODULE.ENV, "run") as dispatch,
+                  self.assertRaisesRegex(MODULE.Incomplete, "matching guarded observer build receipt")):
+                MODULE.native(args, {})
+            self.assertFalse(native.exists())
+            dispatch.assert_not_called()
+
+    def test_native_stages_only_the_admitted_image_under_its_new_name(self):
+        self.assert_native_staging(False)
+
+    def test_native_staging_uses_sealed_pair_after_original_paths_change(self):
+        self.assert_native_staging(True)
+
+    def assert_native_staging(self, replace_original: bool) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root: Path = Path(temporary)
+            receipt: Path
+            image: Path
+            receipt, image = observer_build_receipt(root)
+            expected: bytes = image.read_bytes()
+            native: Path = root / "windows"
+            args: SimpleNamespace = SimpleNamespace(build_receipt=receipt, native_dir=native)
+            original_hash: Callable[[Path], str] = MODULE.PRODUCT.sha256
+            original_admission: Callable[[object], tuple[Path, MODULE.ObserverPair]] = MODULE.admit_retained_observer_pair
+            def admit(record: object) -> tuple[Path, MODULE.ObserverPair]:
+                original: Path
+                pair: MODULE.ObserverPair
+                original, pair = original_admission(record)
+                if replace_original:
+                    original.write_bytes(b"replaced original after admission")
+                    original.with_suffix(".pdb").write_bytes(b"replaced symbols after admission")
+                return original, pair
+            def digest(path: Path) -> str:
+                return "f" * 64 if str(path).endswith("/powershell.exe") else original_hash(path)
+            def dispatch(command: list[str], **kwargs: object) -> dict[str, object]:
+                staged: list[Path] = list(native.glob("*.exe"))
+                self.assertEqual(len(staged), 1)
+                self.assertNotEqual(staged[0].name, image.name)
+                self.assertEqual(staged[0].read_bytes(), expected)
+                self.assertEqual(list(native.glob("*.pdb")), [])
+                self.assertEqual(image.read_bytes(), b"replaced original after admission" if replace_original else expected)
+                self.assertEqual(command[0], "/mnt/c/Windows/System32/WindowsPowerShell/v1.0/powershell.exe")
+                raise MODULE.Incomplete("observed guarded native dispatch; no Windows execution")
+            dispatched: MagicMock
+            with (patch.object(MODULE.PRODUCT, "admit_product", return_value=({}, {"Cargo.lock": "a" * 64})),
+                  patch.object(MODULE, "windows_path", return_value="X:\\owned"),
+                  patch.object(MODULE, "admit_retained_observer_pair", side_effect=admit),
+                  patch.object(MODULE.PRODUCT, "sha256", side_effect=digest),
+                  patch.object(MODULE.ENV, "run", side_effect=dispatch) as dispatched,
+                  self.assertRaisesRegex(MODULE.Incomplete, "observed guarded native dispatch")):
+                MODULE.native(args, {})
+            self.assertEqual(dispatched.call_count, 1)
 
     def test_actual_dependency_boundary_is_required_before_compiler_reliance(self):
         calls = []

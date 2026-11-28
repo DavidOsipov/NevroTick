@@ -49,8 +49,8 @@ fn source_and_escape_order_are_canonical() -> Result<(), Error> {
         .map_err(|_| Error::Utf8)?
         .replace('—', "\\u2014");
     let reordered = escaped.replace(
-        "\"schema_version\": 2,\n  \"text_contract_version\": 4,",
-        "\"text_contract_version\": 4,\n  \"schema_version\": 2,",
+        "\"schema_version\": 2,\n  \"text_contract_version\": 5,",
+        "\"text_contract_version\": 5,\n  \"schema_version\": 2,",
     );
     assert_ne!(
         reordered, escaped,
@@ -61,6 +61,52 @@ fn source_and_escape_order_are_canonical() -> Result<(), Error> {
         cbor::encode(&source.wire()?)?,
         cbor::encode(&alternate.wire()?)?
     );
+    Ok(())
+}
+
+/// The key index preserves input order and checks decoded aliases before values.
+///
+/// # Errors
+/// Propagates a healthy inert-map decoding or shape failure.
+///
+/// # Panics
+/// A sorted/stale index must not reorder fields or miss a decoded duplicate.
+#[test]
+fn json_key_index_preserves_order_and_refuses_alias_before_value() -> Result<(), Error> {
+    let input: &str = r#"{"z":0,"a":1,"middle":2,"b":3,"y":4,"aa":5}"#;
+    let fields: Vec<(String, Wire)> = json::read(input.as_bytes())?.map()?;
+    let keys: Vec<&str> = fields.iter().map(|(key, _)| key.as_str()).collect();
+    assert_eq!(keys, ["z", "a", "middle", "b", "y", "aa"]);
+    let duplicate: String = format!(
+        "{},\"\\u006diddle\":\"{}\"}}",
+        input.strip_suffix('}').ok_or(Error::Schema)?,
+        "x".repeat(STRING_BYTES + 1),
+    );
+    assert!(matches!(
+        json::read(duplicate.as_bytes()),
+        Err(Error::Duplicate)
+    ));
+    Ok(())
+}
+
+/// Reverse order drives every insertion shift at the exact map capacity.
+///
+/// # Errors
+/// Propagates an unexpected bounded-map decoding or shape failure.
+///
+/// # Panics
+/// The complete reverse map must fit the unchanged work budget and retain order.
+#[test]
+fn json_key_index_accepts_reverse_map_at_capacity() -> Result<(), Error> {
+    let entries: Vec<String> = (0..MAX_MAP)
+        .rev()
+        .map(|index| format!("\"key-{index:03}\":{index}"))
+        .collect();
+    let input: String = format!("{{{}}}", entries.join(","));
+    let fields: Vec<(String, Wire)> = json::read(input.as_bytes())?.map()?;
+    assert_eq!(fields.len(), 539);
+    assert_eq!(fields.first().ok_or(Error::Schema)?.0, "key-538");
+    assert_eq!(fields.last().ok_or(Error::Schema)?.0, "key-000");
     Ok(())
 }
 
@@ -458,24 +504,24 @@ fn schema_text_versions_and_exact_fingerprint_fail_closed() -> Result<(), Error>
         ("\"schema_version\": 2", "\"schema_version\": 1"),
         ("\"schema_version\": 2", "\"schema_version\": 3"),
         (
-            "\"text_contract_version\": 4",
-            "\"text_contract_version\": 3",
-        ),
-        (
-            "\"text_contract_version\": 4",
             "\"text_contract_version\": 5",
+            "\"text_contract_version\": 4",
         ),
         (
-            "\"text_contract_version\": 4",
-            "\"text_contract_version\": 4.0",
+            "\"text_contract_version\": 5",
+            "\"text_contract_version\": 6",
         ),
         (
-            "\"text_contract_version\": 4",
-            "\"text_contract_version\": 4e0",
+            "\"text_contract_version\": 5",
+            "\"text_contract_version\": 5.0",
         ),
         (
-            "\"text_contract_version\": 4",
-            "\"text_contract_version\": \"4\"",
+            "\"text_contract_version\": 5",
+            "\"text_contract_version\": 5e0",
+        ),
+        (
+            "\"text_contract_version\": 5",
+            "\"text_contract_version\": \"5\"",
         ),
         (
             "\"domain\": \"nevrotick.ui\"",
@@ -532,7 +578,7 @@ fn required_ids_and_nonblank_values_are_closed() -> Result<(), Error> {
     Ok(())
 }
 
-/// Admit the complete 525-entry catalog and refuse the next map entry at both front ends.
+/// Admit the complete 539-entry catalog and refuse the next map entry at both front ends.
 ///
 /// # Errors
 /// Propagates unexpected fixture, encoding or healthy admission failures.
@@ -542,7 +588,7 @@ fn required_ids_and_nonblank_values_are_closed() -> Result<(), Error> {
 #[test]
 fn exact_roster_fits_both_front_ends_and_one_extra_entry_rejects() -> Result<(), Error> {
     let source: Catalog = english()?;
-    assert_eq!(source.messages.len(), 525);
+    assert_eq!(source.messages.len(), 539);
     let oversized_json: Vec<u8> = changed(
         "\"messages\": {",
         "\"messages\": {\"ui.no-owned-sink.text\": {\"args\": {}, \"text\": \"Extra\"},",
@@ -550,18 +596,18 @@ fn exact_roster_fits_both_front_ends_and_one_extra_entry_rejects() -> Result<(),
     assert!(matches!(json::read(&oversized_json), Err(Error::Bounds)));
 
     let mut canonical: Vec<u8> = cbor::encode(&source.wire()?)?;
-    assert_eq!(canonical.len(), 47_432);
+    assert_eq!(canonical.len(), 48_674);
     assert_eq!(
         Catalog::checked(cbor::read(&canonical)?)?.messages.len(),
-        525
+        539
     );
-    // Definite eight-byte key, then the shortest 525-entry map header.
-    let header: &[u8] = b"\x68messages\xb9\x02\x0d";
+    // Definite eight-byte key, then the shortest 539-entry map header.
+    let header: &[u8] = b"\x68messages\xb9\x02\x1b";
     let offset: usize = canonical
         .windows(header.len())
         .position(|bytes| bytes == header)
         .ok_or(Error::Schema)?;
-    canonical[offset + header.len() - 1] = 0x0e;
+    canonical[offset + header.len() - 1] = 0x1c;
     assert!(matches!(cbor::read(&canonical), Err(Error::Bounds)));
     Ok(())
 }
@@ -577,7 +623,7 @@ fn exact_roster_fits_both_front_ends_and_one_extra_entry_rejects() -> Result<(),
 fn runtime_version_and_missing_text_failures_preserve_prior() -> Result<(), Error> {
     let mut store = synthetic_prior()?;
     let prior = cbor::encode(&store.snapshot().catalog.wire()?)?;
-    let previous: [&[u8]; 2] = [
+    let previous: [&[u8]; 3] = [
         include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/fixtures/test-only-english-v2.cbor"
@@ -585,6 +631,10 @@ fn runtime_version_and_missing_text_failures_preserve_prior() -> Result<(), Erro
         include_bytes!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/fixtures/test-only-english-v3.cbor"
+        )),
+        include_bytes!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/fixtures/test-only-english-v4.cbor"
         )),
     ];
     for candidate in previous {

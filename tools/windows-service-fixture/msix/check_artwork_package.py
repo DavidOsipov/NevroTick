@@ -243,7 +243,7 @@ def guarded_startup_inventory(
     from metadata.pipeline.delivery import _equal
     from prepare_artwork_payload import UiBuildInputs, ui_build_inputs
     from windows_pe import service_preentry_declarations, ui_preentry_declarations, ui_resource_payloads
-    from windows_versioninfo import decode_ui_resource_payloads
+    from windows_versioninfo import UiExecutionManifest, VersionInfo, decode_ui_resource_payloads
 
     raw: bytes = reader.read_regular(ui_receipt, 8 * 1024**2, "guarded UI link receipt")
     reader.require(sha256(raw).hexdigest() == ui_receipt_pin, "guarded UI link receipt SHA-256 differs")
@@ -276,6 +276,8 @@ def guarded_startup_inventory(
                        for key, value in observed_ui.items()),
                    "guarded UI startup facts differ from the archived PE/map")
     try:
+        version: VersionInfo
+        manifest: UiExecutionManifest
         version, manifest = decode_ui_resource_payloads(*ui_resource_payloads(image))
     except ValueError as error:
         raise reader.Refused("archived UI failed VERSIONINFO and execution manifest readback") from error

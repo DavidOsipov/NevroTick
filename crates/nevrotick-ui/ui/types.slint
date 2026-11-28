@@ -26,11 +26,15 @@ export struct SourceChangeRow {
 
 export enum Page { status, sources, statistics, diagnostics, settings, about, recovery }
 
-export enum UpdateStage { idle, checking, offered, downloading, verifying, installing, complete, cancelled }
+export enum UpdateStage { idle, checking, offered, downloading, verifying, installing, complete, cancelled, no-update, offline, metadata-expired, time-unavailable, identity-unknown, externally-managed }
+
+// Inert selector projection; the Rust receiver admits every raw selection.
+export enum UpdateCheckScenario { available, no-update, offline, metadata-expired, time-unavailable, identity-unknown, externally-managed }
 
 export struct UpdatePreview {
     stage: UpdateStage,
     generation: int,
+    scenario: UpdateCheckScenario,
     installed: string,
     target: string,
     channel: string,

@@ -266,3 +266,40 @@ feature_matrix = [
     { package = "time-core", target = "x86_64-unknown-linux-gnu", scope = "checked fixture history/normalization, coefficient, residual-statistics, runs, mathematical charts and closed-real interval-majority owners; ordinary and optimized tests plus independently audited doctests; exact-candidate per-file qualification separate", dependency_owner = "policy/ui-m0-dependencies.json" },
     { package = "time-core", target = "x86_64-pc-windows-msvc", scope = "nineteen pure fixture core owners and external test-consumer compilation; current adaptive/combination/chart cross-target qualification pending and Windows product execution held outside separately admitted Sandbox scope; no native clock, physical confidence, production source eligibility or statistical qualification", dependency_owner = "policy/ui-m0-dependencies.json" },
 ]
+
+# B1 first source child: bind only the existing verify.py release export pair.
+# Remaining image classes, module closure and complete runtime schema stay open.
+# These rows supply no effective-policy, native, package or release qualification.
+[windows_release_roles]
+schema_version = 1
+scope = "workspace-release-export-pair-source-binding"
+
+[[windows_release_roles.roles]]
+role = "ui"
+artifact = "nevrotick-ui.exe"
+package = "nevrotick-ui"
+cargo_manifest = "crates/nevrotick-ui/Cargo.toml"
+entry_source = "crates/nevrotick-ui/src/main.rs"
+cargo_target = "package-default-main"
+required_features = []
+subsystem = "gui"
+source_state = "fixture"
+activation_owner = "entrypoint"
+entry_scope = "rust-entry-source-only"
+preentry_owner = "scripts/verify.py:compile_ui_entry"
+runtime_policy = "pending-complete-role-qualification"
+
+[[windows_release_roles.roles]]
+role = "observer"
+artifact = "nevrotick-observe.exe"
+package = "nevrotick-engine"
+cargo_manifest = "crates/nevrotick-engine/Cargo.toml"
+entry_source = "crates/nevrotick-engine/src/bin/nevrotick-observe.rs"
+cargo_target = "declared-bin"
+required_features = []
+subsystem = "console"
+source_state = "experiment"
+activation_owner = "entrypoint"
+entry_scope = "rust-entry-source-only"
+preentry_owner = "toolchain"
+runtime_policy = "pending-complete-role-qualification"

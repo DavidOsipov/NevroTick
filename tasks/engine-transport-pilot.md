@@ -32631,6 +32631,227 @@ and records with their original pins. The current candidate, full 19-row
 recipe, exact EP1 roster, fresh execution window and subsequent metric
 admission remain separate prerequisites.
 
+**Current candidate and defensive placement review — 28 November 2026.**
+Two read-only specialists inspected clean main at
+`a95da288d07cb4fc1bf0ff925ec7f453eaa2d70b`. The KE policy still binds
+`d5729afd…`; 21 of its 60 pinned inputs differ from current files. The
+SourcePolicy role has 11 changed pins among 47. Reached changes include
+the lockfile, Engine manifest, tool and verification policies, analysis
+runner and reader tests; the KE set also includes production owners.
+Consequently, the earlier four-test-file selective proposal cannot admit
+this candidate. Retain the historical 19-row result, receiving line
+measurement and descriptor catalogue at their original identities. Neither
+role has a current complete capture or current mutation result.
+
+The storage review confirmed that the C: canary's admitted backing is
+`/mnt/c/Users/perso/AppData/Local/NevroTick`, rather than the C: mount root.
+The original launcher SHA-256 is
+`a4361a92df00cc54f8bf1c012bd5923a5568b9f09805ebcfc2451e10aaef7e92`;
+the independent reader SHA-256 is
+`3df04105c1925015dfce01557f24888df9eafcd26f02cfffd5ace0f0805c0185`.
+A placement-only successor must bind the C: capacity record above, check
+startup space and create its image under that exact parent, and have the
+reader independently require the same literal parent and pin the resulting
+launcher bytes. Preserve the 16 GiB backing entry floor, 5 GiB combined
+work/report entry floors, live resource checks, exact command and case
+identities, read-only remount refusal and actual retirement checks. DrvFs
+mode `0777` is not private Windows access-control evidence. Keep the old
+candidate, 768-input map, graph/controller and 686-case EP1 expectation
+unchanged in this placement-only derivative; current candidate and roster
+admission are separate work.
+
+The focused source-guard exit is an accepted exact C: placement paired with
+refused D:, C: root and sibling placement, altered capacity or launcher
+bytes, and fresh capacity just below each unchanged entry floor. Refusal
+must precede directory/image allocation or subprocess dispatch. These
+controls need no Engine, network, mount or Windows execution. The initial
+preparation command returned `aborted before dispatch` without a reason and
+created no files. Subsequent bounded file operations prepared a separate
+placement-only pair in `durable-c-placement-20261128/` under the existing
+private qualification bundle. Planning, build-custody and contract QA
+guided the change. The two original D: guard controls failed at their
+intended C: expectations; all seven controls passed on the new pair in an
+offline, credential-free, read-only-input namespace. Each invocation had a
+20-second wall limit and 256 MiB address-space ceiling, within one
+90-second control budget; no causal rerun was needed.
+
+These controls evaluate the actual extracted guard expressions and check
+source ordering, byte identity and the five exact placement substitutions.
+They do not invoke the complete launcher or reader. In particular, altered
+canary bytes produce a different hash; source inspection establishes the
+existing hash refusal before allocation. A fresh-context independent reviewer
+completed the source comparison and found no confirmed defect within this
+delta. All original candidate, graph, roster, resource and retirement checks
+remain byte-identical except the two placement constants and reader source
+pin. No image allocation, mount, product command or Windows action ran.
+The original 11-second compiler allowance remains, and no fresh execution
+window opened.
+
+| Record under `durable-c-placement-20261128/` | SHA-256 |
+| --- | --- |
+| `run-private-reports-successor.py` | `c1e3ff0de2c4e45030ffa505be7f195c292c286ef5bb5189afeacb656050c010` |
+| `read-combined-successor.py` | `a734dfd2920df1655c15f1eac1ef8cb238d2876ae8139013657f1390a2a9ce61` |
+| `placement_controls.py` | `f447ca2ba4e983a43d531bbda08547cd086e4b33ad82051dc9c7685f2f7ea0fb` |
+| `predecessor-controls.log` | `06f3dcca008accfed0c7e9c4e27f807ce02558f76505e233253545e609576020` |
+| `current-controls.log` | `3b293a15b983f7db10942e574f8da225a98ca2db2ddaa46ae0da97f9dab84da2` |
+
+`controls-result.json` records the scoped commands, limits, observed exits,
+input identities, preserved budget and incomplete product obligations.
+
+At observation, Linux root had less than 93 MB available and shared
+`/dev/shm` had 4,653,142,016 bytes, below the 5 GiB combined floor and
+7 GiB metric floor. C: had capacity; its paired launcher/reader revision is
+now prepared and source-reviewed, with full execution still pending.
+Reentry requires fresh capacity and a current candidate-specific
+graph/tool/case capture with its finite
+execution budget. This review authorizes no campaign or native exposure.
+Independent P3 inspection also found the next management behavior gated by
+the installed-role, provisioning and first-exposure prerequisites already
+recorded in the Windows task; it supplied no additional ready exposure path.
+
+**Original D: placement recovered — 28 November 2026.** David cleaned D:.
+The first readback observed 86,301,396,992 available bytes; a subsequent
+readback observed 145,868,279,808. Both exceed the original 16 GiB backing
+entry floor. The original D: launcher's, reader's and capacity record's
+hashes still match the values above. Use that original placement for the
+next admitted capture; the reviewed C: derivative is an unused alternative.
+No C: allocation or placement migration is needed for this continuation.
+
+The RAM filesystem initially remained below the combined entry floor.
+A read-only ownership review identified three completed Cargo target
+directories under `/dev/shm/nevrotick-keyed-build-cache.MgrfU8ve` and the
+ordinary Clippy `work/target/debug` directory under
+`/dev/shm/nevrotick-local-audit-fixes.Bys9NCBU` as disposable derived output.
+The coordinator verified the exact owners, canonical paths, inodes and
+unchanged entries before removal. All hardlinks were confined to the
+selected targets. The cached executable and its separately retained copy
+matched SHA-256 `0f1b1d81296555c783ff3aa52d4b414d5f9c687ba7fcfb44edc8f5ca3e18175c`;
+the retained manifest still matched TA §3.31. Readable process inspection
+found no references; permission-limited process fields remain an explicit
+observation limit.
+
+Only those four generated targets were retired. Cargo homes, source
+snapshots, logs, corpus, failure artifacts, instrumented coverage output
+and profiles were preserved. The audit scratch's own evidence identity
+was retained rather than equated with TA §3.43's final receipts. Actual
+recovery was 882,593,792 bytes; RAM-filesystem free space became
+5,536,116,736 bytes. Physical available memory was 9,838,436,352 bytes
+at the subsequent readback. The observed D:, RAM-filesystem and physical
+memory values satisfy the combined capture's 16/5/6 GiB entry floors.
+They do not satisfy the separate 7 GiB RAM-filesystem metric entry floor.
+The cleanup receipt `keyed-cache-retirement-20261128.json` in the private
+qualification bundle has SHA-256
+`fb32104a359fe092655e58d324ff59d271409df9f6347ae237e19c6b920b6c80`.
+
+Current admission remains the next source step. All 833 files in the
+`nov28-audit-rust.GMIVpIWj/source.json` map still match current bytes,
+but that receipt supplies only the EP1 metadata/tree observations for
+the two targets. It supplies neither the missing default graph nor the
+current complete case inventory. The old stock19 planner binds its
+768-input predecessor and two-file delta; the underlying controller also
+contains historical case additions and counts. Reuse its execution,
+resource and parsing mechanisms rather than treating either plan as a
+current basis. Prepare a separate current-basis producer and independent
+reader using fresh default/EP1 graph records and complete binary/case
+and Rustdoc discovery. Preserve the stock19 commands, Core selectors,
+cache-retirement boundaries and original D: launcher. Re-admit the actual
+current tool/vendor payloads after the host cleanup before dependent work.
+The old 11-second allowance and both metric bindings remain unchanged;
+no new compiler window or product/native execution was opened in this
+capacity recovery.
+
+**Fresh current basis source preparation — 28 November 2026.**
+
+The later [P5 About outcome source child](slint-gui-handoff.md#continue-the-about-check-outcomes--28-november-2026)
+changes shared runtime inputs. The 833-input source identity and private basis
+preparation below retain their preceding candidate; do not execute them as a
+current-tree recipe without re-admitting the changed inputs. Their source-control
+results and unspent/consumed compiler accounting keep their original scopes.
+The source and producer/consumer reviews traced the actual current
+admission chain. The 833-input product map excludes the Engine analysis
+reader, its tests, `portable-analysis.py` and both role binding files.
+Consequently, a separate explicit current-candidate consumer can be
+finalized after physical capture without a product-hash cycle. Its helper
+closure must still be rebound after the final consumer/test edits. Unknown
+candidates must not inherit current pins, and the current digest must not
+join the historical joined-receiving family and its predecessor/delta rules.
+
+The next producer is a separately owned draft, not a revision of the
+historical receipts. It derives default/EP1 graph commands from the current
+configured verifier and captures both profiles' actual binary/case listings
+before their ordinary executions. Annotated Rustdoc observations will form
+the separate basis for later stock19 comparison. Current counts remain
+unknown until actual discovery. The draft freezes the complete HEAD export,
+overlays the current product/docs/helpers, preserves input/tool/vendor and
+HEAD/index bookends, and adds a joined resource observer. The independent
+basis reader, D: lifecycle wiring and full stock19/current-policy integration
+remain prerequisites to actual capture.
+
+Contract QA implemented the bounded listing reader in private
+`current-listing-reader-20261128.aDlGlm6W/` under this qualification bundle.
+It retains empty binaries, requires one matching zero-benchmark summary
+per binary and bounds bytes, names, binaries and qualified cases. Equal
+names in different binaries remain distinct. All 27 isolated controls
+passed. The first allowed attempt stopped before Python under an additional
+UID-wide process limit; the repaired invocation removed that extra limit
+and retained its one CPU, 256 MiB address-space and 20-second ceilings,
+read-only inputs, private temporary space and network isolation. The retained
+historical listing yielded nine binaries and 318 cases; that observation
+is not the current roster.
+
+Two source-only producer-plan invocations retained their distinct outcomes.
+The first could not open the draft because a later `/dev` mount hid its
+source bind. Correcting mount order reached product admission and the
+reviewed listing-reader loader. The second returned the explicit current
+833-input digest, 22 configured graph commands per profile, two listing
+commands and four ordinary/Rustdoc commands, without executing Cargo,
+compiler or product tests. Its exact earlier source is retained as
+`producer-plan-02-source.py`; subsequent repairs have a different source
+identity and receive no fresh whole-producer execution credit from that plan.
+
+A fresh-context source review completed and returned **revise**. Stable
+finding **CB-001** identified documentation pins overwritten by doctest
+facts. The repair keeps `doc_pins` separate through the closing bookend.
+**CB-002** identified comparison of case pairs without empty binary identity
+and rejection of equal names in different binaries. The repair validates
+complete execution blocks with injective in-memory aliases for qualified
+pairs, preserves raw output unchanged and compares both full cases and
+binary counts with discovery. Twelve isolated controls passed through the
+actual extracted producer function and caller guard. A predecessor guard
+accepted an omitted empty binary on that inert specimen; the revised guard
+refused it. These are source/control observations, not a current Rust run,
+executed mutant score or product vulnerability reproduction.
+
+The same independent reviewer inspected the revised source and raw control
+log, reran nothing and verified both source fixes. Its original comprehension,
+findings and completed recheck are retained in `source-review.md`. The final
+draft is preserved under that private directory's `producer-source/`; its
+RAM workspace is `/dev/shm/nevrotick-current-basis-source-z9zrq6ne`.
+
+| Private record | SHA-256 |
+| --- | --- |
+| `listing.py` | `3a542b1a519e08e458787fcb2e8a8bd4afe6622710d68385aec91f843a3f33af` |
+| `test-02.log` — 27 parser controls | `633e04e974cd34cdf2185bf38e9e62d6f979a0557c87d7f11d5b4fbc63a62678` |
+| `producer-plan-02-source.py` | `a5405cf1bc94a9cad982a5ea506fd1d75e3697408f22fdc29b802ffce65b32a0` |
+| `producer-plan-02.log` — earlier source-only view | `360ffcecdc122ecf363efe19679ed28faba27b35c1bef73590e613b8c19c06cc` |
+| `producer-source/run.py` — revised draft | `2ae543a1df6e274aada32222b6891259086404840da2afcf88a13e101e30d6fc` |
+| `producer-source/test_basis.py` | `c0e3f0093a0cde2ca75b38ac00f45a947190d77805397a5b3feedcd29811f275` |
+| `producer-controls-01.log` — 12 source integration controls | `cc8bb739907924902b6b0e328b376dae274e18d27af0a5cc9fc96e7fbfc12cfb` |
+
+Five bounded control attempts comprise the two parser attempts, two
+source-only plan attempts and one integration-control attempt; first setup
+failures are retained. Each had a 20-second invocation ceiling. No Rust,
+graph/discovery capture, image mount, Windows or metric campaign ran here.
+The old 11-second compiler allowance and both metric bindings remain intact.
+Fresh full capture needs its reviewed complete execution budget; the prior
+stock19 attempt's 597.512 seconds leaves insufficient grounded margin in a
+600-second window to also perform new graph/discovery work. Keep raw graph
+custody separate from stock19's unchanged 64-member/48-MiB report envelope,
+or separately review any representation change before execution. The next
+action is independent basis readback and source/storage integration, followed
+by current candidate-specific graph, roster and complete physical stock19
+capture. Neither source preparation nor these controls discharge those gates.
+
 **Independent audit follow-up — 27 November 2026.** The repository now
 exercises both joined-receiving lineage readers through their shared
 dispatcher using owned synthetic files and independently calculated pins.

@@ -1625,11 +1625,30 @@ def export_windows_artifacts(work: Path, output: Path, *, source: Path,
 
     Admit both complete pairs before copying their exact checked snapshots.
     Report final_output paths when the caller supplies an owned staging slot.
+    The selected source's role bindings must agree with both fixed export
+    routes before any PE/PDB read or payload creation. This source binding
+    establishes no runtime mitigation or installed-role qualification.
     """
+    try:
+        roles: dict[str, STRICT.WindowsReleaseRole] = STRICT.windows_release_role_bindings(source)
+    except STRICT.ENV.Incomplete as error:
+        raise ENV.Incomplete("Windows export role binding is not admitted.") from error
+    routes: tuple[tuple[str, str, str, str], ...] = (
+        ("ui", PACKAGE, "gui", "fixture"),
+        ("observer", "nevrotick-observe", "console", "experiment"),
+    )
+    role: str
+    name: str
+    subsystem: str
+    source_state: str
+    for role, name, subsystem, source_state in routes:
+        if (roles[role].artifact, roles[role].subsystem, roles[role].source_state) != (
+                f"{name}.exe", subsystem, source_state):
+            raise ENV.Incomplete("Windows export role differs from its fixed artifact route.")
     build = work / "target" / ENV.WINDOWS_TARGET / "release"
     pe = windows_pe_reader(source)
     artifacts, payloads = {}, {}
-    for role, name, subsystem in (("ui", PACKAGE, "gui"), ("observer", "nevrotick-observe", "console")):
+    for role, name, subsystem, source_state in routes:
         binary = build / f"{name}.exe"
         names = {f"{name}.pdb", f"{name.replace('-', '_')}.pdb"}
         symbol_paths = [build / candidate for candidate in sorted(names) if (build / candidate).is_file()]

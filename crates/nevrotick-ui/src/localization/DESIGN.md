@@ -1,7 +1,7 @@
 # Checked catalog and presentation contract
 
-This describes the text-contract-4 candidate, including cancellation in the About update fixture.
-The complete inventory in `contract-source.json` has 525 active IDs, 612 stable
+This describes the text-contract-5 candidate, including distinct About check outcomes.
+The complete inventory in `contract-source.json` has 539 active IDs, 626 stable
 ordinals and 87 retired or reserved meanings.
 Existing ordinals are never reused. `text-contract-v1-baseline.json` remains the
 unchanged version-1 semantic reference. English is the sole selected language;
@@ -10,8 +10,8 @@ the production semantic review ledger remains empty.
 ## Independent versions and approval
 
 Catalogs have exactly eight root fields: `schema_version` (2),
-`text_contract_version` (4), `domain` (`nevrotick.ui`), `catalog_revision`
-(positive u32; current English candidate 4), `source_fingerprint`, `locale`
+`text_contract_version` (5), `domain` (`nevrotick.ui`), `catalog_revision`
+(positive u32; current English candidate 5), `source_fingerprint`, `locale`
 (`en`), `plural_profile` (`english-u64-cardinal-v1`), and `messages`.
 Every object is closed. Required IDs must be complete; unknown, retired, reserved,
 missing, empty and blank required values reject. Optional absent feedback is a
@@ -61,14 +61,18 @@ dependency or runtime schema interpreter is required.
 | Encoded JSON string span | 6144 bytes |
 | Decoded text / key | 1024 / 96 UTF-8 bytes |
 | Decoded text scalars / aggregate decoded bytes | 512 / 65536 |
-| Object depth / fields per map / aggregate fields | 4 / 525 / 2048 |
+| Object depth / fields per map / aggregate fields | 4 / 539 / 2048 |
 | Temporary nodes / lexical tokens / charged work | 4096 / 8192 / 4000000 |
 | One formatted output | 4096 UTF-8 bytes / 2048 UTF-16 units |
 | Complete UI snapshot | 131072 UTF-8 bytes / 65536 UTF-16 units |
 
-The About cancellation roster raises the per-map ceiling to 525, matching the
-complete English catalog. The fixed four-million-work bound remains. The prior
-512- and 522-entry contracts and their exact synthetic CBOR fixtures remain
+The About outcomes roster raises the per-map ceiling to 539, matching the
+complete English catalog. The fixed four-million-work bound remains. JSON uses
+a fixed sorted index of field positions for decoded-key duplicate detection;
+it charges key comparisons and index movement before work, rejects duplicates
+before their values, and retains original wire field order. Each map's index
+uses 539 `usize` entries within the existing four-layer depth bound. The prior
+512-, 522- and 525-entry contracts and their exact synthetic CBOR fixtures remain
 useful for historical compatibility checks. The decoder counters measure charged input
 work, and native fields carry additional sink-specific bounds and transformations.
 
@@ -93,7 +97,7 @@ one `LocalizationCopy.value`. No English string comparison identifies state.
 Raw drafts, IDs, accepted preferences and command authority remain separate.
 
 `UiCopy` holds readiness, revision and one shallow reference-counted immutable
-string model with 413 static rows and 29 feedback rows, for 442 total. Private
+string model with 427 static rows and 29 feedback rows, for 456 total. Private
 `CopySlot` constants and append checks fix shape/order. Model setters cannot mutate
 an old generation. Replacing feedback constructs and validates a new model before
 publication; retained readers still see the prior immutable generation. This

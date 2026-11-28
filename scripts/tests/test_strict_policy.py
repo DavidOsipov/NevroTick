@@ -35,7 +35,12 @@ class PolicyAdmissionTests(unittest.TestCase):
         temporary = tempfile.TemporaryDirectory(prefix="nevrotick-policy-admission-")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
-        for name in STRICT.CONFIG_FILES:
+        name: str
+        for name in (*STRICT.CONFIG_FILES,
+                     "crates/nevrotick-ui/Cargo.toml",
+                     "crates/nevrotick-ui/src/main.rs",
+                     "crates/nevrotick-engine/Cargo.toml",
+                     "crates/nevrotick-engine/src/bin/nevrotick-observe.rs"):
             destination = self.root / name
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, destination)

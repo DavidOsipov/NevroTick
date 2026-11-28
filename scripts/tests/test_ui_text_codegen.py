@@ -90,35 +90,40 @@ class CodeGeneration(unittest.TestCase):
         self.assertNotIn(b'UiFixtureCopy', files['localization-copy.slint'])
         self.assertNotIn('no-notification-submission', slots['fields']['shell'])
 
-    def test_about_v4_extends_exact_v2_registry_and_keeps_existing_budgets(self):
-        root = SCRIPTS.parent
-        raw = GEN._read_regular(root / GEN.CONTRACT_PATH, GEN.MAX_CONTRACT_BYTES)
-        current = GEN.protected_json.read(raw)
-        historical = GEN.protected_json.read(GEN._read_regular(
+    def test_about_v5_extends_exact_v2_registry_and_keeps_existing_budgets(self) -> None:
+        root: Path = SCRIPTS.parent
+        raw: bytes = GEN._read_regular(root / GEN.CONTRACT_PATH, GEN.MAX_CONTRACT_BYTES)
+        current: dict[str, object] = GEN.protected_json.read(raw)
+        historical: dict[str, object] = GEN.protected_json.read(GEN._read_regular(
             FIXTURES / 'ui-text-codegen-contract-v2.json', GEN.MAX_CONTRACT_BYTES))
-        english = GEN.protected_json.read(GEN._read_regular(
+        english: dict[str, object] = GEN.protected_json.read(GEN._read_regular(
             root / 'crates/nevrotick-ui/locales/en.json', 131072))
-        self.assertEqual((current['catalog_schema_version'], current['text_contract_version']), (2, 4))
-        self.assertEqual(current['bounds'], {**historical['bounds'], 'MAX_MAP': 525})
+        self.assertEqual((current['catalog_schema_version'], current['text_contract_version']), (2, 5))
+        self.assertEqual(current['bounds'], {**historical['bounds'], 'MAX_MAP': 539})
         self.assertEqual(current['messages'][:596], historical['messages'])
-        expected = ('check', 'checking', 'offer', 'from', 'target', 'channel', 'size',
-                    'confirm', 'decline', 'download', 'verify', 'install', 'complete', 'cancel', 'cancel-check', 'cancelled')
-        ids = ['ui.update.' + field for field in expected]
-        added = current['messages'][596:]
+        expected: tuple[str, ...] = ('check', 'checking', 'offer', 'from', 'target', 'channel', 'size',
+                    'confirm', 'decline', 'download', 'verify', 'install', 'complete', 'cancel', 'cancel-check', 'cancelled',
+                    'scenario', 'scenario-available', 'scenario-no-update', 'scenario-offline',
+                    'scenario-metadata-expired', 'scenario-time-unavailable', 'scenario-identity-unknown',
+                    'scenario-externally-managed', 'no-update', 'offline', 'metadata-expired',
+                    'time-unavailable', 'identity-unknown', 'externally-managed')
+        ids: list[str] = ['ui.update.' + field for field in expected]
+        added: list[dict[str, object]] = current['messages'][596:]
         self.assertEqual([row['key'] for row in added], ids)
-        self.assertEqual([row['ordinal'] for row in added], list(range(597, 613)))
-        self.assertEqual([row['key'] for row in added if row['group'] == 'UpdateOffer'], ids[2:9] + ids[-3:])
+        self.assertEqual([row['ordinal'] for row in added], list(range(597, 627)))
+        self.assertEqual([row['key'] for row in added if row['group'] == 'UpdateOffer'], ids[2:9] + ids[13:16] + ids[24:])
         self.assertEqual({row['key'] for row in current['messages'] if row['active']},
                          set(english['messages']))
+        row: dict[str, object]
         for row in added:
             self.assertEqual(english['messages'][row['key']], {'args': {}, **row['reference']})
 
-        files = GEN._emit_files(raw, hashlib.sha256(raw).hexdigest(), self.template)
-        slots = GEN.protected_json.read(files['output-slot-map.json'])
-        self.assertEqual((slots['static_count'], slots['output_count']), (413, 442))
+        files: dict[str, bytes] = GEN._emit_files(raw, hashlib.sha256(raw).hexdigest(), self.template)
+        slots: dict[str, object] = GEN.protected_json.read(files['output-slot-map.json'])
+        self.assertEqual((slots['static_count'], slots['output_count']), (427, 456))
         self.assertEqual([slots['fields']['fixture']['update-' + field]['indices'] for field in expected],
-                         [[index] for index in range(110, 126)])
-        fingerprint = hashlib.sha256(files['contract-fingerprint-input.bin']).hexdigest()
+                         [[index] for index in range(110, 140)])
+        fingerprint: str = hashlib.sha256(files['contract-fingerprint-input.bin']).hexdigest()
         self.assertEqual(english['source_fingerprint'], fingerprint)
 
     def test_effective_feedback_bindings_follow_generated_slots(self) -> None:
@@ -140,6 +145,27 @@ class CodeGeneration(unittest.TestCase):
             (name, str(index), f'fixture-{name}') for name, index in feedback.items()
         )
         self.assertEqual(sorted(bindings), expected)
+
+    def test_integrated_fixture_copy_keeps_default_english_fallbacks(self) -> None:
+        root: Path = SCRIPTS.parent
+        raw: bytes = GEN._read_regular(root / GEN.CONTRACT_PATH, GEN.MAX_CONTRACT_BYTES)
+        files: dict[str, bytes] = GEN._emit_files(raw, hashlib.sha256(raw).hexdigest(), self.template)
+        fields: dict[str, dict[str, object]] = GEN.protected_json.read(files['output-slot-map.json'])['fields']
+        namespace: str
+        properties: dict[str, object]
+        for namespace, properties in fields.items():
+            source: str = GEN._read_regular(
+                root / 'crates/nevrotick-ui/ui' / (namespace + '-copy.slint'),
+                GEN.MAX_OUTPUT_FILE_BYTES,
+            ).decode('utf-8')
+            property_name: str
+            for property_name in properties:
+                with self.subTest(namespace=namespace, property=property_name):
+                    self.assertRegex(
+                        source,
+                        r'out property\s+<[^>]+>\s+' + re.escape(property_name)
+                        + r':\s*LocalizationCopy\.value\.catalog-ready\s*\?[^\n]+ : [^\n]+;',
+                    )
 
     def test_generate_uses_new_private_output_and_preserves_repo_baseline_and_ledger(self):
         before = {str(path.relative_to(self.repo)): hashlib.sha256(path.read_bytes()).hexdigest()

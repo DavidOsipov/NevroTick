@@ -27,6 +27,10 @@ SCALAR_BINDING_ALIASES = {
     **{('FixtureCopy', 'update-' + field): 'ui.update.' + field for field in (
         'check', 'checking', 'offer', 'from', 'target', 'channel', 'size',
         'confirm', 'decline', 'download', 'verify', 'install', 'complete', 'cancel', 'cancel-check', 'cancelled',
+        'scenario', 'scenario-available', 'scenario-no-update', 'scenario-offline',
+        'scenario-metadata-expired', 'scenario-time-unavailable', 'scenario-identity-unknown',
+        'scenario-externally-managed', 'no-update', 'offline', 'metadata-expired',
+        'time-unavailable', 'identity-unknown', 'externally-managed',
     )},
 }
 

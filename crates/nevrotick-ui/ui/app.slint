@@ -5,7 +5,7 @@ import { SourceCopy } from "source-copy.slint";
 import { PolicyCopy } from "policy-copy.slint";
 import { InspectionCopy } from "inspection-copy.slint";
 import { ScrollView } from "std-widgets.slint";
-import { Page, SourceRow, SourceChangeRow, UpdatePreview, UpdateStage } from "types.slint";
+import { Page, SourceRow, SourceChangeRow, UpdatePreview, UpdateStage, UpdateCheckScenario } from "types.slint";
 import { FixtureCopy } from "fixture-copy.slint";
 import { Theme } from "theme.slint";
 import { ShellCopy } from "shell-copy.slint";
@@ -20,14 +20,14 @@ import { AboutPage } from "about.slint";
 import { RecoveryPage } from "recovery.slint";
 import { RecoveryCopy } from "recovery-copy.slint";
 import { ModalFrame } from "modal-frame.slint";
-export { Page, SourceRow, SourceChangeRow, PolicyCopy, InspectionCopy, SourceCopy, RawCopy, UpdatePreview, UpdateStage }
+export { Page, SourceRow, SourceChangeRow, PolicyCopy, InspectionCopy, SourceCopy, RawCopy, FixtureCopy, UpdatePreview, UpdateStage, UpdateCheckScenario }
 
 // AppWindow only projects accepted host values and forwards narrow requests.
 // In-properties are not domain guards. The host must validate every callback.
 export component AppWindow inherits Window {
     in property <bool> catalog-failure: false;
     in property <string> fixture-tray-feedback: "";
-    out property <string> tray-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[432] : root.fixture-tray-feedback;
+    out property <string> tray-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[446] : root.fixture-tray-feedback;
     title: FixtureCopy.window-title;
     preferred-width: 1080px;
     preferred-height: 780px;
@@ -72,7 +72,7 @@ export component AppWindow inherits Window {
     in property <string> draft-source-query;
     in property <string> accepted-source-query;
     in property <string> fixture-source-query-error: "";
-    out property <string> source-query-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[429] : root.fixture-source-query-error;
+    out property <string> source-query-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[443] : root.fixture-source-query-error;
     in property <bool> inspection-detail-open;
     in property <bool> inspection-detail-hidden;
     in property <SourceRow> inspection-detail-source;
@@ -81,7 +81,7 @@ export component AppWindow inherits Window {
     in property <int> policy-accepted-choice;
     in property <int> draft-policy-choice;
     in property <string> fixture-policy-error: "";
-    out property <string> policy-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[428] : root.fixture-policy-error;
+    out property <string> policy-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[442] : root.fixture-policy-error;
     callback source-query-requested(string);
     callback source-query-clear-requested();
     callback source-filter-requested(int);
@@ -103,25 +103,25 @@ export component AppWindow inherits Window {
     in property <bool> editor-open: false;
     in property <bool> host-ready: false;
     in property <string> fixture-status-headline: "";
-    out property <string> status-headline: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[433] : root.fixture-status-headline;
+    out property <string> status-headline: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[447] : root.fixture-status-headline;
     in property <string> fixture-status-consequence: "";
-    out property <string> status-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[434] : root.fixture-status-consequence;
+    out property <string> status-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[448] : root.fixture-status-consequence;
     in property <string> fixture-status-profile-label: "";
-    out property <string> status-profile-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[435] : root.fixture-status-profile-label;
+    out property <string> status-profile-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[449] : root.fixture-status-profile-label;
     in property <string> fixture-status-profile: "";
-    out property <string> status-profile: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[436] : root.fixture-status-profile;
+    out property <string> status-profile: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[450] : root.fixture-status-profile;
     in property <string> fixture-status-authentication: "";
-    out property <string> status-authentication: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[437] : root.fixture-status-authentication;
+    out property <string> status-authentication: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[451] : root.fixture-status-authentication;
     in property <string> fixture-status-agreement: "";
-    out property <string> status-agreement: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[438] : root.fixture-status-agreement;
+    out property <string> status-agreement: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[452] : root.fixture-status-agreement;
     in property <string> fixture-status-freshness: "";
-    out property <string> status-freshness: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[439] : root.fixture-status-freshness;
+    out property <string> status-freshness: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[453] : root.fixture-status-freshness;
     in property <string> fixture-status-check-label: "";
-    out property <string> status-check-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[440] : root.fixture-status-check-label;
+    out property <string> status-check-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[454] : root.fixture-status-check-label;
     in property <string> fixture-status-remedy-label: "";
-    out property <string> status-remedy-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[441] : root.fixture-status-remedy-label;
+    out property <string> status-remedy-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[455] : root.fixture-status-remedy-label;
     in property <string> fixture-status-feedback: "";
-    out property <string> status-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[431] : root.fixture-status-feedback;
+    out property <string> status-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[445] : root.fixture-status-feedback;
     callback status-check-requested();
     callback status-remedy-requested();
     in property <string> draft-label;
@@ -129,22 +129,22 @@ export component AppWindow inherits Window {
     in property <string> draft-port;
     in property <int> draft-protocol-choice: 0;
     in property <string> fixture-editor-error: "";
-    out property <string> editor-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[413] : root.fixture-editor-error;
+    out property <string> editor-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[427] : root.fixture-editor-error;
     in property <string> fixture-editor-feedback: "";
-    out property <string> editor-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[414] : root.fixture-editor-feedback;
+    out property <string> editor-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[428] : root.fixture-editor-feedback;
     in property <int> draft-interval-choice: 0;
     in property <string> draft-custom-minutes: "1";
     in property <string> fixture-accepted-interval-label: "";
-    out property <string> accepted-interval-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[430] : root.fixture-accepted-interval-label;
+    out property <string> accepted-interval-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[444] : root.fixture-accepted-interval-label;
     in property <string> fixture-preference-error: "";
-    out property <string> preference-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[417] : root.fixture-preference-error;
+    out property <string> preference-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[431] : root.fixture-preference-error;
     in property <string> fixture-preference-feedback: "";
-    out property <string> preference-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[418] : root.fixture-preference-feedback;
+    out property <string> preference-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[432] : root.fixture-preference-feedback;
     in property <int> preference-feedback-section: -1;
     in property <string> fixture-interval-error: "";
-    out property <string> interval-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[415] : root.fixture-interval-error;
+    out property <string> interval-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[429] : root.fixture-interval-error;
     in property <string> fixture-interval-feedback: "";
-    out property <string> interval-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[416] : root.fixture-interval-feedback;
+    out property <string> interval-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[430] : root.fixture-interval-feedback;
     in property <bool> notifications-enabled: true;
     in property <bool> native-notifications-available: false;
     in property <bool> native-notification-test-available: false;
@@ -160,16 +160,16 @@ export component AppWindow inherits Window {
     in property <bool> recovery-review-open: false;
     in property <bool> recovery-leave-open: false;
     in property <string> fixture-recovery-back-label: RecoveryCopy.back;
-    out property <string> recovery-back-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[421] : root.fixture-recovery-back-label;
+    out property <string> recovery-back-label: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[435] : root.fixture-recovery-back-label;
     in property <string> fixture-recovery-error: "";
-    out property <string> recovery-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[419] : root.fixture-recovery-error;
+    out property <string> recovery-error: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[433] : root.fixture-recovery-error;
     in property <string> fixture-recovery-feedback: "";
-    out property <string> recovery-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[420] : root.fixture-recovery-feedback;
+    out property <string> recovery-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[434] : root.fixture-recovery-feedback;
     in property <int> diagnostic-view: 0;
     in property <int> diagnostic-scope: 0;
     in property <int> diagnostic-duration: 0;
     in property <string> fixture-diagnostic-feedback: "";
-    out property <string> diagnostic-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[427] : root.fixture-diagnostic-feedback;
+    out property <string> diagnostic-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[441] : root.fixture-diagnostic-feedback;
     callback diagnostic-view-requested(int);
     callback diagnostic-collection-requested(int, int);
     callback diagnostic-action-requested(int);
@@ -185,17 +185,17 @@ export component AppWindow inherits Window {
     in property <bool> quit-warning-open: false;
     in property <bool> emergency-quit-warning: false;
     in property <string> fixture-quit-headline: "";
-    out property <string> quit-headline: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[422] : root.fixture-quit-headline;
+    out property <string> quit-headline: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[436] : root.fixture-quit-headline;
     in property <string> fixture-quit-consequence: ShellCopy.unknown-consequence;
-    out property <string> quit-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[423] : root.fixture-quit-consequence;
+    out property <string> quit-consequence: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[437] : root.fixture-quit-consequence;
     in property <bool> ui-exit-requested: false;
     in property <string> fixture-shell-feedback: "";
-    out property <string> shell-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[424] : root.fixture-shell-feedback;
+    out property <string> shell-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[438] : root.fixture-shell-feedback;
     in property <int> settings-section: 0;
     in property <string> fixture-service-feedback: "";
-    out property <string> service-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[425] : root.fixture-service-feedback;
+    out property <string> service-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[439] : root.fixture-service-feedback;
     in property <string> fixture-notification-feedback: "";
-    out property <string> notification-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[426] : root.fixture-notification-feedback;
+    out property <string> notification-feedback: LocalizationCopy.value.catalog-ready ? LocalizationCopy.value.texts[440] : root.fixture-notification-feedback;
     out property <bool> recovery-content-focused: main-content.has-focus && root.current-page == Page.recovery && !root.recovery-leave-open && !root.quit-warning-open;
     out property <bool> source-inspection-focused: main-content.has-focus && root.current-page == Page.sources && root.power-mode && !root.quit-warning-open && !root.recovery-leave-open;
     out property <bool> service-section-focused: main-content.has-focus && root.current-page == Page.settings && root.settings-section == 1;
@@ -209,6 +209,7 @@ export component AppWindow inherits Window {
     out property <bool> quit-trigger-focused: !root.quit-warning-open && !root.ui-exit-requested && quit-trigger.has-focus;
     callback navigate(Page);
     callback preview-update-check();
+    callback preview-update-scenario(int);
     callback preview-update-yes(int);
     callback preview-update-later(int);
     callback preview-update-cancel(int);
@@ -548,6 +549,7 @@ export component AppWindow inherits Window {
                         update-interactive: root.host-ready && !root.quit-warning-open && !root.recovery-leave-open && !root.ui-exit-requested;
                         repository-requested => { return root.repository-requested(); }
                         update-check => { root.preview-update-check(); }
+                        update-scenario(choice) => { root.preview-update-scenario(choice); }
                         update-yes(generation) => { root.preview-update-yes(generation); }
                         update-later(generation) => { root.preview-update-later(generation); }
                         update-cancel(generation) => { root.preview-update-cancel(generation); }

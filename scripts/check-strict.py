@@ -14,13 +14,16 @@ import argparse
 import hashlib
 import importlib.util
 import json
+import os
 from pathlib import Path
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import tomllib
+from typing import NamedTuple
 
 
 SPEC = importlib.util.spec_from_file_location(
@@ -237,6 +240,163 @@ pub fn cancel_unpolled_future<F: Future>(future: F) {
                       "clippy::let_underscore_future"),)
 
 
+class WindowsReleaseRole(NamedTuple):
+    """Checked source binding for one existing export, not runtime qualification."""
+
+    role: str
+    artifact: str
+    package: str
+    cargo_manifest: str
+    entry_source: str
+    cargo_target: str
+    required_features: tuple[str, ...]
+    subsystem: str
+    source_state: str
+    activation_owner: str
+    entry_scope: str
+    preentry_owner: str
+    runtime_policy: str
+
+
+def _windows_role_source_bytes(root: Path, name: str, *, maximum: int) -> bytes:
+    """Read bounded regular source without following symbolic links.
+
+    Reject redirects and changed file identities. This is admission of the
+    selected source paths, not complete source-map or module-closure custody.
+    """
+    parts: tuple[str, ...] = tuple(name.split("/"))
+    directory: int = -1
+    descriptor: int = -1
+    try:
+        if (not root.is_absolute() or root.resolve(strict=True) != root
+                or not parts or any(part in {"", ".", ".."} for part in parts)):
+            raise ENV.Incomplete("Windows release role source requires canonical checkout paths.")
+        directory = os.open(root, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW)
+        part: str
+        for part in parts[:-1]:
+            next_directory: int = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC
+                                          | os.O_NOFOLLOW, dir_fd=directory)
+            os.close(directory)
+            directory = next_directory
+        descriptor = os.open(parts[-1], os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW
+                             | os.O_NONBLOCK, dir_fd=directory)
+        before: os.stat_result = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode) or not 0 <= before.st_size <= maximum:
+            raise ENV.Incomplete("Windows release role source exceeds its regular-file byte bound.")
+        payload: bytes = b""
+        while len(payload) <= maximum:
+            chunk: bytes = os.read(descriptor, maximum + 1 - len(payload))
+            if not chunk:
+                break
+            payload += chunk
+        after: os.stat_result = os.fstat(descriptor)
+        named: os.stat_result = os.stat(parts[-1], dir_fd=directory, follow_symlinks=False)
+        identity: tuple[int, ...] = (before.st_dev, before.st_ino, before.st_mode,
+                                    before.st_size, before.st_mtime_ns, before.st_ctime_ns)
+        if (len(payload) != before.st_size or any(
+                (item.st_dev, item.st_ino, item.st_mode, item.st_size,
+                 item.st_mtime_ns, item.st_ctime_ns) != identity for item in (after, named))):
+            raise ENV.Incomplete("Windows release role source changed during admission.")
+        return payload
+    except OSError as error:
+        raise ENV.Incomplete("Windows release role source is missing, redirected or unreadable.") from error
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+        if directory >= 0:
+            os.close(directory)
+
+
+def windows_release_role_bindings(root: Path, inventory: dict | None = None
+                                  ) -> dict[str, WindowsReleaseRole]:
+    """Validate the fixed release export pair against this checkout's sources.
+
+    A parsed inventory may come from the caller's admitted configuration
+    snapshot. Returned immutable rows authorize only source/role matching;
+    complete-role policy, module closure and native qualification remain open.
+    """
+    payload: bytes = _windows_role_source_bytes(
+        root, "policy/verification-manifest.toml", maximum=512 * 1024)
+    if inventory is None:
+        try:
+            inventory = tomllib.loads(payload.decode("utf-8"))
+        except (UnicodeError, ValueError) as error:
+            raise ENV.Incomplete("Windows release role inventory is invalid UTF-8 TOML.") from error
+    if type(inventory) is not dict:
+        raise ENV.Incomplete("Windows release role inventory must be a table.")
+    section: object = inventory.get("windows_release_roles")
+    if (type(section) is not dict or set(section) != {"schema_version", "scope", "roles"}
+            or type(section.get("schema_version")) is not int or section["schema_version"] != 1
+            or type(section.get("scope")) is not str
+            or section["scope"] != "workspace-release-export-pair-source-binding"):
+        raise ENV.Incomplete("Windows release role section differs from the bounded source-binding schema.")
+    rows: object = section["roles"]
+    if type(rows) is not list or len(rows) != 2:
+        raise ENV.Incomplete("Windows release role roster must contain exactly UI and Observe.")
+    expected: dict[str, WindowsReleaseRole] = {
+        "ui": WindowsReleaseRole(
+            "ui", "nevrotick-ui.exe", "nevrotick-ui", "crates/nevrotick-ui/Cargo.toml",
+            "crates/nevrotick-ui/src/main.rs", "package-default-main", (), "gui", "fixture",
+            "entrypoint", "rust-entry-source-only", "scripts/verify.py:compile_ui_entry",
+            "pending-complete-role-qualification"),
+        "observer": WindowsReleaseRole(
+            "observer", "nevrotick-observe.exe", "nevrotick-engine", "crates/nevrotick-engine/Cargo.toml",
+            "crates/nevrotick-engine/src/bin/nevrotick-observe.rs", "declared-bin", (), "console", "experiment",
+            "entrypoint", "rust-entry-source-only", "toolchain", "pending-complete-role-qualification"),
+    }
+    checked: dict[str, WindowsReleaseRole] = {}
+    row: object
+    for row in rows:
+        if type(row) is not dict or set(row) != set(WindowsReleaseRole._fields):
+            raise ENV.Incomplete("Windows release role fields are missing or unknown.")
+        field: str
+        value: object
+        for field, value in row.items():
+            if field == "required_features":
+                if (type(value) is not list or len(value) > 256
+                        or any(type(feature) is not str or not 0 < len(feature) <= 128 for feature in value)):
+                    raise ENV.Incomplete("Windows release role required features must be a string array.")
+            elif type(value) is not str or not 0 < len(value) <= 256:
+                raise ENV.Incomplete("Windows release role fields require exact string types.")
+        role: str = row["role"]
+        if role not in expected or role in checked:
+            raise ENV.Incomplete("Windows release role is unknown or duplicated.")
+        binding: WindowsReleaseRole = expected[role]
+        wanted: dict[str, object] = dict(binding._asdict())
+        wanted["required_features"] = list(binding.required_features)
+        if row != wanted:
+            raise ENV.Incomplete("Windows release role binding or pending qualification differs from its export owner.")
+        try:
+            manifest: dict = tomllib.loads(_windows_role_source_bytes(
+                root, binding.cargo_manifest, maximum=64 * 1024).decode("utf-8"))
+        except (UnicodeError, ValueError) as error:
+            raise ENV.Incomplete("Windows release role Cargo source is invalid UTF-8 TOML.") from error
+        package: object = manifest.get("package")
+        binaries: object = manifest.get("bin", [])
+        if (type(package) is not dict or type(package.get("name")) is not str
+                or package["name"] != binding.package or type(binaries) is not list
+                or len(binaries) > 256 or any(type(binary) is not dict for binary in binaries)):
+            raise ENV.Incomplete("Windows release role Cargo package or binary targets differ.")
+        local_entry: str = str(Path(binding.entry_source).relative_to(Path(binding.cargo_manifest).parent))
+        selected: list[dict] = [binary for binary in binaries
+                                if binary.get("name") == binding.artifact.removesuffix(".exe")]
+        if binding.cargo_target == "package-default-main":
+            if (type(package.get("autobins", True)) is not bool or not package.get("autobins", True)
+                    or selected or any(binary.get("path") == local_entry for binary in binaries)):
+                raise ENV.Incomplete("Windows release role default main was disabled or substituted.")
+        else:
+            if (len(selected) != 1 or type(selected[0].get("path")) is not str
+                    or selected[0]["path"] != local_entry
+                    or type(selected[0].get("required-features", [])) is not list
+                    or selected[0].get("required-features", []) != list(binding.required_features)):
+                raise ENV.Incomplete("Windows release role declared entry or required features differ.")
+        _windows_role_source_bytes(root, binding.entry_source, maximum=512 * 1024)
+        checked[role] = binding
+    if set(checked) != set(expected):
+        raise ENV.Incomplete("Windows release role roster must contain exactly UI and Observe.")
+    return checked
+
+
 def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
     require_clippy_locations(root)
     data = snapshot or {name: (root / name).read_bytes() for name in CONFIG_FILES}
@@ -287,6 +447,7 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
             or inventory.get("security_module_minimum_executable_line_percent") != 90
             or inventory.get("critical_file_minimum_mutation_percent") != 95):
         raise ENV.Incomplete("Verification policy must retain reviewed per-module/file thresholds.")
+    windows_release_role_bindings(root, inventory)
     require_nextest_configuration(parsed[".config/nextest.toml"])
     require_analysis_configuration(parsed)
     native_configs = {

@@ -17,24 +17,30 @@ def fixture():
 
 
 class Coverage(unittest.TestCase):
-    def test_full_product_long_spaced_live_text_keeps_its_text_obligations(self):
-        root=Path(__file__).resolve().parents[2]
-        folder=root/'crates/nevrotick-ui/src/localization'
-        documents=[checker.protected_json.read(checker.read_regular(folder/name,checker.MAX_FILE_BYTES))
+    def test_full_product_long_spaced_live_text_keeps_its_text_obligations(self) -> None:
+        root: Path = Path(__file__).resolve().parents[2]
+        folder: Path = root/'crates/nevrotick-ui/src/localization'
+        documents: list[dict[str, object]] = [checker.protected_json.read(checker.read_regular(folder/name,checker.MAX_FILE_BYTES))
                    for name in ['contract-source.json','text-contract-v1-baseline.json','runtime-text-sinks.json']]
-        contract,baseline,manifest=documents;files=checker.snapshot(root)
-        healthy=checker.check(contract,files,baseline,manifest['runtime_sinks'])
+        contract: dict[str, object]
+        baseline: dict[str, object]
+        manifest: dict[str, object]
+        contract, baseline, manifest = documents
+        files: dict[str, str] = checker.snapshot(root)
+        healthy: dict[str, object] = checker.check(contract,files,baseline,manifest['runtime_sinks'])
         self.assertTrue(healthy['ok'],healthy['errors'])
-        self.assertEqual((healthy['active_ids'],healthy['used_ids']),(525,525))
-        path='crates/nevrotick-ui/ui/app.slint'
+        self.assertEqual((healthy['active_ids'],healthy['used_ids']),(539,539))
+        path: str = 'crates/nevrotick-ui/ui/app.slint'
+        body: str
+        kind: str
         for body,kind in [('', 'missing-required-ui-binding'),
                           ('text: root.spacing-unowned;', 'unowned-required-ui-source'),
                           ('text: "Unowned spaced live text";', 'unowned-ui-literal')]:
             with self.subTest(body=body):
-                changed=dict(files)
+                changed: dict[str, str] = dict(files)
                 changed[path]=files[path].replace('inherits Window {','inherits Window { Text'+' '*501+'{ '+body+' }',1)
-                report=checker.check(contract,changed,baseline,manifest['runtime_sinks'])
-                self.assertEqual((report['active_ids'],report['used_ids']),(525,525))
+                report: dict[str, object] = checker.check(contract,changed,baseline,manifest['runtime_sinks'])
+                self.assertEqual((report['active_ids'],report['used_ids']),(539,539))
                 self.assertFalse(report['ok'])
                 self.assertTrue(any(error['kind']==kind for error in report['errors']),report['errors'])
 

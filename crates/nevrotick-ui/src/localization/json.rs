@@ -3,7 +3,7 @@
 use super::{Budget, Error, JSON_BYTES, KEY_BYTES, MAX_DEPTH, MAX_MAP, Wire};
 use serde::de::Error as _;
 use serde::de::{self, DeserializeSeed, MapAccess, Visitor};
-use std::fmt;
+use std::{cmp::Ordering, fmt};
 
 /// Maximum encoded JSON string-token bytes before Serde allocation.
 const ENCODED_STRING: usize = 6_144;
@@ -212,6 +212,10 @@ impl<'de> Visitor<'de> for Seed<'_> {
             return Err(A::Error::custom("object depth"));
         }
         let mut fields: Vec<(String, Wire)> = Vec::new();
+        // Sorted decoded-key positions preserve the original wire order without
+        // comparing every earlier string. Each map has this fixed local index;
+        // neither catalog data nor a Serde size hint controls its allocation.
+        let mut order: [usize; MAX_MAP] = [0; MAX_MAP];
         while let Some(key) = map.next_key_seed(TextSeed {
             budget: &mut *self.budget,
             key: true,
@@ -221,19 +225,37 @@ impl<'de> Visitor<'de> for Seed<'_> {
                 self.budget.failure = Some(Error::Bounds);
                 return Err(A::Error::custom("map bound"));
             }
-            for (old, _) in &fields {
+            let (mut left, mut right): (usize, usize) = (0, fields.len());
+            while left < right {
+                let middle: usize = left + (right - left) / 2;
+                let old: &str = fields
+                    .get(order[middle])
+                    .ok_or_else(|| A::Error::custom("key index"))?
+                    .0
+                    .as_str();
                 self.budget
                     .work(old.len().max(key.len()))
                     .map_err(A::Error::custom)?;
-                if old == &key {
-                    self.budget.failure = Some(Error::Duplicate);
-                    return Err(A::Error::custom("duplicate decoded key"));
+                match old.cmp(key.as_str()) {
+                    Ordering::Less => left = middle + 1,
+                    Ordering::Greater => right = middle,
+                    Ordering::Equal => {
+                        self.budget.failure = Some(Error::Duplicate);
+                        return Err(A::Error::custom("duplicate decoded key"));
+                    }
                 }
             }
+            // Charge the bounded index movement before doing it, as well as
+            // every key comparison above. MAX_MAP also bounds the stack index.
+            self.budget
+                .work((fields.len() - left) * size_of::<usize>())
+                .map_err(A::Error::custom)?;
             let value = map.next_value_seed(Seed {
                 budget: &mut *self.budget,
                 depth: self.depth + 1,
             })?;
+            order.copy_within(left..fields.len(), left + 1);
+            order[left] = fields.len();
             fields.push((key, value));
         }
         Ok(Wire::Map(fields))

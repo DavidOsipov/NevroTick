@@ -645,6 +645,198 @@ native route, recovery, critical-text approval, resources and release checks
 remain open with their existing owners. Existing native, scoped fuzz and storage
 holds remain. Native deployment and signing stay with their existing owners.
 
+### Continue the About check outcomes — 28 November 2026
+
+**Remote reconciliation:** at David's request, `main` fast-forwarded from
+`a95da288` to `e89066ba05c459d78c555726aedb67aba9b736ed`. The source child below
+was restored without conflicts. An independent check retained all 36 local
+files: 33 byte-identical files and three documents matching an independently
+reconstructed three-way merge. The index remained unchanged. Recovery stash
+`326e3721cc7d4028b39729d4a544565a4377c828` is retained; its changes are already
+restored and must not be applied again to this tree.
+
+The imported G1–G3/B1/W1 queue does not put process-wide policy in the About
+callbacks or catalog decoder. G1's remaining desktop-policy source work depends
+on the exact role manifest and native entry owner; G2/G3 keep native, installed,
+activation and signing prerequisites. The actual native startup still checks
+image policy, DLL search and strict handles before backend selection.
+`host_ready` remains fixture-binding readiness. The new documentation selects
+no tool installation or native campaign. The 29 pinned source/helper/fixture
+bytes underlying the source checkpoint below are unchanged by this pull;
+broader candidate and qualification identities still require their own admission.
+
+Development §7 permits independent P5 fixture source work while physical
+reference/mapping and live service prerequisites remain open. The selected
+next child is UP-UI-09 / AC-26: distinguish a completed check finding no eligible
+update from offline, expired metadata, unavailable trusted time, unknown installed
+identity and external management. This is a bounded source continuation, not
+activation or completion of live P5.
+
+The existing About receiver owns one closed sample scenario, snapshots it into
+each fresh Check generation, and retains the sole Slint timer. A direct scenario
+callback must reject unknown choices and changes during checks, offers or
+consented progress. Each non-offer result has no package facts or consent path;
+old ticks and decisions cannot overwrite a successor. A new check remains useful.
+The selector and result copy stay explicitly sample data. No network, helper,
+package, persistence, service or clock operation is introduced.
+
+| Stage | Skills / requirement | Action and expected evidence | Status / remaining owner |
+| --- | --- | --- | --- |
+| Select next source child | `plan-code-change`; §7 P5, UP-UI-09 / AC-26 | Read current P2/P3/P5/P6 prerequisites and actual About source; independent readiness scouts distinguish held live work from this fixture | Source selection complete; no phase qualification claimed |
+| Implement receiver and view | `implement-rust`, `implement-rust-contracts`, `implement-native-ui`, `implement-slint`, `security-native-ui`; closed DTO admission and same-generation publication | Extend actual generated callbacks, one timer and typed state; root owns shared catalog integration | Implemented and independently source-reviewed; callback execution remains incomplete |
+| Extend literal copy | `evolve-data-contracts`, `qa-i18n-localization`; OD-15 | Append 14 stable meanings, preserve earlier IDs, schema 2 and all byte/work budgets; text contract 5 has exactly 539 active messages | Source controls passed; v2/v3/v4 refusal specimens retained; production critical-text approval ledger remains empty |
+| Verify coherent child | Testing contract, `qa-state-concurrency-lifecycle`, focused contract/regression/static checks | Every outcome and healthy successor through real callbacks, invalid and busy selector refusal, stale tick/decision refusal, timer retirement; existing catalog boundary controls | At most one focused GNU development run and one configured GNU/MSVC checkpoint each, with three causal repair rounds total; record setup failures and actual consumed work |
+
+**Source checkpoint.** Five new updater tests bring the authored updater set to
+11 functions. They exercise all six check-only results, raw choice admission,
+busy-operation immutability, stale callbacks, timer retirement, useful retry and
+literal fixture copy. They are source controls awaiting Rust execution, not an
+observed test roster. Changing an idle/terminal sample selection clears its
+previous result; selecting the same condition preserves it.
+
+The expanded English source would cost 4,223,028 work units with the prior
+all-pairs decoded-key comparison. The JSON receiver now retains original field
+order and uses a fixed sorted index, charging comparisons and index movement
+before work and refusing decoded duplicates before their values. Two new Rust
+controls cover unsorted input/escaped aliases and the reverse 539-entry boundary.
+An independent inert-data calculation gives 621,691 units for the new English
+source under the same 4,000,000 limit. That calculation is not Rust admission.
+The index is 4,312 bytes per map on the selected 64-bit targets, within the
+existing four-layer map-depth bound. All other byte/node/field/output limits
+are unchanged. The canonical synthetic CBOR candidate is 48,674 bytes.
+
+The first isolated Python source run passed 142 tests in 37.675 seconds. Fresh
+review then found that integrating the generated aliases had removed the
+engineering fallbacks. Integration restored all 399 existing fallback branches
+and added the 14 new fixed meanings; no unapproved catalog was installed.
+A new source regression checks the nine globals, and the authored Rust callback
+control reads the six result strings through the same exported copy global.
+The final isolated Python run passed 143 tests in 37.512 seconds. The public
+text gate passed with 539 active/used IDs and no errors. The admitted Rust
+1.100.0 formatter and whitespace checks passed. Independent review also removed
+an unsupported inherited-window accessor from an unexecuted test assertion.
+
+The source/log/patch receipt is
+`~/.local/share/nevrotick/p5-about-outcomes-20261128.k_ots1tl/receipt.json`,
+SHA-256 `c87fd15d5755d0d2dc08ff7f3aec28fc5d3aeb251f425553694aca105c1c5882`.
+It pins 29 source/fixture/helper files and retains both Python runs, generated
+identity, final text report and the independent calculation. No root
+`docs/SHA256SUMS.txt` exists at this checkpoint.
+
+**Initial execution prerequisite failed.** WSL root had 46,350,336 bytes free,
+below the integrated recipe's retained 4-GiB reserve. D: scratch capacity does
+not satisfy that separate reserve. A bounded read-only cache survey found no
+safe two-directory retirement reaching the reserve; live browser consumers and
+separately owned service evidence were preserved. No Rust compiler, Clippy,
+ordinary test, doctest, native, fuzz, coverage, mutation or sanitizer job was
+started for this child. The earlier UI test-build allocation abort under its
+4-GiB per-process address limit also remains unresolved. After a material
+resource/admission change, reuse the existing UI recipe with the exact current
+updater names and fresh execution observations; its historical five/six-case
+counts do not describe these 11 authored cases. No compiler window was opened
+or reset here. Changed runtime inputs also invalidate reuse of the earlier
+833-input receiving-basis preparation as a current-candidate recipe.
+
+**Authorized WSL cleanup — 28 November.** The filesystem prerequisite is now
+satisfied: available root space increased from 27,410,432 to 4,587,982,848 bytes
+at the final retained measurement (net 4,560,572,416 bytes). The maintenance used
+`wsl-cleanup`, removed three individually checked derived Cargo targets and an
+uninstalled Rust documentation extraction, and requested native history
+compression without deleting conversations. There were 184 observed rollout
+conversions; three sampled contents round-tripped by hash and remained readable
+through the native API. The two RPC acknowledgments do not establish completion
+of the background maintenance pass.
+
+Seven retained service coverage `raw/` trees were archived to
+`D:\NevroTick-wsl-evidence-20261128-b7f558b90814`, with original reports and maps
+left in place. Every archive was checked and actually restored to private ext4
+storage with content/mode/timestamp comparison before removal of its original.
+Independent readback checked all 9,275 archived files. Local restoration pointers
+remain under `artifacts/windows-services/recovery-20261107-v1/`
+`.cold-archives-20261128-b7f558b90814/`. Verify the recorded archive/manifest hashes,
+restore the exact original path, compare all entries, and re-admit the restored
+custody before replay; original inode identities are not recreated. The NTFS
+archive directory has a checked owner/SYSTEM-only ACL; DrvFS's displayed POSIX
+mode supplies no privacy claim.
+
+The maintenance receipt is
+`~/.local/share/nevrotick/wsl-cleanup-20261128-0w8qmvy4/receipt.json`, SHA-256
+`8e9979d1ba80ce5ff7ea8651766e24b41229ad58094641d2541c9f1cd6b49a3d`.
+Git work and installed tools/toolchains were preserved. Fifty process-inspection
+permission gaps remain explicit. This closes the measured filesystem shortage;
+the earlier compiler allocation failure still needs a causal, bounded resolution.
+No Rust or native qualification follows from this host maintenance.
+
+**Bounded GNU retry after cleanup.** One focused current-candidate UI run uses
+the existing selected verifier recipe with `product-tests:nevrotick-ui` reduced
+from four build jobs to one. Other selected build rows keep four jobs; the
+4-GiB address-space, 90-second CPU and 300-second per-command wall limits remain.
+The 15-minute total window, 4-GiB filesystem reserves and 1-GiB available-memory
+floor are monitored. Owned compiler observations now include VmPeak, VmSize,
+RSS, threads and actual process limits. Lower concurrency is a diagnostic
+hypothesis, not an established cure for the earlier LLVM failure.
+
+The frozen private recipe and plan are under
+`~/.local/share/nevrotick/p5-outcomes-gnu-20261128-r_u5v919/`; recipe SHA-256
+`d241dc063a8a0ba55db63ee3394fef1b17059caa12c64a7ad249354fdfbc422a`.
+It requires exact equality with the eleven authored updater test names, plus
+the normal nonempty ordinary-test and doctest validation. Fresh admission binds
+current source/helpers and the explicitly selected retained vendor; historical
+765/833-input maps supply no current pass. D: holds owned scratch under the
+checked archive-directory ACL. Existing P5 repair/work budgets are not reset.
+
+The focused GNU run ended at Clippy after passing isolation/source controls,
+the selected dependency metadata/tree rows, formatting and compiler checks on its
+834-input candidate. No ordinary UI test or doctest executed, so the one-job
+test-build hypothesis remains unexercised. Clippy reported `similar_names` for
+the test's `text`/`test` bindings and an unfulfilled
+`match_like_matches_macro` expectation on `Phase::ready`. The causal repair
+renames only the test's rendered-copy binding and removes the obsolete
+expectation while preserving the exhaustive phase match. No lint was suppressed
+or behavior changed. This consumes the third combined source-repair round after
+the fallback and inherited-accessor corrections. The planned single configured
+GNU checkpoint remains; another failure leaves its dependent checks incomplete.
+Its frozen recipe/plan and fresh results are retained under
+`~/.local/share/nevrotick/p5-outcomes-final-gnu-20261128-dcf0d1x9/`;
+recipe SHA-256 `871a85af997593be93678feeffb20f879b9d33c5e212caa40f2f5555639bc2f0`.
+The checkpoint retains the same limits and exact eleven-name observer, with an
+outer 900-second admission-plus-execution watchdog. It is the already-planned
+checkpoint, not a restart of the focused-run budget or the separate Engine
+receiving-verification compiler window.
+
+**Final GNU checkpoint result: incomplete.** The current 834-input source map
+passed isolation, all selected UI source/text controls, graph metadata/tree
+checks, formatting, compiler, Clippy and Rustdoc. The ordinary UI row then
+reached its unchanged 300-second build limit and was terminated with exit -9.
+No UI test or doctest executed. There was no LLVM allocation diagnostic in this
+attempt; the timeout does not resolve the earlier allocation failure or prove
+that one build job is sufficient. Source hashes still matched the checkout at
+readback. Minimum observed root free space was 4,578,357,248 bytes, scratch free
+142,149,595,136 bytes and host available memory 4,981,391,360 bytes. Sampled
+compiler VmPeak reached 3,703,892 KiB (3.532 GiB); sampling does not observe every
+allocation. The actual compiler limits retained 4-GiB AS and the other declared
+CPU/task/file limits.
+
+The final receipt is
+`~/.local/share/nevrotick/p5-outcomes-final-gnu-20261128-dcf0d1x9/receipt.json`,
+SHA-256 `e471b6dfe9a228176fe6300dc1981ab96689c06044103e1a2d0490b6afccff26`.
+It binds the recipe, source map, patch, full verifier result, resource samples
+and summary. The focused failure remains separately retained. Both GNU attempts
+and all three source-repair rounds are consumed; automatic retries stop here.
+Re-entry requires a separately bounded changed compilation/cache or resource
+approach preserving admission, source/graph custody and security limits, followed
+by actual ordinary-test/doctest execution. The selected MSVC checkpoint and
+native/metric qualification remain incomplete; no runtime closure or phase
+completion is claimed. Independent ready source work retains its existing §7
+owners while this checkpoint stays open.
+
+D1/D3, native rendering/keyboard/accessibility/resources, release text approval,
+and D2/currentness before live metadata or commands retain their existing
+triggers. Sanitizer qualification follows OD-22 at module freeze; neither this
+fixture child nor source checks supply a native or release pass. Existing
+security-module coverage and critical-file mutation obligations stay open at
+their configured owners; no gate or execution hold is waived.
+
 ## Branch and integration state
 
 **Merged continuation — 6 November 2026:** PR10 merged as

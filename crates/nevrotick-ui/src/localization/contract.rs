@@ -54,7 +54,7 @@ pub struct Spec {
     pub group: Option<Group>,
 }
 /// Compatibility fingerprint; grants no semantic approval.
-pub const FINGERPRINT: &str = "8636c6e87302c241efa7060644df0734491f1bc96cd36acc3a61771749bc0c69";
+pub const FINGERPRINT: &str = "973058fb8f1d923f20b06e66e0ba6406230af8575ea5b109cb94339de7e4547d";
 /// Fixed product catalog domain, never a path.
 pub const DOMAIN: &str = "nevrotick.ui";
 /// Fixed English cardinal rule and checked integer domain.
@@ -64,9 +64,9 @@ pub const CATALOG_SCHEMA_VERSION: u32 = 2;
 /// Code-owned engineering GUI build version, distinct from file schema.
 pub const GUI_BUILD_VERSION: u32 = 2;
 /// Code-owned text meaning/type contract version, distinct from build/schema.
-pub const TEXT_CONTRACT_VERSION: u32 = 4;
+pub const TEXT_CONTRACT_VERSION: u32 = 5;
 /// Number of active messages, not registry ordinals.
-pub const COUNT: usize = 525;
+pub const COUNT: usize = 539;
 impl MessageId {
     /// Resolve one exact active ID without aliases or normalization.
     ///
@@ -1141,6 +1141,34 @@ impl MessageId {
     pub const UPDATE_CANCEL_CHECK: Self = Self(523);
     /// ui.update.cancelled; stable ordinal 612.
     pub const UPDATE_CANCELLED: Self = Self(524);
+    /// ui.update.scenario; stable ordinal 613.
+    pub const UPDATE_SCENARIO: Self = Self(525);
+    /// ui.update.scenario-available; stable ordinal 614.
+    pub const UPDATE_SCENARIO_AVAILABLE: Self = Self(526);
+    /// ui.update.scenario-no-update; stable ordinal 615.
+    pub const UPDATE_SCENARIO_NO_UPDATE: Self = Self(527);
+    /// ui.update.scenario-offline; stable ordinal 616.
+    pub const UPDATE_SCENARIO_OFFLINE: Self = Self(528);
+    /// ui.update.scenario-metadata-expired; stable ordinal 617.
+    pub const UPDATE_SCENARIO_METADATA_EXPIRED: Self = Self(529);
+    /// ui.update.scenario-time-unavailable; stable ordinal 618.
+    pub const UPDATE_SCENARIO_TIME_UNAVAILABLE: Self = Self(530);
+    /// ui.update.scenario-identity-unknown; stable ordinal 619.
+    pub const UPDATE_SCENARIO_IDENTITY_UNKNOWN: Self = Self(531);
+    /// ui.update.scenario-externally-managed; stable ordinal 620.
+    pub const UPDATE_SCENARIO_EXTERNALLY_MANAGED: Self = Self(532);
+    /// ui.update.no-update; stable ordinal 621.
+    pub const UPDATE_NO_UPDATE: Self = Self(533);
+    /// ui.update.offline; stable ordinal 622.
+    pub const UPDATE_OFFLINE: Self = Self(534);
+    /// ui.update.metadata-expired; stable ordinal 623.
+    pub const UPDATE_METADATA_EXPIRED: Self = Self(535);
+    /// ui.update.time-unavailable; stable ordinal 624.
+    pub const UPDATE_TIME_UNAVAILABLE: Self = Self(536);
+    /// ui.update.identity-unknown; stable ordinal 625.
+    pub const UPDATE_IDENTITY_UNKNOWN: Self = Self(537);
+    /// ui.update.externally-managed; stable ordinal 626.
+    pub const UPDATE_EXTERNALLY_MANAGED: Self = Self(538);
 }
 
 /// Active protected definitions in private dense storage order.
@@ -4817,6 +4845,104 @@ pub const SPECS: &[Spec] = &[
         id: MessageId::UPDATE_CANCELLED,
         key: "ui.update.cancelled",
         ordinal: 612,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO,
+        key: "ui.update.scenario",
+        ordinal: 613,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO_AVAILABLE,
+        key: "ui.update.scenario-available",
+        ordinal: 614,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO_NO_UPDATE,
+        key: "ui.update.scenario-no-update",
+        ordinal: 615,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO_OFFLINE,
+        key: "ui.update.scenario-offline",
+        ordinal: 616,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO_METADATA_EXPIRED,
+        key: "ui.update.scenario-metadata-expired",
+        ordinal: 617,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO_TIME_UNAVAILABLE,
+        key: "ui.update.scenario-time-unavailable",
+        ordinal: 618,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO_IDENTITY_UNKNOWN,
+        key: "ui.update.scenario-identity-unknown",
+        ordinal: 619,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_SCENARIO_EXTERNALLY_MANAGED,
+        key: "ui.update.scenario-externally-managed",
+        ordinal: 620,
+        kind: Kind::Text,
+        group: None,
+    },
+    Spec {
+        id: MessageId::UPDATE_NO_UPDATE,
+        key: "ui.update.no-update",
+        ordinal: 621,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_OFFLINE,
+        key: "ui.update.offline",
+        ordinal: 622,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_METADATA_EXPIRED,
+        key: "ui.update.metadata-expired",
+        ordinal: 623,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_TIME_UNAVAILABLE,
+        key: "ui.update.time-unavailable",
+        ordinal: 624,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_IDENTITY_UNKNOWN,
+        key: "ui.update.identity-unknown",
+        ordinal: 625,
+        kind: Kind::Text,
+        group: Some(Group::UpdateOffer),
+    },
+    Spec {
+        id: MessageId::UPDATE_EXTERNALLY_MANAGED,
+        key: "ui.update.externally-managed",
+        ordinal: 626,
         kind: Kind::Text,
         group: Some(Group::UpdateOffer),
     },

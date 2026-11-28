@@ -1,17 +1,21 @@
 import { GuiFacts } from "localization-copy.slint";
 import { FixtureCopy } from "fixture-copy.slint";
 import { Theme } from "theme.slint";
-import { UpdatePreview, UpdateStage } from "types.slint";
+import { UpdatePreview, UpdateStage, UpdateCheckScenario } from "types.slint";
+import { GuardedComboBox } from "guarded-combo-box.slint";
 import { Panel, BodyText, SecondaryText, Heading, SectionHeading, PageHeading, FactRow, Rule, ActionButton, HelpText } from "components.slint";
 
 export component AboutPage inherits VerticalLayout {
     callback repository-requested() -> bool;
     callback update-check();
+    callback update-scenario(int);
     callback update-yes(int);
     callback update-later(int);
     callback update-cancel(int);
     in property <UpdatePreview> update-preview;
     in property <bool> update-interactive;
+    private property <bool> update-ready: root.update-preview.stage == UpdateStage.idle || root.update-preview.stage == UpdateStage.complete || root.update-preview.stage == UpdateStage.cancelled || root.update-preview.stage == UpdateStage.no-update || root.update-preview.stage == UpdateStage.offline || root.update-preview.stage == UpdateStage.metadata-expired || root.update-preview.stage == UpdateStage.time-unavailable || root.update-preview.stage == UpdateStage.identity-unknown || root.update-preview.stage == UpdateStage.externally-managed;
+    private property <int> scenario-index: root.update-preview.scenario == UpdateCheckScenario.available ? 0 : root.update-preview.scenario == UpdateCheckScenario.no-update ? 1 : root.update-preview.scenario == UpdateCheckScenario.offline ? 2 : root.update-preview.scenario == UpdateCheckScenario.metadata-expired ? 3 : root.update-preview.scenario == UpdateCheckScenario.time-unavailable ? 4 : root.update-preview.scenario == UpdateCheckScenario.identity-unknown ? 5 : 6;
     private property <bool> repository-failed: false;
     spacing: 20px;
     vertical-stretch: 0;
@@ -42,9 +46,20 @@ export component AboutPage inherits VerticalLayout {
         FactRow { label: FixtureCopy.code-license-label; value: FixtureCopy.code-license-value; }
     }
     Panel {
+        BodyText { text: FixtureCopy.update-scenario; }
+        GuardedComboBox {
+            accessible-label: FixtureCopy.update-scenario;
+            model: [FixtureCopy.update-scenario-available, FixtureCopy.update-scenario-no-update, FixtureCopy.update-scenario-offline, FixtureCopy.update-scenario-metadata-expired, FixtureCopy.update-scenario-time-unavailable, FixtureCopy.update-scenario-identity-unknown, FixtureCopy.update-scenario-externally-managed];
+            enabled: root.update-interactive && root.update-ready;
+            draft-index: root.scenario-index;
+            edit-requested(choice) => {
+                root.update-scenario(choice);
+                return root.scenario-index;
+            }
+        }
         ActionButton {
             text: FixtureCopy.update-check;
-            enabled: root.update-interactive && (root.update-preview.stage == UpdateStage.idle || root.update-preview.stage == UpdateStage.complete || root.update-preview.stage == UpdateStage.cancelled);
+            enabled: root.update-interactive && root.update-ready;
             clicked => { root.update-check(); }
         }
         if root.update-preview.stage == UpdateStage.checking: BodyText {
@@ -91,6 +106,12 @@ export component AboutPage inherits VerticalLayout {
         if root.update-preview.stage == UpdateStage.cancelled: BodyText {
             text: FixtureCopy.update-cancelled;
         }
+        if root.update-preview.stage == UpdateStage.no-update: BodyText { text: FixtureCopy.update-no-update; }
+        if root.update-preview.stage == UpdateStage.offline: BodyText { text: FixtureCopy.update-offline; }
+        if root.update-preview.stage == UpdateStage.metadata-expired: BodyText { text: FixtureCopy.update-metadata-expired; }
+        if root.update-preview.stage == UpdateStage.time-unavailable: BodyText { text: FixtureCopy.update-time-unavailable; }
+        if root.update-preview.stage == UpdateStage.identity-unknown: BodyText { text: FixtureCopy.update-identity-unknown; }
+        if root.update-preview.stage == UpdateStage.externally-managed: BodyText { text: FixtureCopy.update-externally-managed; }
     }
     Panel {
         SectionHeading { text: FixtureCopy.technologies-heading; }

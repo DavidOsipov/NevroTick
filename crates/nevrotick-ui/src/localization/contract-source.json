@@ -1,13 +1,13 @@
 {
   "schema_version": 1,
   "domain": "nevrotick.ui",
-  "contract_revision": "ui-l10n-about-cancel-v4-unapproved",
+  "contract_revision": "ui-l10n-about-check-outcomes-v5-unapproved",
   "plural_profile": "english-u64-cardinal-v1",
   "locale": "en",
   "unicode_profile": "unicode-15.1-english-printable-ascii-middle-dot-en-em-dash-v1",
   "catalog_schema_version": 2,
   "gui_build_version": 2,
-  "text_contract_version": 4,
+  "text_contract_version": 5,
   "status": "UNAPPROVED native consumer candidate; exact source sinks and caller chains require common-integration validation. Production semantic ledger remains EMPTY.",
   "bounds": {
     "JSON_BYTES": 131072,
@@ -19,7 +19,7 @@
     "MAX_DEPTH": 4,
     "MAX_FIELDS": 2048,
     "MAX_NODES": 4096,
-    "MAX_MAP": 525,
+    "MAX_MAP": 539,
     "MAX_WORK": 4000000,
     "OUTPUT_BYTES": 4096,
     "OUTPUT_UTF16": 2048,
@@ -66,7 +66,7 @@
     "native-tray": "Exactly six code-owned native command identities. Current private readiness and receiver guards decide availability; label text never selects actions. Closing via tray preserves only an actual observer; services remain separate.",
     "native-notification-test": "Only an explicit local TestExample may reach guarded native Show. One immutable snapshot supplies title/body/fixed Notifications label. OS acceptance does not establish banner display, reading or any service/clock health. Activation is fixed navigation after current private guard checks.",
     "native-observer-stop": "UI-only exit waits for confirmed owned native cleanup. Timeout/failure keeps the app open; elapsed time is not completion. No service, clock, network or elevation effect is authorized.",
-    "about.update-preview": "About Check publishes one in-memory sample offer for the active visit. Yes consumes the current exact offer once and simulates download, verification and installation. The typed offer owns installed 1.0.0, offered 1.1.0, stable channel, 12582912 bytes, unmetered, no roaming and no external management. Not now, dismissal and leaving About invalidate an unaccepted offer. Repeated, stale and out-of-view requests have no effect. The fixture has no network, package, persistence, service, elevation or clock effects. Cancel stops the current sample check, download or verification; installation cannot be cancelled."
+    "about.update-preview": "About Check publishes one in-memory sample offer for the active visit. Yes consumes the current exact offer once and simulates download, verification and installation. The typed offer owns installed 1.0.0, offered 1.1.0, stable channel, 12582912 bytes, unmetered, no roaming and no external management. Not now, dismissal and leaving About invalidate an unaccepted offer. Repeated, stale and out-of-view requests have no effect. The fixture has no network, package, persistence, service, elevation or clock effects. Cancel stops the current sample check, download or verification; installation cannot be cancelled. A closed sample selector chooses one of seven code-owned outcomes only while idle or terminal. Each fresh check snapshots that choice. No eligible update differs from offline, expired metadata, unavailable trusted time, unknown installed identity and external management. Non-offer results carry no offered package facts or consent authority."
   },
   "messages": [
     {
@@ -13251,6 +13251,314 @@
         "global": "FixtureCopy",
         "namespace": "fixture",
         "property": "update-cancelled",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario",
+      "ordinal": 613,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Label for the code-owned in-memory sample selector; no provider or management authority.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO",
+      "reference": {
+        "text": "Sample check outcome"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:158"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario-available",
+      "ordinal": 614,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Select the existing sample package offer after a fresh Check.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO_AVAILABLE",
+      "reference": {
+        "text": "Update available"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:159"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario-available",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario-no-update",
+      "ordinal": 615,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Select a completed sample check with no eligible target.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO_NO_UPDATE",
+      "reference": {
+        "text": "No eligible update"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:160"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario-no-update",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario-offline",
+      "ordinal": 616,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Select unavailable sample retrieval, without asserting no eligible update.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO_OFFLINE",
+      "reference": {
+        "text": "Offline"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:161"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario-offline",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario-metadata-expired",
+      "ordinal": 617,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Select expired sample metadata, without asserting no eligible update.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO_METADATA_EXPIRED",
+      "reference": {
+        "text": "Expired metadata"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:162"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario-metadata-expired",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario-time-unavailable",
+      "ordinal": 618,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Select missing trusted sample time, without granting date or eligibility authority.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO_TIME_UNAVAILABLE",
+      "reference": {
+        "text": "Trusted time unavailable"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:163"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario-time-unavailable",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario-identity-unknown",
+      "ordinal": 619,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Select unknown sample installation identity, without substituting UI build identity.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO_IDENTITY_UNKNOWN",
+      "reference": {
+        "text": "Installed identity unknown"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:164"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario-identity-unknown",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.scenario-externally-managed",
+      "ordinal": 620,
+      "kind": "Text",
+      "group": null,
+      "meaning_revision": 1,
+      "meaning_context": "Select sample external management; no alternate update route is authorized.",
+      "active": true,
+      "symbol": "UPDATE_SCENARIO_EXTERNALLY_MANAGED",
+      "reference": {
+        "text": "Managed externally"
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:165"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-scenario-externally-managed",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.no-update",
+      "ordinal": 621,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Successful sample check finding no eligible target, distinct from every unavailable or managed result.",
+      "active": true,
+      "symbol": "UPDATE_NO_UPDATE",
+      "reference": {
+        "text": "Sample check complete: no eligible update was found."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:166"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-no-update",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.offline",
+      "ordinal": 622,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Unavailable sample retrieval is not a successful no-update check.",
+      "active": true,
+      "symbol": "UPDATE_OFFLINE",
+      "reference": {
+        "text": "Sample check unavailable: offline. Update eligibility was not established."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:167"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-offline",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.metadata-expired",
+      "ordinal": 623,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Expired sample metadata does not establish update eligibility or offer authority.",
+      "active": true,
+      "symbol": "UPDATE_METADATA_EXPIRED",
+      "reference": {
+        "text": "Sample check unavailable: update metadata has expired. Update eligibility was not established."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:168"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-metadata-expired",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.time-unavailable",
+      "ordinal": 624,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Unavailable sample trusted time does not establish update eligibility or clock authority.",
+      "active": true,
+      "symbol": "UPDATE_TIME_UNAVAILABLE",
+      "reference": {
+        "text": "Sample check unavailable: trusted time is unavailable. Update eligibility was not established."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:169"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-time-unavailable",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.identity-unknown",
+      "ordinal": 625,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Unknown sample installed identity is not replaced by running UI version or a no-update claim.",
+      "active": true,
+      "symbol": "UPDATE_IDENTITY_UNKNOWN",
+      "reference": {
+        "text": "Sample check unavailable: the installed product identity is unknown. Update eligibility was not established."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:170"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-identity-unknown",
+        "slot": null
+      }
+    },
+    {
+      "key": "ui.update.externally-managed",
+      "ordinal": 626,
+      "kind": "Text",
+      "group": "UpdateOffer",
+      "meaning_revision": 1,
+      "meaning_context": "Sample external management prevents a local offer and does not authorize another updater.",
+      "active": true,
+      "symbol": "UPDATE_EXTERNALLY_MANAGED",
+      "reference": {
+        "text": "Sample updates are managed externally. No package was offered by this check."
+      },
+      "sources": [
+        "crates/nevrotick-ui/ui/fixture-copy.slint:171"
+      ],
+      "slint": {
+        "global": "FixtureCopy",
+        "namespace": "fixture",
+        "property": "update-externally-managed",
         "slot": null
       }
     }

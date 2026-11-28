@@ -1,9 +1,9 @@
 {
   "schema_version": 2,
-  "text_contract_version": 4,
+  "text_contract_version": 5,
   "domain": "nevrotick.ui",
-  "catalog_revision": 4,
-  "source_fingerprint": "8636c6e87302c241efa7060644df0734491f1bc96cd36acc3a61771749bc0c69",
+  "catalog_revision": 5,
+  "source_fingerprint": "973058fb8f1d923f20b06e66e0ba6406230af8575ea5b109cb94339de7e4547d",
   "locale": "en",
   "plural_profile": "english-u64-cardinal-v1",
   "messages": {
@@ -1383,6 +1383,20 @@
     "ui.update.complete": {"args": {}, "text": "Update simulation complete."},
     "ui.update.cancel": {"args": {}, "text": "Cancel update"},
     "ui.update.cancel-check": {"args": {}, "text": "Cancel check"},
-    "ui.update.cancelled": {"args": {}, "text": "Update cancelled. Installation did not start. You can check again when you are ready."}
+    "ui.update.cancelled": {"args": {}, "text": "Update cancelled. Installation did not start. You can check again when you are ready."},
+    "ui.update.scenario": {"args": {}, "text": "Sample check outcome"},
+    "ui.update.scenario-available": {"args": {}, "text": "Update available"},
+    "ui.update.scenario-no-update": {"args": {}, "text": "No eligible update"},
+    "ui.update.scenario-offline": {"args": {}, "text": "Offline"},
+    "ui.update.scenario-metadata-expired": {"args": {}, "text": "Expired metadata"},
+    "ui.update.scenario-time-unavailable": {"args": {}, "text": "Trusted time unavailable"},
+    "ui.update.scenario-identity-unknown": {"args": {}, "text": "Installed identity unknown"},
+    "ui.update.scenario-externally-managed": {"args": {}, "text": "Managed externally"},
+    "ui.update.no-update": {"args": {}, "text": "Sample check complete: no eligible update was found."},
+    "ui.update.offline": {"args": {}, "text": "Sample check unavailable: offline. Update eligibility was not established."},
+    "ui.update.metadata-expired": {"args": {}, "text": "Sample check unavailable: update metadata has expired. Update eligibility was not established."},
+    "ui.update.time-unavailable": {"args": {}, "text": "Sample check unavailable: trusted time is unavailable. Update eligibility was not established."},
+    "ui.update.identity-unknown": {"args": {}, "text": "Sample check unavailable: the installed product identity is unknown. Update eligibility was not established."},
+    "ui.update.externally-managed": {"args": {}, "text": "Sample updates are managed externally. No package was offered by this check."}
   }
 }

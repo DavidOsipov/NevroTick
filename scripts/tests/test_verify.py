@@ -15,7 +15,7 @@ import tempfile
 import tomllib
 from typing import Any
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -572,6 +572,9 @@ class ProductAdmissionTests(unittest.TestCase):
                 ('license="GPL-3.0-only"\n' if package == "nevrotick-ui" else 'license.workspace=true\n') +
                 '[lints]\nworkspace=true\n')
             if package == "nevrotick-ui":
+                # Role admission checks the declared executable source; this
+                # inert fixture is never built or run.
+                (member / "src/main.rs").write_text("fn main() {}\n")
                 with (member / "Cargo.toml").open("a") as stream:
                     stream.write('[dependencies]\ngarde={version="=0.23.0",default-features=false,features=["derive"]}\n'
                                  '[target.\'cfg(windows)\'.dependencies]\n'
@@ -1143,28 +1146,42 @@ class ProductAdmissionTests(unittest.TestCase):
         self.write_policy()
         VERIFY.admit_product(self.root)
 
-    def test_engine_manifest_effects_are_exact_even_with_refreshed_hash(self):
-        path = self.root / "crates/nevrotick-engine/Cargo.toml"
-        healthy = path.read_text()
-        variants = [healthy.replace('version="=1.54.1"', 'version="=1.54.2"'),
-                    healthy.replace('features=["rt","net","time","sync","macros"]', 'features=["full"]'),
-                    healthy.replace('default-features=false', 'default-features=true'),
-                    healthy.replace('default-features=false', 'default-features=0'),
-                    healthy.replace('ntp-wire={version="=0.0.0",path="../ntp-wire"}', 'ntp-wire={path="../ntp-wire"}'),
-                    healthy.replace('name="nevrotick-observe"', 'name="other"'),
-                    healthy.replace('path="src/bin/nevrotick-observe.rs"', 'path="src/lib.rs"')]
-        variants.extend(healthy + extra for extra in (
+    def test_engine_manifest_effects_are_exact_even_with_refreshed_hash(self) -> None:
+        path: Path = self.root / "crates/nevrotick-engine/Cargo.toml"
+        healthy: str = path.read_text()
+        variants: list[tuple[str, str]] = [
+            (healthy.replace('version="=1.54.1"', 'version="=1.54.2"'), "engine requires"),
+            (healthy.replace('features=["rt","net","time","sync","macros"]',
+                             'features=["full"]'), "engine requires"),
+            (healthy.replace('default-features=false', 'default-features=true'), "engine requires"),
+            (healthy.replace('default-features=false', 'default-features=0'), "engine requires"),
+            (healthy.replace('ntp-wire={version="=0.0.0",path="../ntp-wire"}',
+                             'ntp-wire={path="../ntp-wire"}'), "engine requires"),
+            (healthy.replace('name="nevrotick-observe"', 'name="other"'),
+             "Windows release role declared entry or required features differ"),
+            (healthy.replace('path="src/bin/nevrotick-observe.rs"', 'path="src/lib.rs"'),
+             "Windows release role declared entry or required features differ"),
+        ]
+        variants.extend((healthy + extra, "engine requires") for extra in (
             '\n[dev-dependencies]\nextra="=1.0.0"\n', '\n[features]\nextra=[]\n',
             '\n[build-dependencies]\nextra="=1.0.0"\n',
             '\n[target.\'cfg(windows)\'.dependencies]\nextra="=1.0.0"\n'))
-        variants.append(healthy.replace('[dependencies]\n', '[dependencies]\ntokio-macros="=2.7.1"\n'))
-        for text in variants:
+        variants.append((healthy.replace('[dependencies]\n',
+                                         '[dependencies]\ntokio-macros="=2.7.1"\n'), "engine requires"))
+        text: str
+        diagnostic: str
+        for text, diagnostic in variants:
             with self.subTest(text=text):
+                self.assertNotEqual(text, healthy)
                 path.write_text(text)
                 self.policy["manifests_sha256"]["crates/nevrotick-engine/Cargo.toml"] = VERIFY.sha256(path)
                 self.write_policy()
-                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, "engine requires"):
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, diagnostic):
                     VERIFY.admit_product(self.root)
+        path.write_text(healthy)
+        self.policy["manifests_sha256"]["crates/nevrotick-engine/Cargo.toml"] = VERIFY.sha256(path)
+        self.write_policy()
+        VERIFY.admit_product(self.root)
 
     def test_engine_time_domain_edge_has_exact_normal_role_and_locked_identity(self):
         path = self.root / "crates/nevrotick-engine/Cargo.toml"
@@ -1244,7 +1261,11 @@ class ProductAdmissionTests(unittest.TestCase):
             path = self.root / "crates/nevrotick-engine" / name
             raw = path.read_bytes()
             path.unlink()
-            with self.subTest(name=name), self.assertRaisesRegex(VERIFY.ENV.Incomplete, "entrypoint or runtime-boundary"):
+            diagnostic: str = (
+                "Windows release role source is missing, redirected or unreadable"
+                if name == "src/bin/nevrotick-observe.rs" else "entrypoint or runtime-boundary"
+            )
+            with self.subTest(name=name), self.assertRaisesRegex(VERIFY.ENV.Incomplete, diagnostic):
                 VERIFY.admit_product(self.root)
             path.write_bytes(raw)
 
@@ -3342,8 +3363,13 @@ class ExecutionAccountingTests(unittest.TestCase):
         """Run the verification coordinator with build effects simulated."""
         project = self.work / "windows-projection"
         project.mkdir(exist_ok=True)
-        names = ("Cargo.lock", "deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
-                 *VERIFY.WINDOWS_PE_INPUT_FILES)
+        names: tuple[str, ...] = (
+            "Cargo.lock", "deny.toml", ".config/nextest.toml", *VERIFY.CHECKER_FILES,
+            *VERIFY.WINDOWS_PE_INPUT_FILES, "policy/verification-manifest.toml",
+            "crates/nevrotick-ui/Cargo.toml", "crates/nevrotick-ui/src/main.rs",
+            "crates/nevrotick-engine/Cargo.toml",
+            "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
+        )
         for name in names:
             destination = project / name
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -3738,6 +3764,42 @@ class ExecutionAccountingTests(unittest.TestCase):
         self.assertEqual(observed["status"], "publication-uncertain")
         self.assertNotIn("artifact", observed)
         self.assertEqual({name: (output / name).read_bytes() for name in artifacts}, artifacts)
+
+    def test_windows_export_uses_its_source_roles_before_payload_reads(self) -> None:
+        """An alternate frozen source cannot borrow the coordinator's declarations."""
+        release: Path
+        output: Path
+        artifacts: dict[str, bytes]
+        release, output, artifacts = self.windows_release_fixture()
+        source: Path = self.work / "role-source"
+        relative: str
+        for relative in (*VERIFY.WINDOWS_PE_INPUT_FILES,
+                         "policy/verification-manifest.toml",
+                         "crates/nevrotick-ui/Cargo.toml",
+                         "crates/nevrotick-ui/src/main.rs",
+                         "crates/nevrotick-engine/Cargo.toml",
+                         "crates/nevrotick-engine/src/bin/nevrotick-observe.rs"):
+            destination: Path = source / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / relative, destination)
+        policy: Path = source / "policy/verification-manifest.toml"
+        original: str = policy.read_text()
+        marker: str = "[[windows_release_roles.roles]]"
+        first: int = original.index(marker)
+        second: int = original.index(marker, first + len(marker))
+        self.assertEqual(original.count(marker), 2)
+        self.assertIn('role = "observer"', original[second:])
+        policy.write_text(original[:second])
+        reader: MagicMock
+        with patch.object(VERIFY, "windows_pe_reader") as reader, self.assertRaisesRegex(
+                VERIFY.ENV.Incomplete, "role binding"):
+            VERIFY.export_windows_artifacts(self.work, output, source=source)
+        reader.assert_not_called()
+        self.assertEqual(list(output.iterdir()), [])
+        policy.write_text(original)
+        report: dict[str, object] = VERIFY.export_windows_artifacts(self.work, output, source=source)
+        self.assertEqual(report["component_role"], "ui")
+        self.assertEqual({entry.name: entry.read_bytes() for entry in output.iterdir()}, artifacts)
 
     def test_windows_export_selects_release_and_preserves_matching_symbols(self):
         release, output, artifacts = self.windows_release_fixture()

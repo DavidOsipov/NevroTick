@@ -22,6 +22,8 @@ import sys
 import time
 import tomllib
 import uuid
+from types import ModuleType
+from typing import BinaryIO, NamedTuple
 
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[1]
@@ -37,13 +39,15 @@ def load(name, filename):
 
 PRODUCT = load("allocation_product", "verify.py")
 ANALYSIS = load("allocation_payload_admission", "check-analysis.py")
+PE: ModuleType = load("allocation_pe", "windows_pe.py")
 ENV = PRODUCT.ENV
 Incomplete = ENV.Incomplete
 TARGET = "x86_64-pc-windows-msvc"
 OBSERVER = "policy/time-domain-windows-allocation-observer.rs"
 RUNNER = "scripts/verify-time-domain-windows-allocation.py"
-EXTRA_INPUTS = (OBSERVER, RUNNER, "scripts/check-analysis.py", "scripts/analysis-runtime.py",
-                "scripts/analysis-controls.py", "policy/analysis-tools.json")
+EXTRA_INPUTS: tuple[str, ...] = (OBSERVER, RUNNER, "scripts/check-analysis.py", "scripts/analysis-runtime.py",
+                "scripts/analysis-controls.py", "policy/analysis-tools.json", "scripts/windows_pe.py",
+                "scripts/tests/test_verify_time_domain_windows_allocation.py", "scripts/tests/test_windows_pe.py")
 CASES = ("valid", "earliest_invalid", "latest_invalid", "both_invalid", "inverted")
 BATCHES = (1, 32, 256, 4096)
 COUNTERS = ("alloc_requests", "zeroed_requests", "realloc_requests", "requested_bytes",
@@ -51,6 +55,7 @@ COUNTERS = ("alloc_requests", "zeroed_requests", "realloc_requests", "requested_
 RAW_FIELDS = (*COUNTERS, "live_payload_bytes", "peak_live_payload_bytes", "counter_error")
 PROFILE_DIRECTORY = {"debug": "debug", "release": "release", "verify-release": "verify-release"}
 MAX_JSON = 1024 * 1024
+EVIDENCE_SCHEMA: int = 2
 
 
 def canonical_digest(value):
@@ -382,27 +387,85 @@ def windows_path(path):
     return str(PureWindowsPath(path.parts[2].upper() + ":\\", *path.parts[3:]))
 
 
-def pe_header(path):
-    """Inspect bounded PE identity/declared protections, not effective runtime policy."""
-    with path.open("rb") as stream:
-        header = stream.read(64)
-        if len(header) != 64 or header[:2] != b"MZ":
-            raise Incomplete("Observer has no DOS header.")
-        offset = struct.unpack_from("<I", header, 60)[0]
-        if not 64 <= offset <= 1024 * 1024:
-            raise Incomplete("Observer PE header offset exceeds bounds.")
-        stream.seek(offset)
-        data = stream.read(96)
-    if len(data) != 96 or data[:4] != b"PE\0\0" or struct.unpack_from("<H", data, 4)[0] != 0x8664:
-        raise Incomplete("Observer is not AMD64 PE.")
-    if struct.unpack_from("<H", data, 24)[0] != 0x20b:
-        raise Incomplete("Observer is not PE32+.")
-    flags = struct.unpack_from("<H", data, 94)[0]
-    if flags & 0x4160 != 0x4160:
-        raise Incomplete("Observer PE omits a required declared link protection.")
-    return {"machine": "AMD64", "optional_header": "PE32+", "dll_characteristics": flags,
-            "terminal_server_aware_observed": bool(flags & 0x8000),
-            "limit": "Declared flags only; no complete runtime mitigation qualification."}
+class ObserverPair(NamedTuple):
+    """Exact bounded snapshots and static declarations of one matched EXE/PDB."""
+
+    image: tuple[bytes, str]
+    symbols: tuple[bytes, str]
+    pe: dict[str, str | int | bool]
+    pdb: dict[str, str | int]
+
+
+def observer_pair(path: Path) -> ObserverPair:
+    """Require the existing console-EXE profile and its matching default-profile PDB.
+
+    Both snapshots are admitted before either may be retained or staged. Static
+    declarations and symbol identity establish no effective OS/runtime policy.
+    """
+    try:
+        image: tuple[bytes, str]
+        symbols: tuple[bytes, str]
+        pdb: dict[str, str | int]
+        image, symbols, pdb = PE.read_export_pair(path, path.with_suffix(".pdb"), subsystem="console")
+        declarations: dict[str, str | int] = PE.pe_image_declarations(image[0], path, subsystem="console")
+    except (OSError, ValueError, struct.error) as error:
+        raise Incomplete("Observer EXE/PDB declarations refused.") from error
+    flags: object = declarations.get("dll_characteristics")
+    if type(flags) is not int:
+        raise Incomplete("Observer PE reader returned an invalid protection record.")
+    declared: dict[str, str | int | bool] = {
+        **declarations, "optional_header": "PE32+",
+        "terminal_server_aware_observed": bool(flags & 0x8000),
+    }
+    return ObserverPair(image, symbols, declared, pdb)
+
+
+def observer_pair_record(path: Path, pair: ObserverPair) -> dict[str, object]:
+    """Describe original retained paths and the already-admitted immutable bytes."""
+    return {"path": str(path), "sha256": pair.image[1], "pe": pair.pe,
+            "symbols": {"path": str(path.with_suffix(".pdb")),
+                        "sha256": pair.symbols[1], "identity": pair.pdb}}
+
+
+def retain_observer_pair(binary: Path, output: Path) -> dict[str, object]:
+    """Admit both artifacts before writing fresh files in the private build output.
+
+    Partial I/O failures leave only incomplete private evidence; a passing record
+    is returned after both retained files match the admitted snapshots.
+    """
+    pair: ObserverPair = observer_pair(binary)
+    artifact: Path = output / binary.name
+    symbols: Path = artifact.with_suffix(".pdb")
+    path: Path
+    snapshot: tuple[bytes, str]
+    stream: BinaryIO
+    for path, snapshot in ((artifact, pair.image), (symbols, pair.symbols)):
+        with path.open("xb") as stream:
+            if stream.write(snapshot[0]) != len(snapshot[0]):
+                raise Incomplete("Observer artifact retention was incomplete.")
+        path.chmod(0o400)
+        if PRODUCT.sha256(path) != snapshot[1]:
+            raise Incomplete("Retained observer artifact differs from its admitted snapshot.")
+    return observer_pair_record(artifact, pair)
+
+
+def admit_retained_observer_pair(record: object) -> tuple[Path, ObserverPair]:
+    """Recheck the exact original pair before native directory creation or dispatch."""
+    if (type(record) is not dict or set(record) != {"path", "sha256", "pe", "symbols"}
+            or type(record["path"]) is not str):
+        raise Incomplete("Native observer requires a complete retained EXE/PDB record.")
+    original: Path = Path(record["path"])
+    try:
+        resolved: Path = original.resolve(strict=False)
+    except (OSError, RuntimeError) as error:
+        raise Incomplete("Native observer artifact path cannot be resolved.") from error
+    if (not original.is_absolute() or original != resolved
+            or re.fullmatch(r"NevroTick-[a-f0-9]{32}\.exe", original.name) is None):
+        raise Incomplete("Native observer requires its original canonical build artifact.")
+    pair: ObserverPair = observer_pair(original)
+    if canonical_digest(record) != canonical_digest(observer_pair_record(original, pair)):
+        raise Incomplete("Retained observer pair differs from its frozen build record.")
+    return original, pair
 
 
 def new_output(path):
@@ -546,11 +609,8 @@ def build(args, report):
     basename = "NevroTick-" + uuid.uuid4().hex + ".exe"
     run("observer-link", ["rustc", *flags, "-o", "/work/" + basename, "/work/fixture/" + OBSERVER],
         readonly_dependencies=sealed)
-    binary = work / basename
-    declared_pe = pe_header(binary)
-    artifact = output / basename
-    shutil.copyfile(binary, artifact); artifact.chmod(0o400)
-    report["artifact"] = {"path": str(artifact), "sha256": PRODUCT.sha256(artifact), "pe": declared_pe}
+    binary: Path = work / basename
+    report["artifact"] = retain_observer_pair(binary, output)
     report["dependency_artifacts_sha256"] = dependency_inputs
     report["emitted_library"] = {"path": actual, "sha256": PRODUCT.sha256(actual_host)}
     if (PRODUCT.admit_product(ROOT)[1] != product_inputs
@@ -959,7 +1019,8 @@ def native(args, report):
     receipt_hash = PRODUCT.sha256(args.build_receipt)
     built = decode(args.build_receipt.read_bytes())
     expected = PRODUCT.admit_product(ROOT)[1]
-    if (built.get("schema_version") != 1 or built.get("status") != "passed" or built.get("lane") != "build"
+    if (type(built.get("schema_version")) is not int or built["schema_version"] != EVIDENCE_SCHEMA
+            or built.get("status") != "passed" or built.get("lane") != "build"
             or built.get("purpose") != "test_only_time_domain_allocator_requests"
             or built.get("product_source_sha256") != expected or built.get("candidate_sha256") != canonical_digest(expected)
             or built.get("extra_inputs_sha256") != {name: PRODUCT.sha256(ROOT / name) for name in EXTRA_INPUTS}
@@ -970,18 +1031,18 @@ def native(args, report):
                 "observer-clippy", "observer-link"]
             or any(lane.get("failure") is not None or lane.get("exit_code") != 0 for lane in built["lanes"])):
         raise Incomplete("Native input is not a successful matching guarded observer build receipt.")
-    original = Path(built["artifact"]["path"])
-    if PRODUCT.sha256(original) != built["artifact"]["sha256"] or pe_header(original) != built["artifact"]["pe"]:
-        raise Incomplete("Built observer artifact has changed.")
-    directory = args.native_dir
+    original: Path
+    pair: ObserverPair
+    original, pair = admit_retained_observer_pair(built.get("artifact"))
+    directory: Path = args.native_dir
     windows_path(directory)
     if directory.exists() or directory.is_symlink() or directory.parent != directory.parent.resolve(strict=True):
         raise Incomplete("Use a fresh canonical local Windows fixture directory.")
     directory.mkdir()
-    image = directory / ("NevroTick-" + uuid.uuid4().hex + ".exe")
-    shutil.copyfile(original, image)
-    image_hash = PRODUCT.sha256(image)
-    if image_hash != built["artifact"]["sha256"]:
+    image: Path = directory / ("NevroTick-" + uuid.uuid4().hex + ".exe")
+    image.write_bytes(pair.image[0])
+    image_hash: str = PRODUCT.sha256(image)
+    if image_hash != pair.image[1]:
         raise Incomplete("Native observer copy differs from its actual built artifact.")
     claims = {"candidate_sha256": built["candidate_sha256"], "observer_source_sha256": built["extra_inputs_sha256"][OBSERVER],
               "build_receipt_sha256": receipt_hash, "profile": built["profile"]}
@@ -1007,6 +1068,7 @@ def native(args, report):
     report["observer_output"] = value
     report["assessment"] = validate_observation(value, claims)
     if (PRODUCT.sha256(image) != image_hash or PRODUCT.sha256(original) != image_hash
+            or PRODUCT.sha256(original.with_suffix(".pdb")) != pair.symbols[1]
             or PRODUCT.sha256(request) != hashes["request"] or PRODUCT.sha256(supervisor) != hashes["supervisor"]
             or PRODUCT.sha256(args.build_receipt) != receipt_hash or PRODUCT.admit_product(ROOT)[1] != expected
             or built["extra_inputs_sha256"] != {name: PRODUCT.sha256(ROOT / name) for name in EXTRA_INPUTS}
@@ -1026,7 +1088,7 @@ def main(argv=None):
                  "build-receipt", "native-dir"):
         parser.add_argument("--" + name, type=Path)
     args = parser.parse_args(argv)
-    report = {"schema_version": 1, "purpose": "test_only_time_domain_allocator_requests",
+    report: dict[str, object] = {"schema_version": EVIDENCE_SCHEMA, "purpose": "test_only_time_domain_allocator_requests",
               "lane": args.lane, "status": "incomplete", "started_unix": time.time(),
               "native_execution": "not performed"}
     destination = None
