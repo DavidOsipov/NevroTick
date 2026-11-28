@@ -194,7 +194,7 @@ pub enum FixtureError {
     OutcomeUnavailable,
     /// A worker phase failed without acknowledging physical completion.
     Worker(WorkerError),
-    /// The original cause accompanied by bounded independent cleanup/report facts.
+    /// The original cause accompanied by bounded operation, cleanup or reporting facts.
     Cleanup(ServiceFailure),
 }
 
@@ -225,7 +225,7 @@ impl fmt::Display for FixtureError {
             Self::ServiceFailed => "laboratory service did not finish cleanly",
             Self::OutcomeUnavailable => "laboratory service outcome receipt is unavailable",
             Self::Worker(_) => "laboratory service worker failed",
-            Self::Cleanup(_) => "laboratory service failed with cleanup facts",
+            Self::Cleanup(_) => "laboratory service failed with additional facts",
         })
     }
 }
@@ -396,7 +396,7 @@ impl ServiceFailure {
 impl fmt::Display for ServiceFailure {
     /// Project only a bounded category, leaving all causes explicitly inspectable.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str("laboratory service retained cleanup failures")
+        f.write_str("laboratory service retained additional failures")
     }
 }
 

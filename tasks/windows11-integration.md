@@ -1290,6 +1290,39 @@ errors and distinguish build, static image, effective state and behavior.
 Native checks remain held. This source pass adds no mitigation selection,
 exclusion or runtime changes, and the complete W1 profile remains open.
 
+#### Keep service failure diagnostics faithful to the retained facts — 29 November 2026
+
+W11-W05/S3.1 and CHECK-17/25. The [service fixture error](../tools/windows-service-fixture/src/error.rs)
+now describes additional failures without implying a cleanup failure. The
+host can retain a later operation failure even when cleanup finishes without
+error. The existing host control observes both cases, checks both bounded
+`Display` messages and preserves the exact primary and secondary facts.
+The typed cause and diagnostic record IDs are unchanged.
+
+The first graph attempt captured all six Cargo metadata/tree results but the
+exact target reader refused two already checked-in Roughtime test targets.
+Both GNU and MSVC metadata exposed the same checked local paths and test
+kinds. The [fixture graph reader](../tools/windows-service-fixture/qualification.py)
+now includes those exact entries. Engine remains test-only in the fixture
+graph and the metadata addition selects no Roughtime feature. Sixteen isolated
+graph controls passed. Readback of both retained metadata rows also refused
+wrong wire target path, kind or required-feature metadata.
+
+The configured graph, GNU all-target fixture tests and Clippy passed on service
+candidate `b956b24ed9b6dd9210fd1a8e812aba4b87f0f1433a08bd54d8e0b82b2a13dac0`,
+including the changed host case among 204 library tests and one integration
+test. Rust formatting passed. The locally ignored `p3-operation-facts-*`
+records are under `artifacts/windows-services/recovery-20261107-v1/`. These
+checks cover the fixture and its graph. Installed service, native and current
+metric evidence remain with their existing owners.
+
+| Receipt | SHA-256 |
+| --- | --- |
+| `p3-operation-facts-graph-2911a.json`, incomplete | `0032a1aa1685dba925d7fd52e64df2cbfe9127b5bc12d72a3fec7967bb06824c` |
+| `p3-operation-facts-graph-2911b.json`, passed | `b5d1fbf4017ebd840d708b99128a3cb63d45ea9a350c04a95075286aac5545e2` |
+| `p3-operation-facts-test-2911b.json`, passed | `bd8dac28131f0fc88820b71d5eb7cd998a3c3c8d8fb9c728b188df675017e33e` |
+| `p3-operation-facts-clippy-2911b.json`, passed | `25cfa6c8180a6ba360ae8541efb40b9e141ed2464583edd29adf1444e4c06c5a` |
+
 #### Service and IPC qualification — 25 November 2026
 
 **Source and status:** review of `a281ec3b254be76a079bfe66a4623c06684c1119`.
@@ -27896,6 +27929,23 @@ It retains both old and new source hashes and the observed check results.
 The historical 241-test and archive-replay receipts keep their original
 source identities. No new runtime, native, signing or installed-package
 qualification is claimed for this annotation-only correction.
+
+###### Refuse malformed guarded ArtworkLab handoff inventories — 29 November 2026
+
+W11-W10/S6.4 and CHECK-20/25/26/27. The [shared handoff reader](../scripts/verify.py)
+verifies the decoded object shapes of `authoring_inputs`, the private authoring
+export roster and the base artwork roster before using dictionary operations.
+ArtworkLab calls this reader directly. Wrong shapes return its existing bounded
+`Incomplete` diagnostics before payload staging. Valid receipts retain the
+exact names, digest and held-file checks.
+
+The direct-reader regression re-pinned each changed receipt. Before the
+respective fixes, malformed private export and authoring input rosters both
+raised `AttributeError`. The final read-only, network-isolated Python checks
+passed 11 handoff and 43 ArtworkLab tests. The new control also admitted the
+original healthy handoff before alteration and after restoration. This is
+portable receipt-processing evidence. The unsigned archive, installed
+activation and signing gates retain their separate candidate requirements.
 
 #### Separate the recovery census from confirmed job retirement
 

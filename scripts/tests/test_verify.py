@@ -3320,6 +3320,29 @@ class ExecutionAccountingTests(unittest.TestCase):
         receipt.write_bytes(original)
         self.assertEqual(self.run_msix_handoff(output, original_pin)[0], 0)
 
+    def test_msix_handoff_helper_refuses_non_object_nested_rosters(self) -> None:
+        output: Path = self.complete_msix_handoff_fixture()
+        receipt: Path = output / "verification.json"
+        original: bytes = receipt.read_bytes()
+        original_pin: str = digest(original)
+        self.assertEqual(VERIFY.inspect_msix_handoff(ROOT, output, original_pin)["status"], "handoff-verified")
+        for name, key, message in (
+            (None, "authoring_inputs", "authoring input inventory"),
+            ("authoring_export", "files", "private authoring inventory differs"),
+            ("base_artwork", "files", "artwork differs from its pinned roster"),
+        ):
+            with self.subTest(name=name):
+                report: dict[str, Any] = json.loads(original)
+                assembly: dict[str, Any] = report["msix_assembly_inputs"]
+                record: dict[str, Any] = assembly if name is None else assembly[name]
+                record[key] = list(record[key])
+                changed: bytes = json.dumps(report).encode()
+                receipt.write_bytes(changed)
+                with self.assertRaisesRegex(VERIFY.ENV.Incomplete, message):
+                    VERIFY.inspect_msix_handoff(ROOT, output, digest(changed))
+        receipt.write_bytes(original)
+        self.assertEqual(VERIFY.inspect_msix_handoff(ROOT, output, original_pin)["status"], "handoff-verified")
+
     def test_msix_handoff_requires_unique_generation_receipt_authoring_paths(self):
         output = self.complete_msix_handoff_fixture()
         handoff_receipt = output / "verification.json"

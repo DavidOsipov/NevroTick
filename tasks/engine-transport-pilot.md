@@ -33258,6 +33258,15 @@ neither executed nor admitted. Preserve its incomplete state and do not run
 physical stock19 from it; the 19 lanes, D: report image, service/resource
 closure and read-only physical readback remain open.
 
+**Product map after the ArtworkLab reader repair — 29 November 2026.** The
+configured source admission still returns 838 inputs. Its canonical digest is
+`ff59bd784952c73d7c370cd9a35b213d7232468e6817d1b94f48b2359f943fbe`.
+Comparing all names and hashes against the retained `2045b1be…` basis finds
+only `scripts/verify.py` changed. The [bounded receipt repair](windows11-integration.md#refuse-malformed-guarded-artworklab-handoff-inventories--29-november-2026)
+leaves the basis under its original identity. Re-admit the successor before
+consuming it as current physical stock19 evidence. This source check ran no
+Cargo or stock19 lane.
+
 **Parallel development allocation — 28 November 2026.** Following David's
 request to use P2–P7 capacity, the coordinator retains P2 and shared contract,
 graph and integration ownership. Three fresh-context workers independently

@@ -1029,6 +1029,18 @@ matching the review bundle's independent derivation. This updates one input
 in the receiving verification source inventory. The English content remains
 pending human semantic approval. Native UI qualification remains open.
 
+**Service badge presentation draft — 29 November 2026.** The private patch
+`/tmp/nevrotick-p5-service-badge-ol2tgwft/settings.patch` (SHA-256
+`d0ed3f15d1e295f57f0913130c236ea4dc5d9672a0899ecb1fa51da3e2344f2d`)
+places status facts and Diagnostics above a divider, followed by the
+administrator badge, refusal messages and eight disabled service change
+controls. This only reorders existing source lines. The isolated configured
+text checker on the overlaid candidate passed with 539 active and used IDs
+and the same contract fingerprint. Before integration, verify the generated
+shell callbacks and rebind both the exact-content review's view source and
+the product input map. The draft remains private. Its visible layout still
+requires the existing Simple and Power mode observations.
+
 **Historical candidate text identities — 27 November 2026:** schema 2,
 text contract 4, English revision 4 and informational GUI build 2;
 525 active messages, with fingerprint

@@ -454,7 +454,7 @@ class EngineCompositionGraphTests(unittest.TestCase):
                 ("nevrotick-observe", "bin", "bin", "src/bin/nevrotick-observe.rs"),
                 *[(name, "test", "bin", "tests/" + name + ".rs") for name in (
                     "execute_entered", "prepare_entered", "prepare_release", "quality",
-                    "runtime_boundary", "series", "session")]],
+                    "roughtime_verification", "runtime_boundary", "series", "session")]],
         }
         packages, nodes = [], []
         for name, targets in target_paths.items():

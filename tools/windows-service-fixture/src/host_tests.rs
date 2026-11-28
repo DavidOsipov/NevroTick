@@ -7100,9 +7100,20 @@ mod worker_tests {
                 cleanup_failure: Some(WorkerError::Running),
             }));
             assert_eq!(rig.poll()?, InvocationPoll::Finished);
-            let Some(Err(FixtureError::Cleanup(facts))) = rig.take_result() else {
+            let Some(Err(error)): Option<Result<(), FixtureError>> = rig.take_result() else {
                 return Err("same-code distinct-kind completion fact disappeared".into());
             };
+            assert_eq!(
+                error.to_string(),
+                "laboratory service failed with additional facts"
+            );
+            let FixtureError::Cleanup(facts) = error else {
+                return Err("distinct-kind completion fact was not retained".into());
+            };
+            assert_eq!(
+                facts.to_string(),
+                "laboratory service retained additional failures"
+            );
             assert_eq!(facts.primary(), &FixtureError::Worker(WorkerError::Running));
             assert_eq!(
                 facts.operation(),

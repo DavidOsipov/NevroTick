@@ -1746,7 +1746,7 @@ impl<R: StatusReporter<Error = NativeError>, P: Worker, W: EventWriter> ServiceI
     /// Move the unchanged original primary and secondary objects into their result.
     ///
     /// # Errors
-    /// Returns the retained primary failure and any independently observed cleanup failures.
+    /// Returns the retained primary and any later operation, cleanup or reporting failures.
     fn take_actual_result(&mut self) -> Result<(), FixtureError> {
         let Some(primary) = self.failure.take() else {
             return Ok(());

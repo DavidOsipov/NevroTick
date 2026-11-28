@@ -2718,8 +2718,8 @@ def verify_msix_properties(raw: bytes, *, source: Path, generation_receipt: byte
 
 def msix_authoring_digests(inspection: dict) -> dict[str, str]:
     """Select the exact private assembly files from one checked inspection."""
-    authoring = inspection["authoring_inputs"]
-    if not MSIX_REQUIRED_AUTHORING <= authoring.keys() <= MSIX_ALLOWED_AUTHORING:
+    authoring: object = inspection.get("authoring_inputs")
+    if type(authoring) is not dict or not MSIX_REQUIRED_AUTHORING <= authoring.keys() <= MSIX_ALLOWED_AUTHORING:
         raise ENV.Incomplete("Unexpected Windows MSIX authoring input inventory.")
     return {**authoring, "receipt.json": inspection["generation_receipt_sha256"]}
 
@@ -2923,16 +2923,20 @@ def _read_msix_handoff_export(source: Path, directory: Path, descriptor: int, re
         raise ENV.Incomplete("Windows MSIX handoff assembly inputs must be an object.")
     inspection = inspection.copy()
     claimed_activation = inspection.pop("ui_activation")
-    claimed_artwork = inspection.pop("base_artwork")
-    claimed_authoring = inspection.pop("authoring_export")
+    claimed_artwork: object = inspection.pop("base_artwork")
+    claimed_authoring: object = inspection.pop("authoring_export")
     generation = inspection["generation_receipt_sha256"]
     authoring_names = {*msix_authoring_digests(inspection), MSIX_PROPERTIES_FRAGMENT}
-    if (claimed_authoring["scope"] != "private-assembly-source"
-            or claimed_authoring["export_root"] != "msix-authoring"
+    if (type(claimed_authoring) is not dict
+            or claimed_authoring.get("scope") != "private-assembly-source"
+            or claimed_authoring.get("export_root") != "msix-authoring"
+            or type(claimed_authoring.get("files")) is not dict
             or claimed_authoring["files"].keys() != authoring_names):
         raise ENV.Incomplete("Windows MSIX handoff private authoring inventory differs.")
 
-    artwork_names = {Path(name).name for name in claimed_artwork["files"]}
+    if type(claimed_artwork) is not dict or type(claimed_artwork.get("files")) is not dict:
+        raise ENV.Incomplete("Windows MSIX handoff artwork differs from its pinned roster.")
+    artwork_names: set[str] = {Path(name).name for name in claimed_artwork["files"]}
     artwork_scope, artwork_pins = _msix_artwork_selection(artwork_names)
     if (claimed_artwork != msix_artwork_export_record(artwork_scope, artwork_pins)
             or any(type(row[key]) is not int for row in claimed_artwork["files"].values()
