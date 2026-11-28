@@ -365,7 +365,7 @@ class AllocationAdmissionTests(unittest.TestCase):
                 with self.subTest(missing=missing), self.assertRaises(MODULE.Incomplete):
                     MODULE.observer_pair(image)
 
-    def test_header_only_observer_cannot_establish_complete_artifact_admission(self):
+    def test_header_only_observer_cannot_establish_complete_artifact_admission(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             image: Path = Path(temporary) / "observer.exe"
             data: bytearray = bytearray(160)
@@ -379,7 +379,7 @@ class AllocationAdmissionTests(unittest.TestCase):
             with self.assertRaises(MODULE.Incomplete):
                 MODULE.observer_pair(image)
 
-    def test_observer_refuses_incomplete_static_declarations_before_retaining_either_file(self):
+    def test_observer_refuses_incomplete_static_declarations_before_retaining_either_file(self) -> None:
         change: str
         for change in ("relocations", "cfg", "cet", "loader", "subsystem", "writable_code"):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
@@ -402,7 +402,7 @@ class AllocationAdmissionTests(unittest.TestCase):
                 self.assertEqual(sorted(p.name for p in output.iterdir()), ["existing.txt"])
                 self.assertEqual(sentinel.read_bytes(), b"preserve")
 
-    def test_observer_requires_matching_symbols_and_retains_the_admitted_snapshots(self):
+    def test_observer_requires_matching_symbols_and_retains_the_admitted_snapshots(self) -> None:
         change: str
         for change in ("missing", "guid", "age", "basename"):
             with self.subTest(change=change), tempfile.TemporaryDirectory() as temporary:
@@ -435,7 +435,7 @@ class AllocationAdmissionTests(unittest.TestCase):
             self.assertEqual(record["pe"]["dependent_load_flags"], 0xA00)
             self.assertEqual(record["pe"]["extended_dll_characteristics"], 3)
 
-    def test_retention_uses_sealed_bytes_after_original_paths_change(self):
+    def test_retention_uses_sealed_bytes_after_original_paths_change(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root: Path = Path(temporary)
             image: Path = observer_files(root)
@@ -454,7 +454,7 @@ class AllocationAdmissionTests(unittest.TestCase):
             self.assertEqual(record["sha256"], sealed.image[1])
             self.assertEqual(record["symbols"]["sha256"], sealed.symbols[1])
 
-    def test_native_refuses_old_or_changed_pair_before_windows_staging_or_dispatch(self):
+    def test_native_refuses_old_or_changed_pair_before_windows_staging_or_dispatch(self) -> None:
         change: str
         for change in ("old_schema", "schema_float", "missing_record", "missing_symbols", "symbol_path", "symbol_digest",
                        "symbol_identity", "pe_record", "pdb_bytes", "thin_image", "path_loop"):
@@ -490,7 +490,7 @@ class AllocationAdmissionTests(unittest.TestCase):
                 self.assertFalse(native.exists())
                 dispatch.assert_not_called()
 
-    def test_changed_pair_reader_invalidates_receipt_before_native_effects(self):
+    def test_changed_pair_reader_invalidates_receipt_before_native_effects(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root: Path = Path(temporary)
             receipt: Path
@@ -520,10 +520,10 @@ class AllocationAdmissionTests(unittest.TestCase):
             self.assertFalse(native.exists())
             dispatch.assert_not_called()
 
-    def test_native_stages_only_the_admitted_image_under_its_new_name(self):
+    def test_native_stages_only_the_admitted_image_under_its_new_name(self) -> None:
         self.assert_native_staging(False)
 
-    def test_native_staging_uses_sealed_pair_after_original_paths_change(self):
+    def test_native_staging_uses_sealed_pair_after_original_paths_change(self) -> None:
         self.assert_native_staging(True)
 
     def assert_native_staging(self, replace_original: bool) -> None:

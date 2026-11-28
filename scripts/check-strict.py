@@ -130,6 +130,13 @@ PURE_CLIPPY = {
                           ("disallowed-types", PURE_TYPE_PATHS),
                           ("disallowed-macros", PURE_MACRO_PATHS))},
 }
+# Source inputs remain separate from configuration parsed as TOML.
+WINDOWS_RELEASE_ROLE_SOURCES: dict[str, int] = {
+    "crates/nevrotick-ui/Cargo.toml": 64 * 1024,
+    "crates/nevrotick-ui/src/main.rs": 512 * 1024,
+    "crates/nevrotick-engine/Cargo.toml": 64 * 1024,
+    "crates/nevrotick-engine/src/bin/nevrotick-observe.rs": 512 * 1024,
+}
 CONFIG_FILES = (
     "policy/rust-workspace.toml", "rustfmt.toml", "clippy.toml", "deny.toml",
     ".config/nextest.toml", ".cargo/audit.toml", ".cargo/mutants.toml",
@@ -307,9 +314,13 @@ def _windows_role_source_bytes(root: Path, name: str, *, maximum: int) -> bytes:
             os.close(directory)
 
 
-def windows_release_role_bindings(root: Path, inventory: dict | None = None
+def windows_release_role_bindings(root: Path, inventory: dict | None = None, *,
+                                  source_snapshot: dict[str, bytes] | None = None
                                   ) -> dict[str, WindowsReleaseRole]:
     """Match only the workspace UI/Observe exports to immutable source bindings."""
+    if source_snapshot is not None and (type(source_snapshot) is not dict
+                                        or set(source_snapshot) != set(WINDOWS_RELEASE_ROLE_SOURCES)):
+        raise ENV.Incomplete("Workspace role source snapshot differs from the fixed source roster.")
     expected: dict[str, WindowsReleaseRole] = {
         "ui": WindowsReleaseRole(
             "ui", "nevrotick-ui.exe", "nevrotick-ui", "crates/nevrotick-ui/Cargo.toml",
@@ -322,7 +333,8 @@ def windows_release_role_bindings(root: Path, inventory: dict | None = None
             "entrypoint", "rust-entry-source-only", "toolchain", "pending-complete-role-qualification"),
     }
     return _windows_role_bindings(root, inventory, section_name="windows_release_roles",
-                                  scope="workspace-release-export-pair-source-binding", expected=expected)
+                                  scope="workspace-release-export-pair-source-binding", expected=expected,
+                                  source_snapshot=source_snapshot)
 
 
 def windows_lab_service_role_bindings(root: Path, inventory: dict | None = None
@@ -347,13 +359,23 @@ def windows_lab_service_role_bindings(root: Path, inventory: dict | None = None
 
 
 def _windows_role_bindings(root: Path, inventory: dict | None, *, section_name: str,
-                           scope: str, expected: dict[str, WindowsReleaseRole]
+                           scope: str, expected: dict[str, WindowsReleaseRole],
+                           source_snapshot: dict[str, bytes] | None = None
                            ) -> dict[str, WindowsReleaseRole]:
     """Validate one code-owned closed roster against bounded exact Cargo/entry sources.
 
     Immutable returned rows attest source attribution only. Neither current
     process policy nor final module closure is established by this reader.
     """
+    def role_source(name: str, maximum: int) -> bytes:
+        """Consume captured immutable bytes, or perform a bounded live admission."""
+        if source_snapshot is None:
+            return _windows_role_source_bytes(root, name, maximum=maximum)
+        payload: object = source_snapshot.get(name)
+        if type(payload) is not bytes or len(payload) > maximum:
+            raise ENV.Incomplete("Role source snapshot omits bounded immutable input bytes.")
+        return payload
+
     payload: bytes = _windows_role_source_bytes(
         root, "policy/verification-manifest.toml", maximum=512 * 1024)
     if inventory is None:
@@ -395,8 +417,8 @@ def _windows_role_bindings(root: Path, inventory: dict | None, *, section_name: 
         if row != wanted:
             raise ENV.Incomplete("Windows release role binding or pending qualification differs from its export owner.")
         try:
-            manifest: dict = tomllib.loads(_windows_role_source_bytes(
-                root, binding.cargo_manifest, maximum=64 * 1024).decode("utf-8"))
+            manifest: dict = tomllib.loads(role_source(
+                binding.cargo_manifest, 64 * 1024).decode("utf-8"))
         except (UnicodeError, ValueError) as error:
             raise ENV.Incomplete("Windows release role Cargo source is invalid UTF-8 TOML.") from error
         package: object = manifest.get("package")
@@ -418,14 +440,15 @@ def _windows_role_bindings(root: Path, inventory: dict | None, *, section_name: 
                     or type(selected[0].get("required-features", [])) is not list
                     or selected[0].get("required-features", []) != list(binding.required_features)):
                 raise ENV.Incomplete("Windows release role declared entry or required features differ.")
-        _windows_role_source_bytes(root, binding.entry_source, maximum=512 * 1024)
+        role_source(binding.entry_source, 512 * 1024)
         checked[role] = binding
     if set(checked) != set(expected):
         raise ENV.Incomplete("Windows role roster differs from its code-owned section.")
     return checked
 
 
-def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
+def read_configuration(root: Path, snapshot: dict | None = None, *,
+                       role_snapshot: dict[str, bytes] | None = None) -> dict:
     require_clippy_locations(root)
     data = snapshot or {name: (root / name).read_bytes() for name in CONFIG_FILES}
     parsed = {name: tomllib.loads(data[name].decode("utf-8")) for name in CONFIG_FILES}
@@ -475,7 +498,7 @@ def read_configuration(root: Path, snapshot: dict | None = None) -> dict:
             or inventory.get("security_module_minimum_executable_line_percent") != 90
             or inventory.get("critical_file_minimum_mutation_percent") != 95):
         raise ENV.Incomplete("Verification policy must retain reviewed per-module/file thresholds.")
-    windows_release_role_bindings(root, inventory)
+    windows_release_role_bindings(root, inventory, source_snapshot=role_snapshot)
     require_nextest_configuration(parsed[".config/nextest.toml"])
     require_analysis_configuration(parsed)
     native_configs = {
@@ -1199,7 +1222,14 @@ def main(argv=None) -> int:
         if explicit_fixtures:
             inputs += ("scripts/verify.py",)
         snapshot = {name: (ROOT / name).read_bytes() for name in inputs}
-        config = read_configuration(ROOT, snapshot)
+        role_snapshot: dict[str, bytes] = {
+            name: _windows_role_source_bytes(ROOT, name, maximum=maximum)
+            for name, maximum in WINDOWS_RELEASE_ROLE_SOURCES.items()
+        }
+        config = read_configuration(ROOT, snapshot, role_snapshot=role_snapshot)
+        report["role_source_sha256"] = {
+            name: hashlib.sha256(data).hexdigest() for name, data in role_snapshot.items()
+        }
         if explicit_fixtures:
             import verify as product
 
@@ -1241,6 +1271,9 @@ def main(argv=None) -> int:
         require_clippy_locations(ROOT)
         if any((ROOT / name).read_bytes() != data for name, data in snapshot.items()):
             raise ENV.Incomplete("Policy/tooling inputs changed during the check; results are stale.")
+        if any(_windows_role_source_bytes(ROOT, name, maximum=WINDOWS_RELEASE_ROLE_SOURCES[name]) != data
+               for name, data in role_snapshot.items()):
+            raise ENV.Incomplete("Workspace role source inputs changed during the check; results are stale.")
         report["status"] = "passed"
     except (ENV.Incomplete, OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         report["error"] = str(error)

@@ -1,7 +1,12 @@
 """Independent source-only controls for the fixed Windows release export pair."""
 from __future__ import annotations
 
+from collections.abc import Callable
+from contextlib import redirect_stderr, redirect_stdout
 import copy
+import hashlib
+import io
+import json
 import importlib.util
 from pathlib import Path
 import shutil
@@ -310,6 +315,120 @@ class WindowsLabServiceRoleTests(unittest.TestCase):
         directory.rename(retained)
         directory.symlink_to(retained, target_is_directory=True)
         self.refused(self.inventory)
+
+
+class StandaloneRoleCustodyTests(unittest.TestCase):
+    """Observe standalone admission, receipt identity and completion bookends."""
+
+    ROLE_FILES: tuple[str, ...] = (
+        "crates/nevrotick-ui/Cargo.toml", "crates/nevrotick-ui/src/main.rs",
+        "crates/nevrotick-engine/Cargo.toml", "crates/nevrotick-engine/src/bin/nevrotick-observe.rs",
+    )
+
+    def setUp(self) -> None:
+        temporary: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(prefix="nevrotick-standalone-role-")
+        self.addCleanup(temporary.cleanup)
+        private: Path = Path(temporary.name)
+        self.root: Path = private / "source"
+        self.receipt: Path = private / "receipt.json"
+        name: str
+        for name in (*STRICT.CONFIG_FILES, *self.ROLE_FILES, ".cargo/config.toml", "rust-toolchain.toml",
+                     "policy/tool-manifest.json", "scripts/check-strict.py", "scripts/check-environment.py"):
+            destination: Path = self.root / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, destination)
+
+    def invoke(self, inspection: Callable[[Path], dict] | None = None) -> tuple[int, dict]:
+        with (patch.object(STRICT, "ROOT", self.root),
+              patch.object(STRICT.ENV, "inspect", side_effect=inspection, return_value={}),
+              patch.object(STRICT, "admit_extensions", return_value={}),
+              redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO())):
+            status: int = STRICT.main(["--json", str(self.receipt)])
+        return status, json.loads(self.receipt.read_text())
+
+    def test_healthy_standalone_receipt_binds_every_role_source(self) -> None:
+        expected: dict[str, str] = {name: hashlib.sha256((self.root / name).read_bytes()).hexdigest()
+                                    for name in self.ROLE_FILES}
+        status: int
+        report: dict
+        status, report = self.invoke()
+        self.assertEqual(status, 0)
+        self.assertEqual(report["role_source_sha256"], expected)
+        self.assertFalse(set(expected) & set(STRICT.CONFIG_FILES))
+
+    def test_each_post_admission_edit_refuses_and_restored_sources_work(self) -> None:
+        name: str
+        for name in self.ROLE_FILES:
+            path: Path = self.root / name
+            original: bytes = path.read_bytes()
+
+            def edit(_root: Path) -> dict:
+                self.assertEqual(_root, self.root)
+                path.write_bytes(b"changed after role admission")
+                return {}
+
+            try:
+                status: int
+                report: dict
+                status, report = self.invoke(edit)
+                self.assertEqual(status, 1, name)
+                self.assertEqual(report["status"], "incomplete")
+                self.assertIn("role source", report["error"])
+            finally:
+                path.write_bytes(original)
+            status, report = self.invoke()
+            self.assertEqual((status, report["status"]), (0, "passed"))
+
+
+    def test_validation_uses_captured_bytes_and_completion_refuses_later_live_change(self) -> None:
+        original_reader: Callable[..., bytes] = STRICT._windows_role_source_bytes
+        manifest: Path = self.root / self.ROLE_FILES[0]
+        original: bytes = manifest.read_bytes()
+        inspection_calls: list[Path] = []
+        changed: bool = False
+
+        def capture(root: Path, name: str, *, maximum: int) -> bytes:
+            nonlocal changed
+            payload: bytes = original_reader(root, name, maximum=maximum)
+            if name == self.ROLE_FILES[-1] and not changed:
+                manifest.write_bytes(b"invalid Cargo TOML after capture")
+                changed = True
+            return payload
+
+        def inspect(root: Path) -> dict:
+            inspection_calls.append(root)
+            return {}
+
+        try:
+            with patch.object(STRICT, "_windows_role_source_bytes", side_effect=capture):
+                status: int
+                report: dict
+                status, report = self.invoke(inspect)
+            self.assertTrue(changed)
+            self.assertEqual(inspection_calls, [self.root])
+            self.assertEqual(status, 1)
+            self.assertIn("role source", report["error"])
+            self.assertEqual(report["role_source_sha256"][self.ROLE_FILES[0]],
+                             hashlib.sha256(original).hexdigest())
+        finally:
+            manifest.write_bytes(original)
+        status, report = self.invoke()
+        self.assertEqual((status, report["status"]), (0, "passed"))
+
+    def test_supplied_role_snapshots_require_the_complete_bounded_immutable_roster(self) -> None:
+        source: dict[str, bytes] = {name: (self.root / name).read_bytes() for name in self.ROLE_FILES}
+        self.assertEqual(set(STRICT.windows_release_role_bindings(self.root, source_snapshot=source)),
+                         {"ui", "observer"})
+        changed: dict = dict(source)
+        del changed[self.ROLE_FILES[-1]]
+        with self.assertRaises(STRICT.ENV.Incomplete):
+            STRICT.windows_release_role_bindings(self.root, source_snapshot=changed)
+        value: object
+        for value in (bytearray(source[self.ROLE_FILES[1]]), None, b"x" * (512 * 1024 + 1)):
+            changed = dict(source)
+            changed[self.ROLE_FILES[1]] = value
+            with self.assertRaises(STRICT.ENV.Incomplete):
+                STRICT.windows_release_role_bindings(self.root, source_snapshot=changed)
 
 
 if __name__ == "__main__":

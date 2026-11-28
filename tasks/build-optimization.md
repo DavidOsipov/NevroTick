@@ -314,6 +314,57 @@ service images can carry the new record. Complete B1 module attribution,
 B3 prebuilt/native coverage, effective policy, final package/signing and
 installed-service qualification remain open.
 
+### Standalone strict-checker role-source custody — 28 November 2026
+
+The independent `78bbbda` review identified a current B1 verification-integrity
+gap: standalone `check-strict.py` validates four workspace role sources outside
+its snapshot/hash/final-recheck set. `qa-failure-triage`, contract implementation
+and regression selection own the causal repair. Capture those bounded no-follow
+inputs separately from parsed TOML configuration, validate the captured bytes,
+record their digests and recheck them before standalone success. The broader
+product verifier's inventory is retained; no product-export bypass is inferred.
+
+Use actual standalone `main()` controls with environment/tool inspection mocked:
+unchanged source, each role input changed after admission, changed live source
+after capture but before validation, and restored healthy source. No Cargo or
+native work is selected. Budget: one focused RED/GREEN cohort, one affected
+combined strict/role/export regression checkpoint, two causal repair rounds,
+120-second wall/90-second CPU per test command, one CPU, 512-MiB AS and 128-MiB
+file ceiling. Independent source review must reconcile captured/validated/hashed/
+rechecked identities. The accompanying eight allocation-test return annotations
+are a separate clarity-only edit, with AST comparison and no new runtime tests.
+
+**Observed closeout:** actual standalone `main()` returned success after an
+owned UI manifest changed during mocked environment inspection, and its healthy
+receipt lacked the four role hashes. The new controls retain both pre-change
+RED observations. The repaired standalone path captures bounded immutable source
+bytes, validates that capture, emits `role_source_sha256` and rechecks those
+same paths through the bounded no-follow reader before passing. Configuration
+parsing still sees only its TOML roster. Default product/service callers retain
+their live source admission and existing outer custody guards.
+
+The focused cohort passed 18 cases. The final affected strict/role/service-export/
+product-export cohort passed all **173 tests in 25.280 seconds**, including the
+captured-before-validation mutation, each later edited role source, restored
+healthy cases and malformed supplied snapshots. A fresh independent source
+review found no material issue. Environment/tool inspection is mocked in the
+standalone controls; this is no Cargo, Windows or final-artifact qualification.
+The finite repair/checkpoint budget is closed.
+
+Exactly eight allocation-test methods introduced by `78bbbda` now declare
+`-> None`. Postponed annotations remain enabled, and an AST comparison with
+only those annotations removed is identical to the reviewed source. No method
+body, argument or runtime assertion changed; no annotation-counting or new
+behavioral test was added for this clarity-only correction.
+
+The existing B1 evidence root retains the RED/GREEN/final raw logs, source map,
+patch and annotation comparison in
+`~/.local/share/nevrotick/b1-service-roles-20261128-1brasep9/strict-custody-receipt.json`,
+SHA-256 `96325e1ce2596b94992a26acb8019e154ce08735cd18adcfe1c1fba5813e09d3`.
+The review's catalogue-migration issue is addressed in `fa1d7dc` and `b4ae328`
+as recorded in the GUI handoff; current hosted product execution retains its
+own result and must not be inferred from the commit titles or these Python tests.
+
 ## Candidate and custody
 
 Initial HEAD: `bd78e324f697ae9492e9c567b5234d408e5eb636`, with concurrent staged,
