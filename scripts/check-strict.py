@@ -309,30 +309,7 @@ def _windows_role_source_bytes(root: Path, name: str, *, maximum: int) -> bytes:
 
 def windows_release_role_bindings(root: Path, inventory: dict | None = None
                                   ) -> dict[str, WindowsReleaseRole]:
-    """Validate the fixed release export pair against this checkout's sources.
-
-    A parsed inventory may come from the caller's admitted configuration
-    snapshot. Returned immutable rows authorize only source/role matching;
-    complete-role policy, module closure and native qualification remain open.
-    """
-    payload: bytes = _windows_role_source_bytes(
-        root, "policy/verification-manifest.toml", maximum=512 * 1024)
-    if inventory is None:
-        try:
-            inventory = tomllib.loads(payload.decode("utf-8"))
-        except (UnicodeError, ValueError) as error:
-            raise ENV.Incomplete("Windows release role inventory is invalid UTF-8 TOML.") from error
-    if type(inventory) is not dict:
-        raise ENV.Incomplete("Windows release role inventory must be a table.")
-    section: object = inventory.get("windows_release_roles")
-    if (type(section) is not dict or set(section) != {"schema_version", "scope", "roles"}
-            or type(section.get("schema_version")) is not int or section["schema_version"] != 1
-            or type(section.get("scope")) is not str
-            or section["scope"] != "workspace-release-export-pair-source-binding"):
-        raise ENV.Incomplete("Windows release role section differs from the bounded source-binding schema.")
-    rows: object = section["roles"]
-    if type(rows) is not list or len(rows) != 2:
-        raise ENV.Incomplete("Windows release role roster must contain exactly UI and Observe.")
+    """Match only the workspace UI/Observe exports to immutable source bindings."""
     expected: dict[str, WindowsReleaseRole] = {
         "ui": WindowsReleaseRole(
             "ui", "nevrotick-ui.exe", "nevrotick-ui", "crates/nevrotick-ui/Cargo.toml",
@@ -344,6 +321,57 @@ def windows_release_role_bindings(root: Path, inventory: dict | None = None
             "crates/nevrotick-engine/src/bin/nevrotick-observe.rs", "declared-bin", (), "console", "experiment",
             "entrypoint", "rust-entry-source-only", "toolchain", "pending-complete-role-qualification"),
     }
+    return _windows_role_bindings(root, inventory, section_name="windows_release_roles",
+                                  scope="workspace-release-export-pair-source-binding", expected=expected)
+
+
+def windows_lab_service_role_bindings(root: Path, inventory: dict | None = None
+                                      ) -> dict[str, WindowsReleaseRole]:
+    """Match only the two inert service targets; grant no native/production authority."""
+    expected: dict[str, WindowsReleaseRole] = {
+        "lab-engine": WindowsReleaseRole(
+            "lab-engine", "nevrotick-lab-s02-engine.exe", "nevrotick-windows-service-fixture",
+            "tools/windows-service-fixture/Cargo.toml", "tools/windows-service-fixture/src/bin/engine.rs",
+            "declared-bin", (), "console", "fixture", "SCM-laboratory-controller",
+            "rust-entry-source-only", "scripts/cross-link-service-fixture.py:run",
+            "pending-complete-role-qualification"),
+        "lab-broker": WindowsReleaseRole(
+            "lab-broker", "nevrotick-lab-s02-broker.exe", "nevrotick-windows-service-fixture",
+            "tools/windows-service-fixture/Cargo.toml", "tools/windows-service-fixture/src/bin/broker.rs",
+            "declared-bin", (), "console", "fixture", "SCM-laboratory-controller",
+            "rust-entry-source-only", "scripts/cross-link-service-fixture.py:run",
+            "pending-complete-role-qualification"),
+    }
+    return _windows_role_bindings(root, inventory, section_name="windows_lab_service_roles",
+                                  scope="standalone-laboratory-service-source-binding", expected=expected)
+
+
+def _windows_role_bindings(root: Path, inventory: dict | None, *, section_name: str,
+                           scope: str, expected: dict[str, WindowsReleaseRole]
+                           ) -> dict[str, WindowsReleaseRole]:
+    """Validate one code-owned closed roster against bounded exact Cargo/entry sources.
+
+    Immutable returned rows attest source attribution only. Neither current
+    process policy nor final module closure is established by this reader.
+    """
+    payload: bytes = _windows_role_source_bytes(
+        root, "policy/verification-manifest.toml", maximum=512 * 1024)
+    if inventory is None:
+        try:
+            inventory = tomllib.loads(payload.decode("utf-8"))
+        except (UnicodeError, ValueError) as error:
+            raise ENV.Incomplete("Windows release role inventory is invalid UTF-8 TOML.") from error
+    if type(inventory) is not dict:
+        raise ENV.Incomplete("Windows release role inventory must be a table.")
+    section: object = inventory.get(section_name)
+    if (type(section) is not dict or set(section) != {"schema_version", "scope", "roles"}
+            or type(section.get("schema_version")) is not int or section["schema_version"] != 1
+            or type(section.get("scope")) is not str
+            or section["scope"] != scope):
+        raise ENV.Incomplete("Windows release role section differs from the bounded source-binding schema.")
+    rows: object = section["roles"]
+    if type(rows) is not list or len(rows) != len(expected):
+        raise ENV.Incomplete("Windows role roster differs from its code-owned section.")
     checked: dict[str, WindowsReleaseRole] = {}
     row: object
     for row in rows:
@@ -393,7 +421,7 @@ def windows_release_role_bindings(root: Path, inventory: dict | None = None
         _windows_role_source_bytes(root, binding.entry_source, maximum=512 * 1024)
         checked[role] = binding
     if set(checked) != set(expected):
-        raise ENV.Incomplete("Windows release role roster must contain exactly UI and Observe.")
+        raise ENV.Incomplete("Windows role roster differs from its code-owned section.")
     return checked
 
 

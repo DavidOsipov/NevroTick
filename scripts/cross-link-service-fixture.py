@@ -173,6 +173,32 @@ def pe_readback(path):
         raise Incomplete(str(error)) from error
 
 
+def service_role_bindings(source: Path) -> dict[str, C.PRODUCT.STRICT.WindowsReleaseRole]:
+    """Reconcile the shared checked source rows with this recipe's fixed targets.
+
+    The bindings describe laboratory Rust entry sources, not effective native
+    policy. Refuse mismatched selection before cache, work or compiler effects.
+    """
+    try:
+        bindings: dict[str, C.PRODUCT.STRICT.WindowsReleaseRole] = (
+            C.PRODUCT.STRICT.windows_lab_service_role_bindings(source))
+    except C.PRODUCT.STRICT.ENV.Incomplete as error:
+        raise Incomplete(str(error)) from error
+    expected: dict[str, str] = {"lab-engine": BINS[0], "lab-broker": BINS[1]}
+    Q.require(type(bindings) is dict and set(bindings) == set(expected),
+              "Cross-link requires the checked fixed laboratory service roles.")
+    checked: dict[str, C.PRODUCT.STRICT.WindowsReleaseRole] = {}
+    role: str
+    stem: str
+    for role, stem in expected.items():
+        binding: C.PRODUCT.STRICT.WindowsReleaseRole = bindings[role]
+        Q.require(type(binding) is C.PRODUCT.STRICT.WindowsReleaseRole
+                  and binding.role == role and binding.artifact == stem + ".exe",
+                  "Checked laboratory role differs from the selected cross-link target.")
+        checked[stem] = binding
+    return checked
+
+
 def read_guarded_service_entry(data: bytes, map_text: str) -> dict[str, object]:
     """Bind the raw entry, zero pre-entry callbacks and existing CRT symbol."""
     try:
@@ -251,9 +277,12 @@ def run(args):
     core_policy = Q.disable_core_dumps()
     Q.require(args.lane in ("ready", "link", "libtest-link"), "Unknown service cross-link lane.")
     baseline_entry: bool = getattr(args, "baseline_entry", False)
+    Q.require(type(baseline_entry) is bool, "Baseline entry selection must be a boolean.")
     Q.require(not baseline_entry or args.lane == "link",
               "Baseline entry is only available for the two fixed service roles.")
     Q.require(re.fullmatch(r"[a-z0-9][a-z0-9-]{0,63}", args.label) is not None, "Invalid fresh label.")
+    root_roles: dict[str, C.PRODUCT.STRICT.WindowsReleaseRole] = (
+        service_role_bindings(ROOT) if args.lane in ("ready", "link") else {})
     destination = Q.RECORDS / ("cross-" + args.label + ".json")
     Q.require(not destination.exists() and not destination.is_symlink(), "A prior cross-link record already exists.")
     require_disk_headroom("admission")
@@ -363,6 +392,10 @@ def run(args):
             target = source / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(ROOT / name, target)
+        source_roles: dict[str, C.PRODUCT.STRICT.WindowsReleaseRole] = (
+            service_role_bindings(source) if args.lane in ("ready", "link") else {})
+        Q.require(source_roles == root_roles,
+                  "Copied laboratory service role bindings differ from admitted source.")
         (work / "cargo-home").mkdir(mode=0o700)
         config = work / "cargo-home/config.toml"
         config.write_text('[source.crates-io]\nreplace-with="reviewed"\n[source.reviewed]\ndirectory=' + json.dumps(str(vendor)) + '\n')
@@ -525,6 +558,13 @@ def run(args):
                                            "pdb": str((artifacts / pdb.name).relative_to(ROOT)),
                                            "pdb_sha256": symbol_identity["sha256"], "pdb_identity": symbol_identity,
                                            "raw_pe": readback}
+                    if not libtest:
+                        binding: C.PRODUCT.STRICT.WindowsReleaseRole = source_roles[name]
+                        source_role: dict[str, object] = dict(binding._asdict())
+                        source_role["required_features"] = list(binding.required_features)
+                        artifact_rows[name]["source_role"] = source_role
+                        artifact_rows[name]["selected_preentry_owner"] = (
+                            SELF + ":run" if baseline_entry else "toolchain")
                 Q.require(len({item["image_sha256"] for item in artifact_rows.values()}) == len(emitted),
                           "Distinct fixed-role compositions unexpectedly have identical bytes.")
         check()

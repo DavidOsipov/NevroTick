@@ -876,6 +876,22 @@ Receipt: `~/.local/share/nevrotick/catalog-approval-repair-20261128-kbshmq8r/rec
 SHA-256 `1732703f73d3d5fd85a245ff384c6fd68bf792c946a4dbf06d85f3c5bea76da3`.
 The following publication's full hosted product result remains required.
 
+**Hosted successor observation:** exact `fa1d7dcbce7991d2d495c1a1ddd7bfdf1fbdbeab`
+[job 141029160066](https://github.com/DavidOsipov/NevroTick/actions/runs/46161354547/job/141029160066)
+passed format/compiler/Clippy/Rustdoc and reached all 234 ordinary UI cases.
+The retained failure tail identifies one failure in the catalogue publication
+test at its later static row oracle: actual `OUTPUT_SLOT_COUNT` 456 versus
+expected 442. The earlier approval refusal no longer masks this assertion.
+The independent code-generation control already requires 427 static and 456
+total rows; the fourteen newly added updater meanings explain the exact delta.
+The correction retains the literal cardinality oracle at 456 and updates its
+comment to 397 original static, 30 updater and 29 feedback rows. A bounded
+search of UI Rust and text controls found no other stale 442 row-count oracle;
+unrelated stable text ordinals and historical catalogues are retained.
+The failed run and skipped downstream KE rows remain incomplete. This source
+repair does not restart the exhausted local UI compilation checkpoint; current
+hosted execution remains required.
+
 D1/D3, native rendering/keyboard/accessibility/resources, release text approval,
 and D2/currentness before live metadata or commands retain their existing
 triggers. Sanitizer qualification follows OD-22 at module freeze; neither this

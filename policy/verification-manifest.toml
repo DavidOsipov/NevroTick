@@ -303,3 +303,39 @@ activation_owner = "entrypoint"
 entry_scope = "rust-entry-source-only"
 preentry_owner = "toolchain"
 runtime_policy = "pending-complete-role-qualification"
+
+# Standalone laboratory service attribution; no production/runtime qualification.
+# The cross-link recipe separately records its selected preentry route.
+[windows_lab_service_roles]
+schema_version = 1
+scope = "standalone-laboratory-service-source-binding"
+
+[[windows_lab_service_roles.roles]]
+role = "lab-engine"
+artifact = "nevrotick-lab-s02-engine.exe"
+package = "nevrotick-windows-service-fixture"
+cargo_manifest = "tools/windows-service-fixture/Cargo.toml"
+entry_source = "tools/windows-service-fixture/src/bin/engine.rs"
+cargo_target = "declared-bin"
+required_features = []
+subsystem = "console"
+source_state = "fixture"
+activation_owner = "SCM-laboratory-controller"
+entry_scope = "rust-entry-source-only"
+preentry_owner = "scripts/cross-link-service-fixture.py:run"
+runtime_policy = "pending-complete-role-qualification"
+
+[[windows_lab_service_roles.roles]]
+role = "lab-broker"
+artifact = "nevrotick-lab-s02-broker.exe"
+package = "nevrotick-windows-service-fixture"
+cargo_manifest = "tools/windows-service-fixture/Cargo.toml"
+entry_source = "tools/windows-service-fixture/src/bin/broker.rs"
+cargo_target = "declared-bin"
+required_features = []
+subsystem = "console"
+source_state = "fixture"
+activation_owner = "SCM-laboratory-controller"
+entry_scope = "rust-entry-source-only"
+preentry_owner = "scripts/cross-link-service-fixture.py:run"
+runtime_policy = "pending-complete-role-qualification"

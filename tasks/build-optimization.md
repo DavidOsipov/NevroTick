@@ -257,6 +257,63 @@ The finite budget is consumed, with no Cargo build, Windows execution or product
 protection change. Complete B1 module attribution and native/final-package
 qualification retain their existing owners.
 
+### B1 laboratory service role binding — 28 November 2026
+
+The next source child binds the two existing standalone laboratory service
+targets in the same verification manifest, through a separate closed section.
+`plan-code-change`, `security-build-deployment` and contract/regression QA own
+CHECK-20/26 attribution. Reuse the immutable role record and bounded source
+reader; retain the workspace UI/Observe section's exact two-role contract.
+Both service entries remain fixtures with pending complete runtime qualification.
+The cross-link receiver must validate current bindings before setup and the
+copied read-only source before compilation, then record each admitted image's
+binding and the selected ordinary or guarded preentry owner. Library-test
+artifacts cannot receive service-role attribution.
+
+Independent expectations cover the real export record, missing/duplicate/crossed
+roles, substituted package/entry/features, redirected source and false runtime
+claims, with ordinary and guarded healthy exports. The existing graph, source,
+PE/PDB and publication checks remain mandatory. Budget: one focused source-test
+cohort and one final combined role/export regression checkpoint, two causal
+repair rounds total, one fresh independent source review, 120 seconds per test
+command, one CPU, 512-MiB AS and 128-MiB output-file limit. No Cargo compilation,
+Windows execution or metric campaign is selected. Required source identities
+change and need fresh admission before a later real cross-link.
+
+**Source checkpoint:** the separate closed manifest section and immutable rows
+now bind the actual service package, declared binary paths, empty required
+features, console/fixture classification and pending runtime qualification.
+The cross-link owner checks the original source before cache/work setup,
+rechecks the copied source before compiler dispatch and uses those copied rows
+in each retained artifact record. Ordinary and guarded routes retain distinct
+selected preentry owners; library-test artifacts receive neither service field.
+Existing source bookends, graph, PE/PDB and publication checks are retained.
+
+An actual mocked export produced the intended pre-change RED because its record
+lacked `source_role`. The focused role cohort passed 16 tests. The final combined
+role/strict/service-export/PE/verifier/text-generation run reached 349 cases:
+348 passed and one kernel-limit control failed because the outer harness's hard
+ceilings prevented its declared child limits. A targeted rerun of that same
+control passed with the original soft limits and sufficient hard ceilings for
+its exact 4/8-GiB AS, 300-second CPU, task/descriptor/file probes. No compiler or
+package code runs in that control. Its parent limits remain unchanged, as the
+test independently checks. The earlier import-only setup failure without a
+private HOME and both failed logs are retained; neither is product RED or GREEN.
+Fresh independent source review found no material issue in the combined patch.
+The bounded source/checkpoint budget is consumed.
+After execution, the new `baseline_entry` test parameter received an explicit
+boolean annotation. With postponed annotations retained, its executable AST is
+unchanged; the separate annotation readback binds tested and current bytes.
+
+Raw outputs, the original RED, runner, source hashes and patch are retained at
+`~/.local/share/nevrotick/b1-service-roles-20261128-1brasep9/receipt.json`, SHA-256
+`cc4de55725bb526f29fb7507aba9f7069c277e21464129ce9a7ca012a7974251`.
+These are source and mocked-artifact observations. A fresh graph/source
+checkpoint and cross-link must admit the changed inputs before real emitted
+service images can carry the new record. Complete B1 module attribution,
+B3 prebuilt/native coverage, effective policy, final package/signing and
+installed-service qualification remain open.
+
 ## Candidate and custody
 
 Initial HEAD: `bd78e324f697ae9492e9c567b5234d408e5eb636`, with concurrent staged,

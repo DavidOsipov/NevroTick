@@ -193,5 +193,124 @@ class WindowsReleaseRoleTests(unittest.TestCase):
             STRICT.windows_release_role_bindings(self.root)
 
 
+class WindowsLabServiceRoleTests(unittest.TestCase):
+    """Check standalone source attribution without granting runtime credit."""
+
+    def setUp(self) -> None:
+        temporary: tempfile.TemporaryDirectory = tempfile.TemporaryDirectory(prefix="nevrotick-lab-roles-")
+        self.addCleanup(temporary.cleanup)
+        self.root: Path = Path(temporary.name)
+        name: str
+        for name in ("policy/verification-manifest.toml", "tools/windows-service-fixture/Cargo.toml",
+                     "tools/windows-service-fixture/src/bin/engine.rs",
+                     "tools/windows-service-fixture/src/bin/broker.rs"):
+            destination: Path = self.root / name
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(ROOT / name, destination)
+        self.inventory: dict = tomllib.loads((self.root / "policy/verification-manifest.toml").read_text())
+
+    def refused(self, inventory: dict) -> None:
+        with self.assertRaises(STRICT.ENV.Incomplete):
+            STRICT.windows_lab_service_role_bindings(self.root, inventory)
+
+    def test_current_targets_bind_distinct_immutable_fixture_roles(self) -> None:
+        bindings: dict[str, STRICT.WindowsReleaseRole] = STRICT.windows_lab_service_role_bindings(self.root)
+        self.assertEqual(set(bindings), {"lab-engine", "lab-broker"})
+        role: str
+        basename: str
+        entry: str
+        for role, basename, entry in (
+                ("lab-engine", "nevrotick-lab-s02-engine.exe", "engine.rs"),
+                ("lab-broker", "nevrotick-lab-s02-broker.exe", "broker.rs")):
+            self.assertEqual(bindings[role].artifact, basename)
+            self.assertEqual(bindings[role].entry_source, "tools/windows-service-fixture/src/bin/" + entry)
+            self.assertEqual(bindings[role].package, "nevrotick-windows-service-fixture")
+            self.assertEqual(bindings[role].required_features, ())
+            self.assertEqual((bindings[role].subsystem, bindings[role].source_state), ("console", "fixture"))
+            self.assertEqual(bindings[role].activation_owner, "SCM-laboratory-controller")
+            self.assertEqual(bindings[role].runtime_policy, "pending-complete-role-qualification")
+            with self.assertRaises(AttributeError):
+                bindings[role].role = "ui"
+
+    def test_missing_duplicate_and_foreign_rosters_are_refused(self) -> None:
+        changed: dict = copy.deepcopy(self.inventory)
+        del changed["windows_lab_service_roles"]
+        self.refused(changed)
+        changed = copy.deepcopy(self.inventory)
+        changed["windows_lab_service_roles"]["roles"].pop()
+        self.refused(changed)
+        replacement: str
+        for replacement in ("lab-engine", "ui", "observer"):
+            changed = copy.deepcopy(self.inventory)
+            changed["windows_lab_service_roles"]["roles"][1]["role"] = replacement
+            self.refused(changed)
+        changed = copy.deepcopy(self.inventory)
+        changed["windows_lab_service_roles"] = changed["windows_release_roles"]
+        self.refused(changed)
+
+    def test_schema_and_runtime_claims_are_closed(self) -> None:
+        field: str
+        value: object
+        for field, value in (("schema_version", True), ("schema_version", 1.0), ("schema_version", 2),
+                             ("scope", "workspace-release-export-pair-source-binding"),
+                             ("roles", {}), ("observed_enforced", True)):
+            changed: dict = copy.deepcopy(self.inventory)
+            changed["windows_lab_service_roles"][field] = value
+            self.refused(changed)
+        for field, value in (("runtime_policy", "enforced"), ("source_state", "production"),
+                             ("activation_owner", "entrypoint"), ("entry_scope", "complete-native-startup"),
+                             ("preentry_owner", "toolchain"), ("role", True), ("required_features", [True]),
+                             ("artifact", "nevrotick-lab-s02-broker.exe"), ("subsystem", "gui"),
+                             ("entry_source", "tools/windows-service-fixture/src/bin/broker.rs"),
+                             ("package", "nevrotick-engine"), ("observed", "passed")):
+            changed = copy.deepcopy(self.inventory)
+            changed["windows_lab_service_roles"]["roles"][0][field] = value
+            self.refused(changed)
+
+    def test_actual_package_entry_and_feature_drift_is_refused(self) -> None:
+        manifest: Path = self.root / "tools/windows-service-fixture/Cargo.toml"
+        original: str = manifest.read_text()
+        altered: str
+        for altered in (
+                original.replace('name = "nevrotick-windows-service-fixture"', 'name = "other"', 1),
+                original.replace('path = "src/bin/engine.rs"', 'path = "src/bin/broker.rs"', 1),
+                original.replace('name = "nevrotick-lab-s02-engine"', 'name = "another-engine"', 1),
+                original.replace('path = "src/bin/engine.rs"', 'path = "src/bin/engine.rs"\nrequired-features = ["changed"]', 1),
+                original + '\n[[bin]]\nname = "nevrotick-lab-s02-engine"\npath = "src/bin/engine.rs"\n'):
+            self.assertNotEqual(altered, original)
+            try:
+                manifest.write_text(altered)
+                self.refused(self.inventory)
+            finally:
+                manifest.write_text(original)
+        self.assertEqual(set(STRICT.windows_lab_service_role_bindings(self.root)), {"lab-engine", "lab-broker"})
+
+    def test_missing_oversized_and_redirected_sources_are_refused(self) -> None:
+        entry: Path = self.root / "tools/windows-service-fixture/src/bin/engine.rs"
+        original: bytes = entry.read_bytes()
+        try:
+            entry.unlink()
+            self.refused(self.inventory)
+            entry.write_bytes(b"x" * (512 * 1024 + 1))
+            self.refused(self.inventory)
+            entry.unlink()
+            retained: Path = self.root / "retained-engine.rs"
+            retained.write_bytes(original)
+            entry.symlink_to(retained)
+            self.refused(self.inventory)
+        finally:
+            entry.unlink(missing_ok=True)
+            entry.write_bytes(original)
+        self.assertEqual(STRICT.windows_lab_service_role_bindings(self.root)["lab-engine"].artifact,
+                         "nevrotick-lab-s02-engine.exe")
+
+    def test_redirected_source_ancestor_is_refused(self) -> None:
+        directory: Path = self.root / "tools/windows-service-fixture"
+        retained: Path = self.root / "retained-service"
+        directory.rename(retained)
+        directory.symlink_to(retained, target_is_directory=True)
+        self.refused(self.inventory)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -13,7 +13,7 @@ import struct
 import tempfile
 from types import SimpleNamespace
 import unittest
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 from uuid import UUID
 
 from test_windows_pe import _image, _OBSERVE_GUID, _OPTIONAL, _pdb, _UI_GUID, _ui_resource_image, with_import_modules
@@ -121,6 +121,20 @@ class ServiceArtifactExport(unittest.TestCase):
             BROKER: (_image(3, pdb_path=BROKER + ".pdb", guid=_OBSERVE_GUID), _pdb(guid=_OBSERVE_GUID)),
         }
         self.symbols = {ENGINE: ENGINE.replace("-", "_") + ".pdb", BROKER: BROKER + ".pdb"}
+        self.role_bindings: dict[str, CROSS.C.PRODUCT.STRICT.WindowsReleaseRole] = {
+            "lab-" + role: CROSS.C.PRODUCT.STRICT.WindowsReleaseRole(
+                "lab-" + role, stem + ".exe", "nevrotick-windows-service-fixture",
+                "tools/windows-service-fixture/Cargo.toml",
+                "tools/windows-service-fixture/src/bin/" + role + ".rs", "declared-bin", (),
+                "console", "fixture", "SCM-laboratory-controller", "rust-entry-source-only",
+                CROSS.SELF + ":run", "pending-complete-role-qualification",
+            ) for role, stem in (("engine", ENGINE), ("broker", BROKER))
+        }
+        # These tiny fixtures replace only the shared, checked source admission.
+        # Its real manifest/Cargo/entry checks have their own receiving controls.
+        self.role_admission: MagicMock = self.enterContext(patch.object(
+            CROSS.C.PRODUCT.STRICT, "windows_lab_service_role_bindings", return_value=self.role_bindings,
+        ))
         for object_, name, replacement in (
             (CROSS, "ROOT", self.root),
             (CROSS.Q, "ROOT", self.root),
@@ -152,11 +166,16 @@ class ServiceArtifactExport(unittest.TestCase):
             (CROSS.C.PRODUCT, "admit_vendor", {}),
         ):
             self.enterContext(patch.object(object_, name, return_value=output))
-        self.enterContext(patch.object(CROSS.C.RUNTIME, "run", side_effect=self.execute_fixture))
+        self.runtime: MagicMock = self.enterContext(patch.object(
+            CROSS.C.RUNTIME, "run", side_effect=self.execute_fixture,
+        ))
         self.enterContext(contextlib.redirect_stdout(io.StringIO()))
 
     def execute_fixture(self, root, work, command, **_kwargs):
         release = Path("target") / CROSS.TARGET / "release"
+        if command in ([str(self.llvm / "rust-lld"), "-flavor", "link", "--version"],
+                       [str(self.llvm / "llvm-readobj"), "--version"]):
+            return {"exit_code": 0, "failure": None, "output": "inert version response"}
         if command[0] == str(self.stable / "bin/cargo"):
             self.assertEqual(root, self.root)
             build = work / release
@@ -185,11 +204,11 @@ class ServiceArtifactExport(unittest.TestCase):
         self.assertIn(command[5], [str(Path("/work") / release / (name + ".exe")) for name in CROSS.BINS])
         return {"exit_code": 0, "failure": None, "output": "inspected " + Path(command[5]).name}
 
-    def run_link(self, label, *, scratch_root=None):
+    def run_link(self, label, *, scratch_root=None, baseline_entry: bool = False):
         return CROSS.run(SimpleNamespace(
             label=label, lane="link", source_checkpoint=self.checkpoint,
             sdk_config=self.sdk, sdk_inventory=self.sdk_inventory, vendor_dir=self.vendor,
-            scratch_root=scratch_root,
+            scratch_root=scratch_root, baseline_entry=baseline_entry,
         ))
 
     def receipt(self, label):
@@ -250,6 +269,103 @@ class ServiceArtifactExport(unittest.TestCase):
 
     def test_valid_fixed_roles_export_exact_bytes_and_receipt(self):
         self.assert_healthy("healthy")
+
+    def test_fixed_service_exports_record_their_checked_source_roles(self) -> None:
+        self.assert_healthy("source-roles")
+        receipt: dict[str, object] = self.receipt("source-roles")
+        stem: str
+        role: str
+        for stem, role in ((ENGINE, "lab-engine"), (BROKER, "lab-broker")):
+            artifact: dict[str, object] = receipt["artifacts"][stem]
+            self.assertIn("source_role", artifact)
+            self.assertEqual(artifact["source_role"]["role"], role)
+            self.assertEqual(artifact["source_role"]["artifact"], stem + ".exe")
+            self.assertEqual(artifact["source_role"]["entry_scope"], "rust-entry-source-only")
+            self.assertEqual(artifact["source_role"]["runtime_policy"], "pending-complete-role-qualification")
+            self.assertEqual(artifact["selected_preentry_owner"], "toolchain")
+        self.assertEqual(self.role_admission.call_args_list[0].args, (self.root,))
+        self.assertEqual(self.role_admission.call_args_list[1].args,
+                         (self.cache / "cross-source-roles/source",))
+
+    def test_wrong_fixed_binding_refuses_ready_and_link_before_work_or_commands(self) -> None:
+        changed: dict[str, CROSS.C.PRODUCT.STRICT.WindowsReleaseRole] = dict(self.role_bindings)
+        changed["lab-engine"] = changed["lab-engine"]._replace(artifact="other.exe")
+        self.role_admission.return_value = changed
+        lane: str
+        for lane in ("ready", "link"):
+            with self.subTest(lane=lane), self.assertRaisesRegex(CROSS.Incomplete, "selected cross-link target"):
+                CROSS.run(SimpleNamespace(label="wrong-" + lane, lane=lane, scratch_root=None))
+            self.assertFalse(self.cache.exists())
+            self.runtime.assert_not_called()
+            self.assertEqual({path.name for path in self.records.iterdir()}, {"source.json"})
+        self.role_admission.return_value = self.role_bindings
+        self.assert_healthy("restored-role-binding")
+
+    def test_copied_source_binding_drift_refuses_before_compiler_dispatch(self) -> None:
+        changed: dict[str, CROSS.C.PRODUCT.STRICT.WindowsReleaseRole] = dict(self.role_bindings)
+        changed["lab-engine"] = changed["lab-engine"]._replace(runtime_policy="different-policy")
+        self.role_admission.side_effect = [self.role_bindings, changed]
+        with self.assertRaisesRegex(CROSS.Incomplete, "Copied laboratory service role bindings differ"):
+            self.run_link("copied-role-drift")
+        self.runtime.assert_not_called()
+        self.assertEqual(self.receipt("copied-role-drift")["commands"], [])
+        self.assertFalse((self.records / "cross-copied-role-drift-artifacts").exists())
+
+    def test_ready_checks_original_and_copied_bindings(self) -> None:
+        status: str = CROSS.run(SimpleNamespace(
+            label="ready-roles", lane="ready", source_checkpoint=self.checkpoint,
+            sdk_config=self.sdk, sdk_inventory=self.sdk_inventory, vendor_dir=self.vendor,
+            scratch_root=None,
+        ))
+        self.assertEqual(status, "passed")
+        self.assertEqual(self.role_admission.call_count, 2)
+        self.assertEqual(self.runtime.call_count, 2)
+        self.assertNotIn("artifacts", self.receipt("ready-roles"))
+
+    def test_guarded_exports_keep_rust_scope_and_selected_recipe_entry(self) -> None:
+        entry: Path = self.root / CROSS.SERVICE_ENTRY_SOURCE
+        entry.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(ROOT / CROSS.SERVICE_ENTRY_SOURCE, entry)
+        self.identity[CROSS.SERVICE_ENTRY_SOURCE] = CROSS.C.PRODUCT.sha256(entry)
+        compiler: Path = self.stable / "clang"
+        compiler.write_bytes(b"inert compiler identity")
+        compiler.chmod(0o700)
+        stem: str
+        for stem in (ENGINE, BROKER):
+            image: bytearray = bytearray(self.pairs[stem][0])
+            struct.pack_into("<I", image, _OPTIONAL + 16, 0x1010)
+            struct.pack_into("<II", image, _OPTIONAL + 32, 0x1000, 0x200)
+            struct.pack_into("<I", image, _OPTIONAL + 60, 0x200)
+            self.pairs[stem] = (with_import_modules(image, direct=BaselineServiceEntryReadback.MODULES),
+                                self.pairs[stem][1])
+
+        def execute(root: Path, work: Path, command: list[str], **options: object) -> dict[str, object]:
+            if command[0] == str(compiler):
+                self.assertEqual(command[-4:], ["-c", "/work/source/" + CROSS.SERVICE_ENTRY_SOURCE,
+                                               "-o", "/work/" + CROSS.SERVICE_ENTRY_OBJECT])
+                (work / CROSS.SERVICE_ENTRY_OBJECT).write_bytes(b"inert baseline object")
+                return {"exit_code": 0, "failure": None, "output": "inert object emission"}
+            result: dict[str, object] = self.execute_fixture(root, work, command, **options)
+            if command[0] == str(self.stable / "bin/cargo"):
+                name: str
+                for name in (ENGINE, BROKER):
+                    (work / (name.replace("-", "_") + ".map")).write_text(BaselineServiceEntryReadback.MAP)
+            return result
+
+        with (patch.object(CROSS, "BASELINE_CLANG", compiler),
+              patch.object(CROSS, "BASELINE_CLANG_INPUTS", {compiler: CROSS.C.PRODUCT.sha256(compiler)}),
+              patch.object(CROSS, "SERVICE_PREENTRY_IMPORTS", BaselineServiceEntryReadback.MODULES),
+              patch.object(CROSS.C.RUNTIME, "run", side_effect=execute)):
+            self.assertEqual(self.run_link("guarded-source-roles", baseline_entry=True), "passed")
+        receipt: dict[str, object] = self.receipt("guarded-source-roles")
+        self.assertEqual(len(receipt["commands"]), 4)
+        for stem in (ENGINE, BROKER):
+            artifact: dict[str, object] = receipt["artifacts"][stem]
+            self.assertEqual(artifact["selected_preentry_owner"], CROSS.SELF + ":run")
+            self.assertEqual(artifact["source_role"]["entry_scope"], "rust-entry-source-only")
+            self.assertEqual(artifact["raw_pe"]["baseline_entry"]["entry_rva"], 0x1010)
+            self.assertEqual(artifact["raw_pe"]["baseline_entry"]["crt_startup_rva"], 0x1030)
+        self.assertFalse(receipt["native_execution"])
 
     def test_late_empty_artifact_directory_is_preserved(self):
         label: str = "late-artifact-slot"
@@ -389,6 +505,9 @@ class ServiceArtifactExport(unittest.TestCase):
         self.assertEqual(len(receipt["commands"]), 2)
         self.assertEqual(set(receipt["artifacts"]), {name})
         export = receipt["artifacts"][name]
+        self.assertNotIn("source_role", export)
+        self.assertNotIn("selected_preentry_owner", export)
+        self.role_admission.assert_not_called()
         self.assertEqual(Path(export["image"]).name, image.name)
         self.assertEqual(Path(export["pdb"]).name, symbols.name)
         self.assertEqual((self.root / export["image"]).read_bytes(), image_bytes)

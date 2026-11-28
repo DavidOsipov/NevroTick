@@ -372,8 +372,8 @@ mod tests {
     /// Fails if a slot aliases, a static array entry is absent or rows are mutable.
     fn check_flat_rows(copy: &UiCopy) {
         assert!(copy.catalog_ready);
-        // 397 original static rows, 16 updater rows and 29 feedback rows.
-        assert_eq!(OUTPUT_SLOT_COUNT, 442);
+        // 397 original static rows, 30 updater rows and 29 feedback rows.
+        assert_eq!(OUTPUT_SLOT_COUNT, 456);
         assert_eq!(copy.texts.row_count(), OUTPUT_SLOT_COUNT);
         for (slot, expected) in [
             (CopySlot::FIXTURE_ABOUT_HEADING, "About NevroTick"),
