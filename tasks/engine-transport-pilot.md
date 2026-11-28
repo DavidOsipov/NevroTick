@@ -33243,6 +33243,21 @@ Source review corrected a Core expected-shape mismatch and a Python
 metric qualification. Placement, full resource/service closure, fresh
 bookends and the actual 19-lane execution remain open.
 
+**Outer placement remains unadmitted — 29 November 2026.** A tiny
+network-isolated namespace smoke confirmed that exact writable `resources`
+and `reports` subdirectory binds can coexist with a read-only root bind;
+its sibling write refused with `EROFS`
+(`/tmp/nevrotick-stock19-bind-smoke-20261129/result.log`, SHA-256
+`aedfaa2f0f34da69e33e7f424557e9012459a872e9746f7654341428949f8253`).
+This checks only bind mechanics. The private three-file placement draft in
+`/tmp/nevrotick-current-stock19-wrapper-20261129/` remained incomplete after
+automatic cybersecurity review stopped its authoring session. Its outer CLI calls a
+two-argument function with three arguments, and independent read-only review
+found missing final service-result and all-in elapsed checks. The draft was
+neither executed nor admitted. Preserve its incomplete state and do not run
+physical stock19 from it; the 19 lanes, D: report image, service/resource
+closure and read-only physical readback remain open.
+
 **Parallel development allocation — 28 November 2026.** Following David's
 request to use P2–P7 capacity, the coordinator retains P2 and shared contract,
 graph and integration ownership. Three fresh-context workers independently

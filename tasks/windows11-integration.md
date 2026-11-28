@@ -1241,6 +1241,55 @@ the separate pre-backend-order assertion. No native execution is authorized or
 claimed by this source record. No additional portable acceptance gap was
 established in this bounded readback, and no tests were added or run.
 
+#### W1 Observe diagnostic role source record — 29 November 2026
+
+W11-W05/platform security owns startup admission with the Engine diagnostic
+entry owner and W11-W10 for package attribution (CHECK-16/20/26/27). At
+`c0e7f18d483890179af2979b5de076fd67d73c16`, the [B1 role binding](../policy/verification-manifest.toml)
+identifies `nevrotick-observe.exe` as a console experiment. The
+[declared bin](../crates/nevrotick-engine/Cargo.toml) requires no optional
+feature. Its role binding covers Rust entry source, assigns pre-entry work to
+the toolchain, and records `pending-complete-role-qualification`. The
+[configured MSVC target](../.cargo/config.toml) supplies v3, CFG, ASLR/DEP,
+strict CET declarations and static import search `0xA00`. Effective policy,
+loader state and linked module coverage still require artifact and process
+observations tied to the selected feature graph and toolchain.
+
+The [actual entry](../crates/nevrotick-engine/src/bin/nevrotick-observe.rs)
+parses bounded arguments and checks the two loopback peers and schedule.
+[`prepare`](../crates/nevrotick-engine/src/lib.rs) then obtains OS entropy
+and binds sockets before Windows resume registration. This is the first
+native acquisition boundary. The entry has no process mitigation admission
+before it. The resume watch protects observation validity, and the optional
+Windows adjustment and leap presentation operations are reads. The absence
+of local mitigation admission leaves inherited and effective state unknown.
+
+The [Windows export](../scripts/verify.py) recognizes the Observer image but
+marks it `excluded-observe-image` for the guarded MSIX handoff. The current
+[ArtworkLab payload](../tools/windows-service-fixture/msix/check_artwork_package.py)
+binds its `Observe` application ID to `nevrotick-ui.exe`. A future change to
+the shipping roster or activation path reopens this role's package and
+process applicability (CHECK-18/23). Production Engine startup has its own
+service owner and admission contract.
+
+| Control | Observe source disposition and remaining evidence |
+| --- | --- |
+| Ordinary and Strict CFG, export suppression, CET/HSP and context validation | Build declarations are configured as above. Record effective ordinary/strict/audit fields and module admission separately on the exact image. The toolchain and launch owners still owe creation and loader attribution, including export suppression and HSP/context activation under the supported OS, CPU and VM classes. |
+| Dynamic code, image load, DLL search, extension points, permanent strict handles, heap termination and CIG | The entry has no corresponding readiness guard or readback. Apply the §15.4 required values and disposition to this role before qualification. Record `ProhibitDynamicCode=1`, opt-out/downgrade clear, the three image-load fields, permanent-handle word `0x3` and extension-point disabling where required. Runtime DLL search, heap termination and the direct-artifact signer profile need their own configuration and observations. |
+| Win32k and child creation, EAF/EAF+, IAF, GDI non-system fonts | Applicability and compatibility remain open against the actual diagnostic operations, dependencies, providers and launch owner. A console subsystem alone establishes no exception or effective restriction. |
+| Windows-signed module dependency integrity, FSCTL restrictions and RedirectionGuard | Check the actual import and lazy provider closure, filesystem operations and ownership of any in-scope file boundary. Support, exact fields and healthy neighboring operations are open. |
+| `SmtBranchTargetIsolation`, `IsolateSecurityDomain`, `DisablePageCombine`, `SpeculativeStoreBypassDisable`, `RestrictCoreSharing` | Evaluate each field against the role's threat and the supported hardware, VM and scheduler conditions. Effective values, legitimate work and resource cost remain unobserved. |
+| `ProcessSystemCallFilterPolicy` and `ProcessActivationContextTrustPolicy` | Carry the existing unsupported and unresolved research dispositions, respectively, from §15.4. |
+
+Before any protected use of this diagnostic role, bind its exact candidate
+and supported launch to expected fields, activation owners and independent
+effective observations. A required unknown, failed or mismatched field
+must refuse before `prepare`. Pair that refused path with the same image's
+healthy bounded loopback and resume-watch cleanup. Retain original typed
+errors and distinguish build, static image, effective state and behavior.
+Native checks remain held. This source pass adds no mitigation selection,
+exclusion or runtime changes, and the complete W1 profile remains open.
+
 #### Service and IPC qualification — 25 November 2026
 
 **Source and status:** review of `a281ec3b254be76a079bfe66a4623c06684c1119`.
