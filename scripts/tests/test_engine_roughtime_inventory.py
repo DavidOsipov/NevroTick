@@ -32,6 +32,7 @@ FILES: tuple[tuple[str, str], ...] = (
     ("round", f"{ENGINE}/roughtime/round.rs"),
     ("selection", f"{ENGINE}/roughtime/round/selection.rs"),
     ("recovery", f"{ENGINE}/roughtime/round/recovery.rs"),
+    ("disclosure", f"{ENGINE}/roughtime/round/recovery/disclosure.rs"),
     ("proof", f"{ENGINE}/roughtime/round/recovery/proof.rs"),
     ("interval", f"{ENGINE}/roughtime/interval.rs"),
 )
@@ -86,7 +87,7 @@ class RoughtimeInventoryTests(unittest.TestCase):
             with self.subTest(key=key, value=value), self.assertRaises(COMMON.Incomplete):
                 COMMON.admission_profile(changed, SCOPE, self.policy)
 
-    def test_role_keeps_ten_owners_and_campaign_closed(self) -> None:
+    def test_role_keeps_eleven_owners_and_campaign_closed(self) -> None:
         wrong_scopes: tuple[COMMON.Scope, ...] = (
             SCOPE._replace(subjects=FILES[:-1]),
             SCOPE._replace(policy=COMMON.ENGINE_ROUGHTIME_LINE_POLICY),
@@ -117,6 +118,14 @@ class RoughtimeInventoryTests(unittest.TestCase):
             line_policy: Path = root / COMMON.ENGINE_ROUGHTIME_LINE_POLICY
             self.assertEqual(inventory["candidate_sha256"], json.loads(line_policy.read_bytes())["candidate_sha256"])
             line_policy.write_bytes(line_policy.read_bytes() + b"\n")
+            with self.assertRaisesRegex(COMMON.Incomplete, "different candidates or policies"):
+                ENGINE_ANALYSIS.read_roughtime_inventory_policy(root)
+
+            line_policy.write_bytes((ROOT / COMMON.ENGINE_ROUGHTIME_LINE_POLICY).read_bytes())
+            policy_file: Path = root / SCOPE.policy
+            policy: dict[str, object] = json.loads(policy_file.read_bytes())
+            policy["candidate_sha256"] = "f" * 64
+            policy_file.write_text(json.dumps(policy))
             with self.assertRaisesRegex(COMMON.Incomplete, "different candidates or policies"):
                 ENGINE_ANALYSIS.read_roughtime_inventory_policy(root)
 
@@ -191,7 +200,7 @@ class RoughtimeInventoryTests(unittest.TestCase):
                 subject: {"raw_output": json.dumps([descriptor]), "warning": None}
                 for subject, descriptor in descriptors.items()
             },
-            "mutation_enumerated_total": 10,
+            "mutation_enumerated_total": 11,
             "mutation_campaign_budget_exceeded": False,
         })
 

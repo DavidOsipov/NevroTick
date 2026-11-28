@@ -439,7 +439,7 @@ async fn charged_successor(
     let mut round: OrderedRound<'_> = tcp_round(&control, None, bindings, endpoints)?;
     let (entered, observed): (oneshot::Sender<()>, oneshot::Receiver<()>) = oneshot::channel();
     let (release, released): (Sender<()>, Receiver<()>) = mpsc::channel();
-    round.before_connect_dispatch = Some(Box::new(move || {
+    round.before_connect_dispatch.0 = Some(Box::new(move || {
         entered
             .send(())
             .map_err(|()| io::Error::other("successor observer disappeared"))?;
@@ -500,7 +500,7 @@ fn stop_before_dispatch(owner: StopAuthority) -> TestResult<()> {
         tcp_round(&control, Some(&recovery), &mut original, endpoints)?;
     let (entered, observed): (Sender<()>, Receiver<()>) = mpsc::channel();
     let (release, released): (Sender<()>, Receiver<()>) = mpsc::channel();
-    round.before_connect_dispatch = Some(Box::new(move || {
+    round.before_connect_dispatch.0 = Some(Box::new(move || {
         entered.send(()).map_err(io::Error::other)?;
         released.recv_timeout(WATCHDOG).map_err(io::Error::other)
     }));

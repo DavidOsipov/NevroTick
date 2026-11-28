@@ -9808,6 +9808,9 @@ ROUGHTIME_RESULT_FILES: dict[str, tuple[str, int]] = {
     "unittests src/lib.rs": ("nevrotick_engine", 283),
     "tests/roughtime_verification.rs": ("roughtime_verification", 0),
 }
+# This binds the planned exact identities, not an assertion that discovery or
+# coverage has executed. The live result reader must still observe every case.
+ROUGHTIME_TEST_INVENTORY_SHA256: str = "1462c0fa0a3cb2841c3a8c260df246bb39d89ced3b5cee84e64124133378998a"
 
 
 def read_roughtime_line_policy(root: Path) -> tuple[dict[str, object], dict[str, list[str]]]:
@@ -9825,7 +9828,7 @@ def read_roughtime_line_policy(root: Path) -> tuple[dict[str, object], dict[str,
         raise Incomplete("Engine Roughtime requires both exact test binaries.")
     roster: dict[str, list[str]] = {}
     for binary, names in inventory.items():
-        expected_count: int = 23 if binary == "src/lib.rs" else 60
+        expected_count: int = 32 if binary == "src/lib.rs" else 63
         if (type(names) is not list or len(names) != expected_count
                 or any(type(name) is not str or re.fullmatch(r"\w+(?:::\w+)*", name, re.ASCII) is None
                        or len(name) > 256 for name in names)
@@ -9833,6 +9836,8 @@ def read_roughtime_line_policy(root: Path) -> tuple[dict[str, object], dict[str,
                 or any(name.startswith("roughtime::") != (binary == "src/lib.rs") for name in names)):
             raise Incomplete("Engine Roughtime test roster is malformed or assigned to the wrong binary.")
         roster[binary] = names
+    if COMMON.canonical_sha256(roster) != ROUGHTIME_TEST_INVENTORY_SHA256:
+        raise Incomplete("Engine Roughtime test roster differs from its reviewed exact identities.")
     manifest: dict[str, object] = tomllib.loads((root / "policy/verification-manifest.toml").read_text())
     minimum: object = manifest.get("security_module_minimum_executable_line_percent")
     if type(minimum) is not int or minimum != ROUGHTIME_LINE_FACTS["line_minimum_percent"]:
@@ -9878,7 +9883,7 @@ def roughtime_line_execution(text: str, roster: dict[str, list[str]]) -> dict[st
 
 
 def execute_roughtime_line_profile(args: argparse.Namespace, report: dict[str, object]) -> None:
-    """Measure the ten GNU owners with fixed source, graph, tool and result custody."""
+    """Measure the eleven GNU owners with fixed source, graph, tool and result custody."""
     policy, roster = read_roughtime_line_policy(ROOT)
     COMMON.admission_profile(args, ROUGHTIME_LINE_SCOPE, policy)
     subjects: dict[str, str] = ROUGHTIME_LINE_SCOPE.select("all")
@@ -9896,6 +9901,8 @@ def execute_roughtime_line_profile(args: argparse.Namespace, report: dict[str, o
             PRODUCT.SLINT.profile_rows(session.dependency_policy, PRODUCT.SLINT.RGT_PROFILE)
         except PRODUCT.SLINT.Incomplete as error:
             raise Incomplete(str(error)) from error
+        # Roughtime fixture implementations live in separate sources so the
+        # whole-file LLVM line totals for these owners measure production code.
         ignored: list[str] = [re.escape("/work/source/" + name) + "$" for name in session.product_identity
                               if name.endswith(".rs") and name not in subjects.values()]
         ignored.append("/rustlib/src/rust/library/")
@@ -9963,7 +9970,7 @@ def read_roughtime_inventory_policy(root: Path) -> dict[str, object]:
 
 
 def execute_roughtime_inventory_profile(args: argparse.Namespace, report: dict[str, object]) -> None:
-    """Generate ten GNU source inventories without compiling or testing mutants."""
+    """Generate eleven GNU source inventories without compiling or testing mutants."""
     deadline: float = time.monotonic() + 120
     policy: dict[str, object] = read_roughtime_inventory_policy(ROOT)
     COMMON.admission_profile(args, ROUGHTIME_INVENTORY_SCOPE, policy)

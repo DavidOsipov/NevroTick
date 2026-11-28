@@ -27,8 +27,10 @@ use tokio::{
     time,
 };
 
+mod disclosure;
 mod proof;
 
+pub use disclosure::{DisclosureAction, DisclosureError, DisclosureView};
 pub use proof::{ConflictProof, ConflictProofError};
 
 /// Live state of one exact controlled invocation.
@@ -186,6 +188,8 @@ pub struct ConflictEvidence {
     cutoff: Instant,
     /// Original declared upper per-probe delay limit.
     max_delay: Duration,
+    /// One controlled session and recipient bound to this exact evidence slot.
+    disclosure: disclosure::StateOwner,
 }
 
 impl ConflictEvidence {
@@ -663,6 +667,7 @@ impl RecoveryRound<'_> {
                 selected,
                 cutoff: self.round.cutoff,
                 max_delay: self.round.max_delay,
+                disclosure: disclosure::StateOwner::new(),
             });
         }
         result

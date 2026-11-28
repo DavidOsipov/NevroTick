@@ -346,6 +346,7 @@ ENGINE_ROUGHTIME_LINE_SUBJECTS = (
     ("round", "crates/nevrotick-engine/src/roughtime/round.rs"),
     ("selection", "crates/nevrotick-engine/src/roughtime/round/selection.rs"),
     ("recovery", "crates/nevrotick-engine/src/roughtime/round/recovery.rs"),
+    ("disclosure", "crates/nevrotick-engine/src/roughtime/round/recovery/disclosure.rs"),
     ("proof", "crates/nevrotick-engine/src/roughtime/round/recovery/proof.rs"),
     ("interval", "crates/nevrotick-engine/src/roughtime/interval.rs"),
 )

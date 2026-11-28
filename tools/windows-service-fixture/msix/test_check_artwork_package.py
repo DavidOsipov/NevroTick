@@ -13,6 +13,7 @@ import tempfile
 import unittest
 
 from test_check_package import block_map, make_zip, with_zip64_end_records
+from test_prepare_payload import write_guarded_role_export
 
 
 SCRIPT: Path = Path(__file__).with_name("check_artwork_package.py")
@@ -122,6 +123,7 @@ class CombinedPackageTests(unittest.TestCase):
         pinned_payload: dict[str, bytes] | None = None,
         manifest_sha: str | None = None,
         script: Path = SCRIPT,
+        guarded: tuple[str, ...] = (),
     ) -> subprocess.CompletedProcess[bytes]:
         for name, value in self.data.items():
             path: Path = self.payload / name
@@ -144,6 +146,7 @@ class CombinedPackageTests(unittest.TestCase):
             "--package", str(self.package), "--package-sha256", sha256(archive).hexdigest(),
             "--pins", str(self.pins), "--pins-sha256", sha256(raw_pins).hexdigest(),
             "--manifest-sha256", manifest_sha or sha256(pinned[MANIFEST]).hexdigest(),
+            *guarded,
         ], capture_output=True, timeout=8, check=False)
 
     def assert_refusal(self, outcome: subprocess.CompletedProcess[bytes], cause: bytes) -> None:
@@ -163,6 +166,7 @@ class CombinedPackageTests(unittest.TestCase):
         self.assertEqual(outcome.stderr, b"")
         receipt: dict[str, object] = json.loads(outcome.stdout)
         self.assertEqual(receipt["status"], "unsigned-combined-artworklab-checked")
+        self.assertNotIn("startup_inventory", receipt)
         self.assertEqual((receipt["payload_count"], receipt["artwork_count"]), (56, 51))
         members: dict[str, dict[str, int | str]] = receipt["members"]
         self.assertEqual(set(members), self.data.keys() | {BLOCK_MAP, CONTENT_TYPES})
@@ -195,6 +199,90 @@ class CombinedPackageTests(unittest.TestCase):
                 for name, kind in expected_formats.items()
             },
         })
+
+    def test_partial_guarded_startup_selection_refuses(self) -> None:
+        self.assert_refusal(self.run_reader(guarded=("--guarded-ui-sha256", "0" * 64)),
+                            b"guarded startup requires both pinned link receipts")
+
+    def test_guarded_receipt_must_name_the_archived_ui(self) -> None:
+        ui_receipt: Path = self.root / "verification.json"
+        map_data: bytes = b"fixture linker map"
+        link_map: Path = self.root / "entry.map"
+        link_map.write_bytes(map_data)
+        report: dict[str, object] = {
+            "status": "passed",
+            "native_windows_execution": "not performed",
+            "artifact": {
+                "sha256": sha256(header(b"previous-ui")).hexdigest(),
+                "component_role": "ui", "source_state": "fixture",
+                "profile": "release", "target": "x86_64-pc-windows-msvc",
+            },
+            "ui_preentry": {
+                "image_sha256": sha256(header(b"previous-ui")).hexdigest(),
+                "object_sha256": sha256(b"fixture baseline object").hexdigest(),
+                "map_sha256": sha256(map_data).hexdigest(),
+            },
+        }
+        body: bytes = json.dumps(report).encode("utf-8")
+        ui_receipt.write_bytes(body)
+        self.assert_refusal(self.run_reader(guarded=(
+            "--guarded-ui-receipt", str(ui_receipt), "--guarded-ui-sha256", sha256(body).hexdigest(),
+            "--guarded-ui-link-map", str(link_map),
+            "--guarded-role-receipt", str(self.root / "unused-role.json"), "--guarded-role-sha256", "0" * 64,
+        )), b"guarded UI link receipt differs from the archived UI")
+
+    def test_guarded_archive_joins_both_original_service_roles(self) -> None:
+        role_receipt: Path = self.root / "cross-artwork-roles.json"
+        images, _, role_report = write_guarded_role_export(self.root / "cross-artwork-roles-artifacts")
+        role_bytes: bytes = json.dumps(role_report).encode("utf-8")
+        role_receipt.write_bytes(role_bytes)
+        gui: bytearray = bytearray(images[ENGINE])
+        struct.pack_into("<H", gui, 0x98 + 68, 2)
+        self.data.update(images)
+        self.data[UI] = bytes(gui)
+
+        gate_pin: str = sha256(b"fixture UI gate").hexdigest()
+        mapping: bytes = (
+            " Preferred load address is 0000000140000000\n"
+            "  Address         Publics by Value              Rva+Base               Lib:Object\n"
+            f" 0001:00000010 nevrotick_ui_entry 0000000140001010 nevrotick-ui-entry-{gate_pin}.obj\n"
+            " 0001:00000030 mainCRTStartup 0000000140001030 msvcrt:exe_main.obj\n"
+            " entry point at         0001:00000010\n"
+        ).encode("ascii")
+        link_map: Path = self.root / "ui.map"
+        link_map.write_bytes(mapping)
+        image_pin: str = sha256(gui).hexdigest()
+        ui_report: dict[str, object] = {
+            "status": "passed", "native_windows_execution": "not performed",
+            "artifact": {
+                "component_role": "ui", "source_state": "fixture", "profile": "release",
+                "target": "x86_64-pc-windows-msvc", "sha256": image_pin,
+            },
+            "ui_preentry": {
+                "image_sha256": image_pin, "object_sha256": gate_pin, "map_sha256": sha256(mapping).hexdigest(),
+                "entry_rva": 0x1010, "crt_startup_rva": 0x1030, "image_base": 0x140000000,
+                "tls_callback_table_rva": 0, "direct_import_modules": [],
+            },
+        }
+        body: bytes = json.dumps(ui_report).encode("utf-8")
+        ui_receipt: Path = self.root / "ui.json"
+        ui_receipt.write_bytes(body)
+        guarded: tuple[str, ...] = (
+            "--guarded-ui-receipt", str(ui_receipt), "--guarded-ui-sha256", sha256(body).hexdigest(),
+            "--guarded-ui-link-map", str(link_map),
+            "--guarded-role-receipt", str(role_receipt), "--guarded-role-sha256", sha256(role_bytes).hexdigest(),
+        )
+        healthy: subprocess.CompletedProcess[bytes] = self.run_reader(guarded=guarded)
+        self.assertEqual(healthy.returncode, 0, healthy.stderr)
+        observed: dict[str, dict[str, object]] = json.loads(healthy.stdout)["startup_inventory"]["members"]
+        self.assertEqual(set(observed), {UI, ENGINE, BROKER})
+        self.assertEqual(observed[UI]["crt_startup_rva"], 0x1030)
+        for service, original in images.items():
+            with self.subTest(service=service):
+                self.data[service] = original + b"\0"
+                self.assert_refusal(self.run_reader(guarded=guarded),
+                                    b"archived service differs from guarded link: " + service.encode("ascii"))
+            self.data[service] = original
 
     def test_same_count_substituted_archive_member_refuses(self) -> None:
         altered: dict[str, bytes] = self.data.copy()

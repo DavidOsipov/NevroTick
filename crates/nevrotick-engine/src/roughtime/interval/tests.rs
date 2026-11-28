@@ -35,6 +35,31 @@ fn at(origin: Instant, elapsed: Duration) -> Result<Instant, &'static str> {
         .ok_or("fixture capture out of range")
 }
 
+/// Refuse each invalid limit independently through the public policy constructor.
+///
+/// # Panics
+/// Panics if reversed rates or either zero limit is admitted, or a valid policy is refused.
+#[test]
+fn policy_requires_ordered_rates_and_positive_age_and_width() {
+    let lower: NonZeroU32 = NonZeroU32::MIN;
+    let upper: NonZeroU32 = lower.saturating_add(1);
+    let positive: Duration = Duration::from_nanos(1);
+    let refused: [([NonZeroU32; 2], Duration, Duration); 3] = [
+        ([upper, lower], positive, positive),
+        ([lower, upper], Duration::ZERO, positive),
+        ([lower, upper], positive, Duration::ZERO),
+    ];
+    for (rates, age, width) in refused {
+        assert!(matches!(
+            IntervalPolicy::new(rates, Duration::ZERO, age, width),
+            Err(IntervalError::Configuration)
+        ));
+    }
+    for rates in [[lower, upper], [lower, lower]] {
+        assert!(IntervalPolicy::new(rates, Duration::ZERO, positive, positive).is_ok());
+    }
+}
+
 /// Preserve every possible processing instant from send through receive.
 ///
 /// # Errors

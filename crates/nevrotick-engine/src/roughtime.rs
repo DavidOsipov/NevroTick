@@ -245,3 +245,7 @@ fn truncated_hash(parts: &[&[u8]]) -> [u8; 32] {
     output.copy_from_slice(&digest[..32]);
     output
 }
+
+#[cfg(test)]
+#[path = "../tests/fixtures/roughtime/signed_reply.rs"]
+mod signed_reply;

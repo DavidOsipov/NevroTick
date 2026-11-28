@@ -592,7 +592,7 @@ mod exchange {
     /// Maximum wait for a single native UDP loopback exchange in this fixture.
     const BUDGET: Duration = Duration::from_secs(2);
     /// Complete-frame receive limit for the controlled client.
-    const UDP_RESPONSE_LIMIT: usize = 4_096;
+    pub(super) const UDP_RESPONSE_LIMIT: usize = 4_096;
     /// The public test seed that produced the certified delegated key.
     const DELEGATED_SEED: [u8; 32] = *b" !\"#$%&'()*+,-./0123456789:;<=>?";
     /// Exact zero-terminated RFC v1 response domain separator.
@@ -692,7 +692,7 @@ mod exchange {
     }
 
     /// Extend the tree-left reply with one opaque outer field, preserving both signed values.
-    fn capped_signed_reply(reply: &[u8; 476]) -> [u8; UDP_RESPONSE_LIMIT] {
+    pub(super) fn capped_signed_reply(reply: &[u8; 476]) -> [u8; UDP_RESPONSE_LIMIT] {
         let mut frame: [u8; UDP_RESPONSE_LIMIT] = [0x5a; UDP_RESPONSE_LIMIT];
         frame[..8].copy_from_slice(b"ROUGHTIM");
         frame[8..12].copy_from_slice(&4_084_u32.to_le_bytes());
@@ -1891,8 +1891,8 @@ mod ordered_round {
         ControlledAgreement, ControlledDate, IntervalError, IntervalPolicy,
     };
     use nevrotick_engine::roughtime::round::recovery::{
-        ConflictEvidence, ConflictProof, ControlledRecovery, RecoveryControl, RecoveryDatePolicy,
-        RecoveryRound, SelectedPeer,
+        ConflictEvidence, ConflictProof, ControlledRecovery, DisclosureError, RecoveryControl,
+        RecoveryDatePolicy, RecoveryRound, SelectedPeer,
     };
     use nevrotick_engine::roughtime::round::{
         OrderedRound, ProbeProgress, RetryRoundPeer, RoundControl, RoundError, RoundPeer,
@@ -1907,8 +1907,9 @@ mod ordered_round {
     use tokio::time::{Instant as TokioInstant, error::Elapsed};
 
     use super::exchange::{
-        TestResult, assert_retry_wait, checked as checked_exchange, malformed_retry,
-        observed_nonce, peer, receive_request, refused_retry_floor,
+        TestResult, UDP_RESPONSE_LIMIT, assert_retry_wait, capped_signed_reply,
+        checked as checked_exchange, malformed_retry, observed_nonce, peer, receive_request,
+        refused_retry_floor,
     };
     use super::signed_reply::{digest, sign_reply};
     use super::tcp_exchange::{accept_peer, assert_retired, dual_transport_peer, submit_request};
@@ -2057,6 +2058,14 @@ mod ordered_round {
     /// Returns the bounded diagnostic for the original refusal.
     fn checked<T>(result: Result<T, RoundError>) -> TestResult<T> {
         result.map_err(|error| format!("unexpected Roughtime round result: {error:?}").into())
+    }
+
+    /// Preserve an unexpected disclosure refusal in the fixture result.
+    ///
+    /// # Errors
+    /// Returns a diagnostic containing the original bounded refusal category.
+    fn checked_disclosure<T>(result: Result<T, DisclosureError>) -> TestResult<T> {
+        result.map_err(|error| format!("unexpected disclosure result: {error:?}").into())
     }
 
     /// Observe the actual round receipt or terminal datagram refusal.
@@ -2956,7 +2965,11 @@ mod ordered_round {
     }
 
     /// The exact request seen by the peer and its signed response.
-    type SignedFrames = (Vec<u8>, [u8; 476]);
+    type SignedFrames<Response = [u8; 476]> = (Vec<u8>, Response);
+
+    /// Original capped frames and their recovery disposition.
+    type CappedRecoveryResult =
+        TestResult<(SignedFrames<Vec<u8>>, Result<ProbeProgress, RoundError>)>;
 
     /// Send one signed reply through the guarded recovery round.
     ///
@@ -2973,6 +2986,29 @@ mod ordered_round {
         assert_eq!(checked(round.start_next())?, selected.address);
         let frames: SignedFrames = selected.respond(midpoint)?;
         Ok((frames, poll_recovery_to_settlement(round)?))
+    }
+
+    /// Send one signed recovery leg at the client's complete-frame limit.
+    ///
+    /// # Errors
+    /// Returns a send, fixture signing, or observer failure.
+    ///
+    /// # Panics
+    /// Panics if the selected peer differs or the socket reports a short send.
+    fn recovery_capped_leg(
+        round: &mut RecoveryRound<'_>,
+        selected: &Server,
+        midpoint: u64,
+    ) -> CappedRecoveryResult {
+        assert_eq!(checked(round.start_next())?, selected.address);
+        let (request, sender): (Vec<u8>, SocketAddr) = receive_request(&selected.socket)?;
+        let ordinary: [u8; 476] = selected.signed_response(&request, midpoint, 5)?;
+        let response: [u8; UDP_RESPONSE_LIMIT] = capped_signed_reply(&ordinary);
+        assert_eq!(selected.socket.send_to(&response, sender)?, response.len());
+        Ok((
+            (request, response.to_vec()),
+            poll_recovery_to_settlement(round)?,
+        ))
     }
 
     /// Observe an actual signed reply's recovery disposition.
@@ -3187,6 +3223,90 @@ mod ordered_round {
             checked(recovery.begin_bound(&round_control, ROUND_BUDGET, PROBE_BUDGET))?;
         observe_randomized_round(&mut round, &servers)?;
         assert_quiet_operators(&servers);
+        Ok(())
+    }
+
+    /// Refuse both invalid roster sizes without spending the invocation or retry debt.
+    ///
+    /// # Errors
+    /// Returns an unexpected fixture, route, retry or recovery admission failure.
+    /// # Panics
+    /// Panics if an invalid roster changes control or retry behavior or emits a request.
+    #[test]
+    fn randomized_recovery_refuses_roster_sizes_outside_three_to_sixteen() -> TestResult<()> {
+        let servers: Vec<Server> = (1_u8..=17)
+            .map(|seed| Server::bind(seed, seed + 32))
+            .collect::<TestResult<Vec<Server>>>()?;
+        let mut bindings: Vec<RetryBinding<'_>> = servers
+            .iter()
+            .map(|server| {
+                let route: RetryRoute =
+                    checked_exchange(RetryRoute::new(server.address, ExchangeTransport::Udp))?;
+                checked_exchange(RetryBinding::new_for_routes(&server.root, route, None))
+            })
+            .collect::<TestResult<Vec<RetryBinding<'_>>>>()?;
+        let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
+        let policy: RecoveryDatePolicy<'_> = recovery_date_policy(&calendar)?;
+        let selected: &Server = &servers[0];
+
+        let before: Instant = Instant::now();
+        malformed_retry(&mut bindings[0], &selected.socket, selected.address)?;
+        let first_floor: Instant = refused_retry_floor(
+            &mut bindings[0],
+            &selected.socket,
+            selected.address,
+            (before, Instant::now()),
+            FIRST_RETRY_WAIT,
+        )?;
+        thread::sleep(first_floor.saturating_duration_since(Instant::now()));
+
+        {
+            let mut candidates: Vec<RetryRoundPeer<'_>> = bindings
+                .iter_mut()
+                .zip(&servers)
+                .zip(1_u64..=17)
+                .map(|((binding, server), group)| {
+                    declared_retry_candidate(binding, server, (group, group))
+                })
+                .collect::<TestResult<Vec<RetryRoundPeer<'_>>>>()?;
+            for count in [2, 17] {
+                let invocation: RecoveryControl = RecoveryControl::new();
+                assert!(matches!(
+                    ControlledRecovery::new_randomized(
+                        &invocation,
+                        ROUND_BUDGET,
+                        policy,
+                        &mut candidates[..count],
+                        None,
+                    ),
+                    Err(RoundError::Configuration)
+                ));
+                assert_quiet_operators(&servers);
+                let mut recovery: ControlledRecovery<'_> =
+                    checked(ControlledRecovery::new_randomized(
+                        &invocation,
+                        ROUND_BUDGET,
+                        policy,
+                        &mut candidates[..3],
+                        None,
+                    ))?;
+                let round_control: RoundControl = RoundControl::new();
+                let round: RecoveryRound<'_> =
+                    checked(recovery.begin_bound(&round_control, ROUND_BUDGET, PROBE_BUDGET))?;
+                assert_eq!(round.status(), RoundStatus::Active);
+                assert_quiet_operators(&servers);
+            }
+        }
+
+        let before: Instant = Instant::now();
+        malformed_retry(&mut bindings[0], &selected.socket, selected.address)?;
+        let _second_floor: Instant = refused_retry_floor(
+            &mut bindings[0],
+            &selected.socket,
+            selected.address,
+            (before, Instant::now()),
+            Duration::from_millis(1500),
+        )?;
         Ok(())
     }
 
@@ -3722,6 +3842,15 @@ mod ordered_round {
         exercise_scheduled_fallback(ScheduledScenario::Due)
     }
 
+    /// Drop the pending wait and use the same retry floor and remaining round slot.
+    ///
+    /// # Errors
+    /// Returns an unexpected fixture, retry or resumed recovery result.
+    #[test]
+    fn dropping_scheduled_fallback_wait_preserves_floor_and_round_slot() -> TestResult<()> {
+        exercise_scheduled_fallback(ScheduledScenario::DroppedWait)
+    }
+
     /// Stop a pending scheduler wait and verify original retry debt still refuses work.
     ///
     /// # Errors
@@ -3923,6 +4052,8 @@ mod ordered_round {
     enum ScheduledScenario {
         /// The exact previously observed retry floor becomes due.
         Due,
+        /// Drop a pending wait while the original retry floor is still in force.
+        DroppedWait,
         /// An acknowledged invocation withdrawal wakes the original pending wait.
         Stop,
         /// The original wait next runs after its separate child cutoff.
@@ -3935,7 +4066,7 @@ mod ordered_round {
     /// Returns an unexpected fixture, scheduling or subsequent admission result.
     ///
     /// # Panics
-    /// Panics if withdrawal discards the original debt or allows more traffic.
+    /// Panics if settlement changes the original floor, deadline, round count or traffic.
     fn exercise_scheduled_fallback(scenario: ScheduledScenario) -> TestResult<()> {
         let (servers, listener): ([Server; 3], TcpListener) = same_address_fallback_peers()?;
         let tcp: SocketAddr = listener.local_addr()?;
@@ -3947,25 +4078,61 @@ mod ordered_round {
         let runtime: Runtime = Builder::new_current_thread().enable_time().build()?;
         let peers: [RetryRoundPeer<'_>; 3] =
             bound_retry_roster(&mut bindings, &servers, Some(tcp))?;
+        let invocation_budget: Duration = ROUND_BUDGET + ROUND_BUDGET;
+        let earliest_cutoff: Instant = Instant::now()
+            .checked_add(invocation_budget)
+            .ok_or("unrepresentable invocation cutoff")?;
         let mut recovery: ControlledRecovery<'_> = checked(ControlledRecovery::new_with_fallback(
             &authority,
-            ROUND_BUDGET + ROUND_BUDGET,
+            invocation_budget,
             recovery_date_policy(&calendar)?,
             peers,
             UDP_WAIT,
         ))?;
+        let latest_cutoff: Instant = Instant::now()
+            .checked_add(invocation_budget)
+            .ok_or("unrepresentable invocation cutoff")?;
         let (first_request, until): (Vec<u8>, Instant) =
             observe_scheduled_silence(&mut recovery, &controls, &servers)?;
         match scenario {
-            ScheduledScenario::Due => check_scheduled_start(
-                &mut recovery,
-                &controls[1],
-                &servers,
-                &listener,
-                &runtime,
-                &first_request,
-                until,
-            ),
+            ScheduledScenario::Due | ScheduledScenario::DroppedWait => {
+                let dropped_wait: bool = matches!(scenario, ScheduledScenario::DroppedWait);
+                let budget: Duration = if dropped_wait {
+                    check_scheduled_drop(
+                        &mut recovery,
+                        &controls[1],
+                        &servers,
+                        &listener,
+                        &runtime,
+                        until,
+                    )?;
+                    invocation_budget
+                } else {
+                    ROUND_BUDGET
+                };
+                let cutoff: Instant = check_scheduled_start(
+                    &mut recovery,
+                    &controls[1],
+                    &servers,
+                    &listener,
+                    &runtime,
+                    &first_request,
+                    (until, budget),
+                )?;
+                if dropped_wait {
+                    assert!((earliest_cutoff..=latest_cutoff).contains(&cutoff));
+                }
+                let unused: RoundControl = RoundControl::new();
+                assert!(matches!(
+                    runtime.block_on(recovery.begin_scheduled_fallback(
+                        &unused,
+                        ROUND_BUDGET,
+                        PROBE_BUDGET
+                    )),
+                    Err(RoundError::Finished)
+                ));
+                Ok(())
+            }
             ScheduledScenario::Stop => {
                 check_scheduled_stop(
                     &mut recovery,
@@ -4054,6 +4221,42 @@ mod ordered_round {
         })
     }
 
+    /// Drop the actual pending future before its first wake.
+    ///
+    /// # Errors
+    /// Returns an error if the initial wait does not reach Pending.
+    ///
+    /// # Panics
+    /// Panics if the retry becomes due during the observation or dropping the wait
+    /// changes the floor, starts traffic or prevents another deferred admission.
+    fn check_scheduled_drop(
+        recovery: &mut ControlledRecovery<'_>,
+        control: &RoundControl,
+        servers: &[Server; 3],
+        listener: &TcpListener,
+        runtime: &Runtime,
+        until: Instant,
+    ) -> TestResult<()> {
+        {
+            let waiter = recovery.begin_scheduled_fallback(control, ROUND_BUDGET, PROBE_BUDGET);
+            tokio::pin!(waiter);
+            require_scheduled_pending(runtime, waiter.as_mut())?;
+            assert!(Instant::now() < until);
+            assert!(
+                matches!(listener.accept(), Err(error) if error.kind() == ErrorKind::WouldBlock)
+            );
+        }
+        assert!(Instant::now() < until);
+        assert!(matches!(
+            recovery.begin_bound(control, ROUND_BUDGET, PROBE_BUDGET),
+            Err(RoundError::Exchange(ExchangeError::RetryDeferred { until: retained }))
+                if retained == until
+        ));
+        assert!(matches!(listener.accept(), Err(error) if error.kind() == ErrorKind::WouldBlock));
+        assert_quiet_operators(servers);
+        Ok(())
+    }
+
     /// Compare the due round and all its replies with the independent fixture.
     ///
     /// # Errors
@@ -4068,14 +4271,14 @@ mod ordered_round {
         listener: &TcpListener,
         runtime: &Runtime,
         first_request: &[u8],
-        until: Instant,
-    ) -> TestResult<()> {
+        (until, budget): (Instant, Duration),
+    ) -> TestResult<Instant> {
         let short: Duration = Duration::from_millis(10);
         assert!(matches!(
             runtime.block_on(recovery.begin_scheduled_fallback(control, short, short)),
             Err(RoundError::Expired)
         ));
-        let waiter = recovery.begin_scheduled_fallback(control, ROUND_BUDGET, PROBE_BUDGET);
+        let waiter = recovery.begin_scheduled_fallback(control, budget, PROBE_BUDGET);
         tokio::pin!(waiter);
         require_scheduled_pending(runtime, waiter.as_mut())?;
         assert!(matches!(listener.accept(), Err(error) if error.kind() == ErrorKind::WouldBlock));
@@ -4088,7 +4291,9 @@ mod ordered_round {
         let date: ControlledDate<'_> = round
             .admit_date()
             .map_err(|error| format!("unexpected scheduled date refusal: {error:?}"))?;
-        assert_fresh_fallback_chain(date.agreement(), &frames, first_request)
+        let agreement: &ControlledAgreement<'_> = date.agreement();
+        assert_fresh_fallback_chain(agreement, &frames, first_request)?;
+        Ok(agreement.original_cutoff())
     }
 
     /// Deliver Stop only after the wait has had a chance to enroll its wakeup.
@@ -4223,6 +4428,212 @@ mod ordered_round {
         Ok(observed)
     }
 
+    /// Decode one literal report field without using the product encoder.
+    ///
+    /// # Errors
+    /// Returns a refusal if the expected field prefix or its closing quote is absent.
+    fn report_field<'a>(input: &'a str, prefix: &str) -> TestResult<(&'a str, &'a str)> {
+        let remaining: &'a str = input
+            .strip_prefix(prefix)
+            .ok_or("unexpected report field")?;
+        remaining
+            .split_once('"')
+            .ok_or_else(|| "unterminated report field".into())
+    }
+
+    /// Decode padded Base64 with an independent bit accumulator.
+    ///
+    /// # Errors
+    /// Returns a refusal for unexpected characters, padding or an incomplete ending.
+    fn report_bytes(value: &str) -> TestResult<Vec<u8>> {
+        let mut output: Vec<u8> = Vec::new();
+        let mut accumulator: u32 = 0;
+        let mut bits: u32 = 0;
+        let mut padding: usize = 0;
+        for byte in value.bytes() {
+            if byte == b'=' {
+                padding += 1;
+                continue;
+            }
+            if padding != 0 {
+                return Err("unexpected Base64 padding".into());
+            }
+            let digit: u8 = match byte {
+                b'A'..=b'Z' => byte - b'A',
+                b'a'..=b'z' => byte - b'a' + 26,
+                b'0'..=b'9' => byte - b'0' + 52,
+                b'+' => 62,
+                b'/' => 63,
+                _ => return Err("unexpected Base64 byte".into()),
+            };
+            accumulator = (accumulator << 6) | u32::from(digit);
+            bits += 6;
+            if bits >= 8 {
+                bits -= 8;
+                output.push(u8::try_from((accumulator >> bits) & 255)?);
+                accumulator &= (1 << bits) - 1;
+            }
+        }
+        if !value.len().is_multiple_of(4) || padding > 2 || accumulator != 0 {
+            return Err("invalid Base64 ending".into());
+        }
+        Ok(output)
+    }
+
+    /// Check the actual recipient against independent signer and peer observations.
+    ///
+    /// # Errors
+    /// Returns a refusal for malformed report fields, invalid encoding or arithmetic.
+    ///
+    /// # Panics
+    /// Panics if report bytes, nonce ancestry or the first causal witness differ
+    /// from the supplied fixture observations, or a fixture frame is too short.
+    fn inspect_disclosure(
+        report: &[u8],
+        servers: &[Server; 3],
+        observed: &[SignedFrames<impl AsRef<[u8]>>],
+    ) -> TestResult<()> {
+        let mut rest: &str = std::str::from_utf8(report)?
+            .strip_prefix("{\"responses\":[")
+            .ok_or("missing report envelope")?;
+        let mut prior_lower: Vec<u64> = Vec::new();
+        let mut first_conflict: Option<(usize, usize)> = None;
+        for (index, (request, response)) in observed.iter().enumerate() {
+            if index != 0 {
+                rest = rest.strip_prefix(',').ok_or("missing report separator")?;
+            }
+            let (root, next): (&str, &str) = report_field(rest, "{\"publicKey\":\"")?;
+            assert_eq!(
+                report_bytes(root)?,
+                servers[index % servers.len()]
+                    .trust_anchor
+                    .verifying_key()
+                    .as_bytes()
+            );
+            let (reported_request, next): (&str, &str) = report_field(next, ",\"request\":\"")?;
+            assert_eq!(report_bytes(reported_request)?, *request);
+            let (reported_response, next): (&str, &str) = report_field(next, ",\"response\":\"")?;
+            let decoded_response: Vec<u8> = report_bytes(reported_response)?;
+            let response: &[u8] = response.as_ref();
+            assert_eq!(decoded_response, response);
+            // The independently encoded signer fixture fixes the little-endian
+            // RADI and MIDP spans. The cap fixture adds eight bytes to its outer table.
+            let offset: usize = match response.len() {
+                476 => 0,
+                UDP_RESPONSE_LIMIT => 8,
+                _ => return Err("unknown declared fixture reply layout".into()),
+            };
+            let radius: u64 = u64::from(u32::from_le_bytes(
+                decoded_response[256 + offset..260 + offset].try_into()?,
+            ));
+            let midpoint: u64 =
+                u64::from_le_bytes(decoded_response[260 + offset..268 + offset].try_into()?);
+            let upper: u64 = midpoint
+                .checked_add(radius)
+                .ok_or("fixture upper overflow")?;
+            if first_conflict.is_none() {
+                first_conflict = prior_lower
+                    .iter()
+                    .position(|lower| *lower > upper)
+                    .map(|earlier| (earlier, index));
+            }
+            prior_lower.push(
+                midpoint
+                    .checked_sub(radius)
+                    .ok_or("fixture lower underflow")?,
+            );
+            rest = next;
+            if index != 0 {
+                let (random, next): (&str, &str) = report_field(rest, ",\"rand\":\"")?;
+                let random: Vec<u8> = report_bytes(random)?;
+                assert_eq!(random.len(), 32);
+                assert_eq!(
+                    observed_nonce(request),
+                    Some(digest(&[observed[index - 1].1.as_ref(), &random]))
+                );
+                rest = next;
+            }
+            rest = rest.strip_prefix('}').ok_or("missing report entry end")?;
+        }
+        assert_eq!(rest, "]}");
+        assert_eq!(first_conflict, Some((0, observed.len() - 1)));
+        Ok(())
+    }
+
+    /// Transfer only a current confirmation of the original signed conflict.
+    ///
+    /// # Errors
+    /// Returns fixture errors or an unexpected round or disclosure refusal.
+    ///
+    /// # Panics
+    /// Panics if stale, busy, dismissed or retired actions breach recipient custody.
+    #[test]
+    fn disclosure_preserves_observed_chain_and_single_recipient() -> TestResult<()> {
+        let servers: [Server; 3] = operators()?;
+        let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
+        let control: RecoveryControl = RecoveryControl::new();
+        let mut recovery: ControlledRecovery<'_> = checked(ControlledRecovery::new(
+            &control,
+            ROUND_BUDGET,
+            recovery_date_policy(&calendar)?,
+        ))?;
+        let observed: Vec<SignedFrames> = first_recovery_conflict(&mut recovery, &servers)?;
+        let evidence: &ConflictEvidence = recovery.first_conflict().ok_or("missing conflict")?;
+        let old = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        let current = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        assert!(matches!(old.submit(), Err(DisclosureError::Stale)));
+        assert!(checked_disclosure(evidence.disclosure_report())?.is_none());
+        checked_disclosure(current.submit())?;
+        let first_report: Vec<u8> = {
+            let view = checked_disclosure(evidence.disclosure_report())?.ok_or("missing report")?;
+            let bytes: &[u8] = view.bytes().ok_or("missing recipient bytes")?;
+            inspect_disclosure(bytes, &servers, &observed)?;
+            bytes.to_vec()
+        };
+        let busy = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        assert!(matches!(busy.submit(), Err(DisclosureError::Busy)));
+        {
+            let view =
+                checked_disclosure(evidence.disclosure_report())?.ok_or("lost full report")?;
+            assert_eq!(
+                view.bytes().ok_or("missing full report bytes")?,
+                first_report.as_slice()
+            );
+        }
+        checked_disclosure(evidence.clear_disclosure_report())?;
+        let dismissed = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        checked_disclosure(evidence.dismiss_disclosure())?;
+        assert!(matches!(dismissed.submit(), Err(DisclosureError::Stale)));
+        assert!(checked_disclosure(evidence.disclosure_report())?.is_none());
+        let successor = checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?;
+        checked_disclosure(successor.submit())?;
+        checked_disclosure(evidence.clear_disclosure_report())?;
+        checked_disclosure(evidence.retire_disclosure())?;
+        assert!(matches!(
+            evidence.confirm_disclosure(PROBE_BUDGET),
+            Err(DisclosureError::Unavailable)
+        ));
+        assert_eq!(evidence.conflict().positions(), (0, 2));
+        {
+            let followup_control: RoundControl = RoundControl::new();
+            let mut followup: RecoveryRound<'_> = checked(recovery.begin(
+                &followup_control,
+                roster(&servers)?,
+                ROUND_BUDGET,
+                PROBE_BUDGET,
+            ))?;
+            assert!(
+                matches!(followup.evaluate_date(), Err(IntervalError::Conflict(conflict)) if conflict.positions() == (0, 2))
+            );
+            assert!(
+                matches!(followup.admit_date(), Err(IntervalError::Conflict(conflict)) if conflict.positions() == (0, 2))
+            );
+        }
+        checked(control.withdraw(Withdrawal::Stop))?;
+        assert_quiet_operators(&servers);
+        Ok(())
+    }
+
     /// Compare the received frames, intermediary chain and original roster independently.
     ///
     /// # Errors
@@ -4279,18 +4690,20 @@ mod ordered_round {
         Ok(())
     }
 
-    /// Recheck both limits of the original contradictory prefix after withdrawal.
+    /// Recheck both limits of the original contradictory prefix after withdrawal,
+    /// including the full disclosure with nine exact-cap replies.
     ///
     /// # Errors
     /// Returns fixture, live exchange or historical verification failures.
     ///
     /// # Panics
-    /// Panics if reconstruction loses an entry or reports a different first witness.
+    /// Panics if reconstruction loses an entry, reports a different first witness,
+    /// or changes the exact largest report length.
     #[test]
     fn reconstructs_two_and_nine_receipt_conflict_prefixes() -> TestResult<()> {
         let servers: [Server; 3] = operators()?;
         let calendar: LeapKnowledge<'static> = bundled_leap_knowledge()?;
-        for length in [2_usize, 9] {
+        for (length, expected_cap_report) in [(2_usize, None), (9, None), (9, Some(62_871_usize))] {
             let invocation: RecoveryControl = RecoveryControl::new();
             let round_control: RoundControl = RoundControl::new();
             let mut recovery: ControlledRecovery<'_> = checked(ControlledRecovery::new(
@@ -4298,6 +4711,7 @@ mod ordered_round {
                 ROUND_BUDGET,
                 recovery_date_policy(&calendar)?,
             ))?;
+            let mut observed: Vec<SignedFrames<Vec<u8>>> = Vec::with_capacity(length);
             {
                 let mut round: RecoveryRound<'_> = checked(recovery.begin(
                     &round_control,
@@ -4311,8 +4725,18 @@ mod ordered_round {
                         (false, 1) => 1_021,
                         (false, _) => 1_020,
                     };
-                    let (_frames, progress): (SignedFrames, Result<ProbeProgress, RoundError>) =
-                        recovery_leg(&mut round, &servers[position % servers.len()], midpoint)?;
+                    let server: &Server = &servers[position % servers.len()];
+                    let (frames, progress): (
+                        SignedFrames<Vec<u8>>,
+                        Result<ProbeProgress, RoundError>,
+                    ) = if expected_cap_report.is_some() {
+                        recovery_capped_leg(&mut round, server, midpoint)?
+                    } else {
+                        let ((request, response), progress) =
+                            recovery_leg(&mut round, server, midpoint)?;
+                        ((request, response.to_vec()), progress)
+                    };
+                    observed.push(frames);
                     if position == length - 1 {
                         assert!(matches!(progress, Err(RoundError::Conflict(conflict))
                             if conflict.positions() == (0, position)));
@@ -4330,6 +4754,19 @@ mod ordered_round {
             assert!(std::ptr::eq(retained, proof.evidence()));
             assert_eq!(proof.evidence().receipts().len(), length);
             assert_eq!(proof.evidence().conflict().positions(), (0, length - 1));
+            checked_disclosure(
+                checked_disclosure(retained.confirm_disclosure(PROBE_BUDGET))?.submit(),
+            )?;
+            {
+                let report = checked_disclosure(retained.disclosure_report())?
+                    .ok_or("missing disclosure")?;
+                let bytes: &[u8] = report.bytes().ok_or("missing report bytes")?;
+                if let Some(size) = expected_cap_report {
+                    assert_eq!(bytes.len(), size);
+                }
+                inspect_disclosure(bytes, &servers, &observed)?;
+            }
+            checked_disclosure(retained.clear_disclosure_report())?;
             assert_quiet_operators(&servers);
         }
         Ok(())
@@ -4387,6 +4824,23 @@ mod ordered_round {
             recovery.first_conflict().map(ConflictEvidence::cutoff),
             Some(initial_cutoff)
         );
+        assert!(Instant::now() >= initial_cutoff);
+        let evidence: &ConflictEvidence = recovery
+            .first_conflict()
+            .ok_or("missing conflict after timeout")?;
+        checked_disclosure(
+            checked_disclosure(evidence.confirm_disclosure(PROBE_BUDGET))?.submit(),
+        )?;
+        {
+            let view = checked_disclosure(evidence.disclosure_report())?
+                .ok_or("missing report after timeout")?;
+            inspect_disclosure(
+                view.bytes().ok_or("missing report bytes after timeout")?,
+                &servers,
+                &observed,
+            )?;
+        }
+        checked_disclosure(evidence.clear_disclosure_report())?;
         Ok(())
     }
 

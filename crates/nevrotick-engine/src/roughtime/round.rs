@@ -11,7 +11,10 @@ use super::{
         ExchangeError, ExchangeTransport, PendingExchange, Receipt, RoundAuthority, StagedReceipt,
         Withdrawal,
         retry::{RetryBinding, RetryLease, RetryState},
-        tcp::{PendingConnect, PendingTcpExchange, connect_native},
+        tcp::{
+            BeforeConnectDispatch, ConnectAttempt, PendingConnect, PendingTcpExchange,
+            connect_native,
+        },
     },
     interval::{self, ControlledAgreement, ControlledDate, IntervalError, IntervalPolicy},
 };
@@ -26,9 +29,6 @@ use std::{
     time::{Duration, Instant},
 };
 use time_domain::{LeapDateScope, LeapKnowledge};
-
-#[cfg(test)]
-use super::exchange::tcp::{BeforeConnectDispatch, ConnectFixture};
 
 pub mod recovery;
 mod selection;
@@ -356,9 +356,8 @@ pub struct OrderedRound<'a> {
     pending_connect: Option<PendingConnect<'a>>,
     /// Scheduled rounds dispatch TCP through the shared worker lane.
     worker_connect: bool,
-    /// Fixture gate transferred only to this round's next selected worker.
-    #[cfg(test)]
-    before_connect_dispatch: Option<BeforeConnectDispatch>,
+    /// Dispatch preparation transferred only to this round's next selected worker.
+    before_connect_dispatch: BeforeConnectDispatch,
     /// The one peer scheduled over TCP in a fresh fallback round.
     tcp_slot: Option<usize>,
     /// Dedicated UDP response window for the original round, when enabled.
@@ -476,8 +475,7 @@ impl<'a> OrderedRound<'a> {
             pending_tcp: None,
             pending_connect: None,
             worker_connect: false,
-            #[cfg(test)]
-            before_connect_dispatch: None,
+            before_connect_dispatch: BeforeConnectDispatch::READY,
             tcp_slot: None,
             udp_wait: None,
             retries: None,
@@ -570,12 +568,12 @@ impl<'a> OrderedRound<'a> {
                 self.cutoff,
                 &self.receipts,
                 retry,
-                #[cfg(not(test))]
-                connect,
-                #[cfg(test)]
-                ConnectFixture {
+                ConnectAttempt {
                     connect,
-                    before_dispatch: self.before_connect_dispatch.take(),
+                    before_dispatch: std::mem::replace(
+                        &mut self.before_connect_dispatch,
+                        BeforeConnectDispatch::READY,
+                    ),
                 },
             ) {
                 Ok(pending) => pending,

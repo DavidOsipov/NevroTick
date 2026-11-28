@@ -339,6 +339,47 @@ lanes. Its last admission checks that the tools and Cargo context still match.
 The ordinary local invocation retains its exact bootstrap helper hashes and
 full extension inventory.
 
+### Local GNU linker pin refresh — 28 November 2026
+
+The local Ubuntu Noble security update replaced `x86_64-linux-gnu-ld.bfd`
+when Binutils moved from `2.42-4ubuntu2.10` to `2.42-4ubuntu2.11`.
+[Ubuntu Security Notice 9214-1](https://ubuntu.com/security/notices/USN-9214-1)
+identifies the patched Noble version. The old exact bootstrap pin refused the
+replacement. The refreshed pin identifies
+the installed executable at the same canonical path. Its bytes match the
+member of the exact Binutils package named by Ubuntu’s signed Noble security
+index. The unchanged version banner is `GNU ld (GNU Binutils for Ubuntu) 2.42`.
+
+The isolated DEV-01 smoke passed the boundary, format, Clippy, two unit-test,
+doctest and Windows-target compile controls. It also observed the deliberate
+unsafe rejection and restored positive control. The remaining four bootstrap
+helper executable hashes matched their existing pins. In a separate isolated
+C fixture, the exact GNU BFD executable linked a valid ELF and refused an
+unresolved symbol without emitting an artifact. Product dependency
+reports and analysis receipts that include the previous manifest or linker
+identity retain their original scope. Rebind current dependent runs before
+crediting this host. The Windows-target compile check supplies no native pass.
+
+| Private evidence under `~/.local/share/nevrotick/gnu-ld-refresh.iySMyPNg/` | SHA-256 |
+| --- | --- |
+| `signed-index-package.json` | `1ec1dc476d3a98d19ed0c2656e3383fd6de0d63fbadeae9310a684f70c9bffb4` |
+| `binutils.deb` | `693b6f0278e4627105579535c3ecb6d2594d7b89c25cd2946d499c575a319acb` |
+| `archive-linker.sha256` | `d772b69f714871a2b6f41dbe5534e4598dcb2beaaf1ec1cea5902a129bcea562` |
+| `prior-pin-environment.json` | `96abf05bcc60721625b97bdab3dcf653ebecc70757b4205dba112222bd263827` |
+| `current-pin-environment.json` | `d67692d9774a9509d025e196a884eb788caa5c53ed0c74e1818187d617e4160e` |
+| `bfd-link-controls.json` | `07af2c23f304fd6a3e79ecd62f9b8fc8bcbc72189c8357514c84b47e70ab1d49` |
+
+The standalone sanitizer policy was refreshed separately. Its GNU BFD pin
+and 15 runtime-library pins match the installed members of exact packages
+verified against Ubuntu's signed Noble security index. The configured ASan
+hash-only admission passed all 211 pins. Three focused checker controls passed,
+and no detector fixtures ran. The private evidence directory
+`~/.local/share/nevrotick/sanitizer-runtime-refresh.IzOgWQSb/` contains the
+`verified-packages.json` receipt (SHA-256
+`5057eb17ff4aefa6aab001e19219dfdd8794cfdc20c4f5d1d0a73a56ebc3993f`)
+and the `admission.json` receipt (SHA-256
+`45f7655ac043a560949870459f7000502752f7cfa0c8be9ff5aa4db40577764b`).
+
 ### UI preview source report
 
 `python3 -B scripts/check-strict.py --preview-contract` checks the private

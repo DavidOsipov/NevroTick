@@ -1100,6 +1100,35 @@ dependent integration, not every portable contract calculation.
    protected receipt; revalidate at candidate time without cross-hypothesis
    resumption. The Windows path remains separately subject to OPEN-8 and TA-W07.
 
+**TA-W07 re-entry evidence.** The earlier `keprov1124a18deba5` readback
+retains successful fixed-wall and ordinary KE with guest exit zero and store
+restoration. Its `accepted-readback.json` SHA-256 is
+`1ec72b7bf440814ac2aac1aa4732d298072bdfc3a73a085e44fbcf22f0f7c7e9`.
+The [owning native task](engine-transport-pilot.md#carry-both-certificate-time-classes-through-completed-laboratory-ke)
+records the actual ambient-UTC prerequisite and its 26 November CRL expiry.
+The result remains a single-point, laboratory time-provider comparison.
+Re-enter through R-05/CRYPTO-04 with a fresh admitted synthetic chain/CRL
+and the applicable owned Windows guest and service context. The first
+discriminator needs a chain valid throughout the candidate interval, a
+validity boundary inside the interval, and stale or unavailable revocation
+under the same strict policy and controlled wrong ambient time. The current
+Windows wrapper and Engine classifier can collapse unavailable revocation
+into a generic certificate refusal. Retain a separate typed result for that
+case and observe no protected UDP for refusals before proposing the dependent
+verifier choice. A separately managed bootstrap trust path still requires an
+owner decision on trust, currentness and retrieval. This review supplies no
+new guest execution or trust-policy admission.
+
+The [CRYPTO-04 offline matrix](s0.1-crypto-feasibility.md#open-8-certificate-interval-and-revocation-fixtures)
+now supplies the fresh, independently checked synthetic fixtures. OpenSSL
+distinguishes a valid midpoint with a failing upper bound, missing CRL, and
+CRL expiry at the ambient point. The [bound point image](s0.1-crypto-feasibility.md#open-8-windows-laboratory-point-image-binding)
+cross-linked and pins the ten exact planned cases. The
+[single-point collector](s0.1-crypto-feasibility.md#open-8-single-point-windows-collector-source)
+passed PowerShell syntax parsing. Re-entry needs the behavioral controls,
+admitted guest trust and UTC, and a native observation of the same policy
+with candidate and ambient clocks distinguished.
+
 Recording the RFC semantics does not close TA-W02. Its engineering exit still
 requires the reviewed enforcing contract, selected limits and independent
 fixture/expected-result identities before dependent implementation.
@@ -2137,17 +2166,19 @@ under the existing 4,096-byte, 2-second per-input and 30-second total flags, wit
 seed `688161900` and final `cov: 155`, `ft: 233`. The raw logs retain build, graph,
 tool, fixture and executable digests. The frame above the cap is exercised by
 the stable tests. The first attempt ended during inventory serialization, before
-compilation. Both attempts took 387.695 seconds. The wire-only experiment uses
-the admitted sanitizer boundary. The observation control qualifies forwarding
-and failure propagation. The AES hold and six-owner selector retain their
-existing scopes.
+compilation. Both attempts took 387.695 seconds. Both binaries used the admitted
+ASan build selection, but the assertion-induced signal qualifies only input
+forwarding and failure propagation. It is not a representative ASan detector
+control and supplies no ASan memory-fault qualification. The AES hold and
+six-owner selector retain their existing scopes.
 
 The configured per-file line rerun was refused before compiler startup. The
 analysis runner rejected the reserved `/dev/shm` work path. An outer private
 namespace provided new scratch, but its exact bind of the analysis tool root
 was also refused as a mount root. The earlier decoder receipt retains its
-original scope. Fresh per-file line and mutation gates, a maintained fuzz
-selection for CI, native Windows and production effect checks remain open.
+original scope. Fresh per-file line and mutation gates, a
+[maintained fuzz selection](#331-ta-w02030406-follow-up-fuzz-targets), native
+Windows and production effect checks remain open.
 
 | Evidence under `~/.local/share/nevrotick/roughtime-hostile-coverage.Hq03x6mA/` | SHA-256 |
 | --- | --- |
@@ -2326,15 +2357,17 @@ in that replay's bound source map.
 
 The independent source reconciliation distinguishes directly generated
 operator or arm changes from whole-function replacements and operations the
-listing does not target individually. Existing tests in the rightmost column
-exercise the indicated behavior. A named test alone supplies no mutation kill.
+listing does not target individually. The rightmost column records the controls
+and gaps at this listing checkpoint. Sections 3.28–3.30 record the later
+regressions, including both adjacent invalid roster sizes. A named test alone
+supplies no mutation kill.
 
 | Critical owner | Listed | Example scope and generation gap | Independent control or remaining evidence |
 | --- | ---: | --- | --- |
 | Verifier | 36 | Merkle index shifts are listed. The request constructor's selected-root commitment check and the strict signature-provider call have no individually targeted descriptor. | Every commitment byte is checked in the keyed verifier, and signed depth-two and depth-32 proofs exercise folding. Provider strictness sensitivity remains separate. |
 | UDP exchange | 99 | Receive sentinel size and publication comparisons are listed. Actual send debit, socket release, and capture transfer lack individual descriptors. | Real UDP cap and excess cases, retained alias debt, and withdrawn publication controls. Winsock's generated oversize mapping needs native execution. |
 | Request | 8 | Encoder body replacements and size arithmetic are listed. Literal prefix and individual copy and padding operations have no targeted descriptor. | The peer independently checks emitted UDP and TCP request fields with a one-byte padding refusal neighbor. |
-| TCP | 66 | Deadline, frame and idle-counter expressions are listed. Worker-witness transfer, partial-write slice selection and stream release lack individual descriptors. | Both pre-dispatch withdrawals and the post-dispatch custody test, plus fragmented, coalesced, idle and truncated frames. Deterministic partial writes and native provider retirement remain open. |
+| TCP | 66 | Deadline, frame and idle-counter expressions are listed. Worker-witness transfer, partial-write slice selection and stream release lack individual descriptors. | Both pre-dispatch withdrawals and the post-dispatch custody test, plus fragmented, coalesced, idle and truncated frames. See §3.30 for the later forced partial offers and retirement controls. Native provider retirement remains open. |
 | Retry | 51 | Join/time ordering and backoff arithmetic are listed. Constructors and lease transitions lack operation-level targets. | Seeded debt in worker and final-date tests, rational backoff controls, and route validation. A duplicate-alias refusal through the legacy constructor remains open. |
 | Round | 98 | Return-clock reversal, cutoff, and terminal comparisons are listed. Individual dual-witness assignments, guard reacquisition and retry reset calls are absent. | Separate round and recovery withdrawals and bounded clock observations inside date admission. Deterministic withdrawal between transport poll and final publication guard remains open. |
 | Selection | 58 | Rank and rejection-sampling arithmetic are listed. Fixed permutations, roster caps and actual readiness calls lack individual targets. | All six trio orders, reachable rank across a 16-peer roster, bounded redraws and actual ready-trio reuse. An explicit over-cap roster control remains open. |
@@ -2362,6 +2395,1233 @@ outcome against its exact denominator.
 | `final-verify_wire_analysis.log` | `e9769180dee0b5d7ff71b0bfa62fcb2a30df8b71ee077c48109bde7412cf7a26` |
 | `line-replay/verification.json` | `5a37bc12e5ac355733f2273564eebcfeac091e2016819ee176c64f7101fb527f` |
 | `line-replay/coverage.json` | `d110f9e5a167ab8361fca2f9fdaa9733d36f4e9121c2d3a90ec9cc1765160961` |
+
+### 3.28 TA-W03/04/06 controls for gaps in the generated inventory
+
+CHECK-6/19/24/25/26. Use the precise gaps in §3.27 to select controls through
+the existing policy, binding, selector, conflict verifier and recovery owners.
+Keep the candidate test-only and retain the existing critical-file scope and
+thresholds. The standalone proof verifier receives independently signed round
+inputs. Scheduled fallback uses the existing controlled loopback, observes a
+pending future, drops it without another poll, then checks the original
+deadline and retry floor through a completed resumption.
+
+| Stage and skill | Requirement and action | Checkpoint exit |
+| --- | --- | --- |
+| Planning and preflight with `qa-mutation-testing`, `qa-regression-selection`, `qa-environment-preflight` | Distinguish useful controls for uncovered behavior from generated mutant outcomes. Review the work and durable storage admission before any campaign. | Keep campaign admission separate. Allow 420 seconds total for selected checks and any causal repair here. |
+| Test construction with `implement-rust-contracts`, `qa-contract-tests`, `qa-boundary-edge-cases`, `qa-state-concurrency-lifecycle` and `qa-golden-fixture-parity` | Check invalid limits independently, duplicate aliases through the legacy constructor, one extra eligible peer before entropy selection, exact duplicate-link cause with an otherwise authentic proof, and cancellation of a pending wait before retry or round consumption. | Exact healthy and refusing cases pass. Independent workers own the proof and waiter fixtures in disjoint source checkouts. |
+| Candidate freeze and closeout with `qa-subagent-dispatch`, `qa-independent-review` and `qa-context-checkpoint` | Run both exact test binaries for ordinary GNU behavior and the 90% line gate. Re-list all ten owners after the test-source changes and compare every descriptor with §3.27. | Retain fresh source, tool and vendor bookends. Zero mutated builds or outcomes in this checkpoint. Native and 95% mutation qualification stay open. |
+
+The 826-input product map is
+`b90d3cef1aff95a34c5d4637c22c2c491ed6ed3808d79a3f4d542f815a80457b`.
+Relative to §3.27, five Rust inputs changed, all in tests. The ordinary GNU
+run admitted the same dependency graph and executed all 26 selected unit and
+61 Roughtime integration cases without skips or failures. The selected
+format, GNU Clippy, MSVC-target Clippy and isolation controls also passed.
+This exact selected ordinary run took 101.16 seconds including startup,
+admission and cleanup. A cargo-mutants baseline must still run under its own
+admitted campaign command and account for its actual selected tests.
+
+Seven inventory controls, five line-analysis controls and 67 shared wire
+controls passed. The instrumented replay ran the same 87 cases in 95.19
+seconds. All ten per-file thresholds passed. The changed line counts were
+230/233 for Retry, 190/205 for Selection, 327/341 for Recovery and 181/192
+for Interval. TCP remained the lowest result at 318/353 (90.08%). The ten
+listing commands then passed in 39.11 seconds. All 601 descriptors retained
+the same file, span, replacement, kind and per-file digest. Four Retry diffs
+display updated test imports as surrounding context. Their actual edit lines
+remain identical. The fresh receipt binds all 835 inputs and the same
+29,754-file vendor map. The checks took approximately 237 seconds combined,
+within the 420-second allowance.
+
+An independent fresh-context reviewer matched all ten initial changed paths
+to the frozen checkout and traced the five controls through their owners. The
+17-peer case rejects before entropy is queried. The last repeated link remains
+valid against the immediately preceding response, and each exchange separately
+passes keyed verification. The dropped waiter retains the original floor and
+slot and observes quiet sockets before the fresh nine-reply fallback. This
+uses real monotonic time, so the initial one-second retry-floor observation
+remains sensitive to host stalls. The test observes application effects and
+does not measure a detached timer or provider resource with no such effects.
+
+For the next campaign admission, the previous Engine work floor is 7 GiB at
+startup and the durable supervisor reserves 5 GiB. The empty private tmpfs
+probe observed 8,690,761,728 free bytes. The actual local durable ext4 evidence
+path had 897,077,248 free bytes. The tmpfs probe establishes scratch capacity
+only. It cannot satisfy the durable evidence reserve. Re-enter on independently
+owned durable capacity and a reviewed private rule for one whole-file cohort.
+The eight-descriptor request encoder is the smallest complete first cohort.
+Keep all ten files in the full gate and retain one aggregate time/resource
+budget when considering the subsequent cohorts. No public campaign opens.
+
+| Retained evidence under `~/.local/share/nevrotick/roughtime-guard-controls.1ttwbzwv/` | SHA-256 |
+| --- | --- |
+| `baseline.py` | `fcbf4edb2d86110d4eb8a6674772f073a44df1cc0e9b26dab56f6f8af84924d5` |
+| `ordinary.json` | `70e99954e684c80e15904d43741070456d285382b890560a7d6e6e9ae71f1ae0` |
+| `engine_roughtime_inventory.log` | `8d8722d799e66103ee632bf031c5fc5d460aa3111c89882876b424469755a189` |
+| `engine_roughtime_line_analysis.log` | `58b4d9eb44aad1a09eb5e592d39a7ddd513e13e4a1683a0188871d505d90f68b` |
+| `verify_wire_analysis.log` | `320dab59311ff4236f08b715a89cae093a0df5fcc295220c483b49150252524b` |
+| `coverage/verification.json` | `3288bfcae15ebdc73bd62577cfa703389cfa7d990461286c7c6ea6a20cd64089` |
+| `coverage/coverage.json` | `4187fb275d59ef79be196ac7b37877dea722747da55189e4fa7180e0a13c030b` |
+| `enumerate/verification.json` | `e2538e519d7dcc0d5aad692bd2db0ef2fab167a20a48e5fbe5c5f620f0150f08` |
+| `resource-preflight.log` | `d494083c4af54d35e6adc688233f38fa70cb00a45ddc7a46b9661af32578398c` |
+
+The `rgt_proof_control` and `rgt_waiter_control` workers returned only their
+assigned test patches. Their original patches are retained as `proof.patch`
+and `waiter.patch`. The independent `rgt_guard_exit_review` worker inspected
+the frozen paths, complete reached controls and passing ordinary receipt.
+Coverage and listing completed after the reviewer's readback. The coordinator
+compared both against the exact frozen inputs, launch hashes and selected
+outcomes. Both worker checkouts and the temporary freeze were retired.
+
+### 3.29 TA-W06 public roster cardinality controls
+
+CHECK-6/19/24/25/26 and §3.21. The follow-up audit of `c97041d` flagged both
+adjacent invalid roster sizes. The §3.28 selector control covered 17 peers
+internally. Extend it to two peers and require no entropy calls at either
+size while retaining the 16-peer final-schedule control. Exercise the public
+recovery constructor with each otherwise eligible roster. Require
+`Configuration`, quiet peer sockets, and admission of a three-peer round
+with the same original control after each refusal. A binding with a due
+first failure remains eligible. Its next actual failure must still produce
+the independently specified 1.5-second wait after both refusal sequences.
+
+Apply `qa-boundary-edge-cases`, `qa-contract-tests`, `qa-regression-selection`
+and the §3.28 admission and review route. The checkpoint uses a 420-second
+total allowance for the exact selected ordinary and instrumented runs,
+focused checker controls and complete listing. The source changes add only
+test behavior and rebind the checked suite. Existing qualification holds
+and thresholds apply.
+
+The 826-input product map is
+`22478879ca1d903d01c8e6498844bfa07cce8622687031d95328db994d22fb8a`.
+Only the private selector test and the public integration test file changed
+in the product map from §3.28. The exact ordinary GNU suite ran 26 unit and
+62 integration tests in 98.00 seconds including admission and retirement.
+The isolation and format controls and both GNU and MSVC-target Clippy lanes
+passed. The fresh reviewer `roster_final_review` traced the guarded call and
+independently recomputed the frozen product and roster bindings, then read the
+passing ordinary receipt. The public test observes actual fixture sockets and
+an active three-peer round after each refusal. The zero-draw oracle is in the
+same selector called by the constructor. The retry progression observation
+has the precision of the actual exchange's monotonic capture bracket.
+
+The same 88 cases passed the instrumented GNU run in 94.63 seconds.
+All ten 90% line gates passed. Selection moved from 190/205 to 192/206
+executable lines. The other nine counts match §3.28. Seven inventory, five
+line-analysis and 67 shared wire controls passed.
+
+The complete inventory replay took 39.25 seconds and returned all 601 raw
+descriptors byte-for-byte at the per-record level, including displayed diffs.
+The coordinator matched all 835 input digests to the frozen tree and live
+checkout and verified the line and inventory export bytes. The selected
+checks took approximately 233 seconds combined. Mutation and Windows native
+qualification remain separate and open.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-roster-controls.6L93PMB6/` | SHA-256 |
+| --- | --- |
+| `baseline.py` | `40100c09df71d81b7d10ac847fb5a68ae8280136b1807100cbf1cea77b74755a` |
+| `ordinary.json` | `6a14aa5a8b871a1e9ccfaf7c2212bd28e24dc8cce8177ff4c5c58aba65079bd5` |
+| `engine_roughtime_inventory.log` | `adec287eae8a3c3e056be251c8ffed89f4561520ea0ff9712dc8c6117c076b78` |
+| `engine_roughtime_line_analysis.log` | `2c3ae7e86106e123c52d89dec82d9605aff42d9a9caac31cafdda07032128bbb` |
+| `verify_wire_analysis.log` | `71bae17d8b65e41d6461f8ab55756f64ae935147e1742a5fc1703ac88f5ec375` |
+| `coverage/verification.json` | `3b9bd03c81862300b5d949030bc04d384022a582746445dd0d0f87d11b7ff6ba` |
+| `coverage/coverage.json` | `9c88e25115b2fca9cb7ba22a318eb6176f9fc2579762361f60b2ec647e51d299` |
+| `enumerate/verification.json` | `6ffd9a6092cdcd91f44602dbf810725dc54ec445a2bad5940026680c8e0ad040` |
+
+### 3.30 TA-W06 partial TCP request writes and retirement
+
+CHECK-6/19/24/25/26. Exercise §3.27's remaining partial-request boundary in
+the actual TCP `poll` path. Use a private per-connection fixture cap after
+the same remaining-slice calculation used without the fixture. Observe each
+native send's byte progress through the loopback peer, using the published
+fixed request layout and the original prepared nonce. Verify that each
+partial write keeps the attempt in `Preparing`, and the final write alone
+opens `Awaiting`. Check original cutoff, first and last send capture, and
+connection retirement before publication of the signed healthy response.
+The withdrawal neighbor must observe prefix only, `Withdrawn(Stop)`, peer EOF
+and a permanently spent original attempt. Its pending owner remains live
+while the peer observes EOF.
+
+Apply `implement-rust-contracts`, `qa-integration-tests`,
+`qa-state-concurrency-lifecycle`, `qa-regression-selection` and the §3.29
+admission/review path. Allow 420 seconds total for selected ordinary and
+instrumented runs, checker tests, complete re-enumeration and any repair. The
+fixture forces partial request progress by varying offered buffer extent at
+the real socket. Native scheduling and platform short returns for a larger
+offer remain separate observations, as does Winsock/provider retirement.
+OPEN-8 and Windows trust/date authorization retain their existing owners.
+
+The first frozen map
+`42f95b454bcbc2761558506c603b3dc3dfd29324e81054f925ec1716a072430e`
+passed the ordinary selection and checker controls. Fresh independent review
+found that `Spent` on the pending exchange alone could hide reopening of its
+shared authority. The coordinator interrupted the first coverage attempt at
+29.08 seconds before a passing result. The final fixture separately checks
+the shared `Spent` phase after publication and the latched `Withdrawn(Stop)`
+phase after closure and the later spent poll. Independent repair readback
+confirmed these assertions only observe the original authority, and the
+production path matches the first freeze.
+
+The final 827-input product map is
+`49ee4580b42dbbcf1795953909932b27be2458690dfe0ac44c7fcede519a0bfe`.
+The exact GNU suite executed 28 unit and 62 integration cases, including
+both partial-write controls. Format, isolation, GNU Clippy and MSVC-target
+Clippy passed. The ordinary run took 99.24 seconds including the admission
+and retirement steps. The peer saw sixteen 63-byte writes followed by 28
+bytes in the healthy case. The withdrawal case saw one 63-byte prefix
+followed by EOF. Test capture inequalities concern the userspace write
+brackets. Cutoff equality in this case does not qualify expiry during a
+native write or a later provider cleanup.
+
+The final instrumented GNU run took 94.72 seconds and executed the same
+90 cases. All ten line gates passed. TCP covered 324 of 357 lines, compared
+with 318 of 353 in §3.29. The other nine owner counts are unchanged. Seven
+inventory, five line-analysis and 67 shared wire controls passed on the
+final freeze.
+
+The final listing took 39.45 seconds. The total remains 601 descriptors
+over all ten files. Nine files reproduce the raw §3.29 descriptors exactly.
+All 66 TCP entries match the prior owners, operations, replacements and source
+spans after mapping moved lines. The test cap generated no additional target.
+The coordinator verified all 836 listing input digests and both exported
+artifact sets. Approximately 358 seconds were consumed across the two attempts
+including the interruption, within the original 420-second allowance.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-partial-write.23fq7of7/` | SHA-256 |
+| --- | --- |
+| `baseline.py` | `dcd465c1a1fa1f07a3ccc544fd5cb0833ad16aac921ddb01d62106c15d487394` |
+| `ordinary.json` | `560a84ac71cbbdde020b8b0e55620c5cf34ee3aadb10bb6300e52e5bf1a87c6d` |
+| `coverage.log` | `0b79d47ead56c5f94122491bffc326a6559b04a665d41c9f8c41b6c748d65504` |
+| `predecessor-fixture.rs` | `95abd2d8b7b1f1f0064dce698e505ec0d7c11266c9b2386b45ba21eaab316a24` |
+| `final/ordinary.json` | `889c1f450d83e51e40d661fa4fa7d06db793243a43bd4aad9b00e9d7269230ed` |
+| `final/engine_roughtime_inventory.log` | `9b6dd6edda6fef78b8fb23e1c56ffef41c768eaa0e87b18dcc7d359cf16fbc50` |
+| `final/engine_roughtime_line_analysis.log` | `58b4d9eb44aad1a09eb5e592d39a7ddd513e13e4a1683a0188871d505d90f68b` |
+| `final/verify_wire_analysis.log` | `3c44911f3041ce5aa77fd63038dace0df4a8f19ad32678c9d6e153f5a34604d5` |
+| `final/coverage/verification.json` | `b69cd99fd0df1fbff5fa259750bad6f9baf1f40f22e77e317c5893c9aadace7b` |
+| `final/coverage/coverage.json` | `14a1952190dddec996d9c36e1a0e2130bd3f08c348e9aeae955aa465ca647df9` |
+| `final/enumerate/verification.json` | `874cfe3d2b7fdc5ed4838b7c5c941a53e770cc3809d8333d559414464d081486` |
+
+### 3.31 TA-W02/03/04/06 follow-up fuzz targets
+
+The sleep hold ended. One bounded priority-1 wire-only experiment completed for
+the staged index tree `3e2b17d62d780119eea3677f0768f99d3ad195c0` and admitted
+product source map
+`17c69e3b30cf23b9f0a936dfe3f7cc68e0e0d92fae694af73de849c89df7c6ad`.
+This task-only status update changes neither that admitted source map nor the
+executed product bytes. Maintained selections for priorities 2–4 remain open. Keep the existing AES
+hold and native Windows qualifications. Treat packet bytes, root selections,
+structured evidence and test inputs as untrusted regardless of their origin.
+Use local fixtures and preserve each real admission guard.
+
+| Priority and owner | Target and seed inputs | Independent checks |
+| --- | --- | --- |
+| 1. TA-W02/03 wire admission | Maintain the existing `policy/roughtime-wire-fuzz-target.rs` experiment. Exercise request and response decoders and the TCP declared-length reader with separately attributed corpora. Keep accepted maps with unknown fields, official and corrected Appendix B specimens with provenance, and boundary neighbors for lengths, offsets and Merkle paths. | Admitted fields and original byte spans agree with an independent fixture reader. Legal cap-sized frames remain admissible, and oversized or structurally invalid frames refuse within the declared work bounds. Record accepted decode and header outcomes separately. |
+| 2. TA-W03 keyed verification | Drive `RootKey::from_bytes`, `PendingRequest::new` and `PendingRequest::verify` with independently checked local signed vectors. Exercise both raw input variation and structured variations that can reach deeper verification. Retain healthy shallow and deep proofs and the published legacy-context refusal. | Accepted evidence retains the exact selected root, original framed exchange and independently specified signed bounds. Distinguish request identity, delegated key, response signature and Merkle inclusion outcomes. A structurally valid frame alone earns no keyed-verifier credit. |
+| 3. TA-W04 conflict evidence | Guide bounded traces through the real round and conflict receiver. Seed independently signed multi-peer agreements and contradictions. Cover pair selection, response ancestry and repeated link randomness. Add a raw evidence target only once DATA-18 has an actual receiving decoder. | An independent transcript model computes the first strict causal contradiction and retained positions. An invalid prefix cannot become conflict proof, clear a conflict or admit a date. Preservation of a previously recorded proof stays observable after the round retires. |
+| 4. TA-W06 selection and recovery | Guide bounded action sequences through public selected-roster and recovery owners with controlled fixtures. Include ready and deferred peers, distinct group constraints, the 2/3/16/17 roster neighbors, UDP silence, partial TCP progress, withdrawal, expiry and join. | Compare each observed transition with an independent state model. Record refusal, actual dispatch, retained retry debt, first conflict, admission and join as separate observations. Preserve one-use authority, no receipt after withdrawal, and no spent work being refunded. |
+
+Start with `qa-structured-fuzzing` and the existing wire adapter. The current
+wire analysis selector admits Roughtime coverage and enumeration. A maintained
+fuzz selection requires a reviewed runner role, exact tool/graph/source
+admission, and an accepted input plus an intended failure control through the
+actual target. Bind the corpus provenance and digests. Set finite input,
+execution, worker, memory and artifact limits before running. Record callback,
+acceptance and reached-check counts separately. Use `qa-state-guided-fuzzing` for
+the later trace targets only after qualifying the driver, independent state
+model, fresh state reset and equal-budget comparison with the baseline. Retain
+original and minimized witnesses privately with exact replay identity. Coverage,
+mutation scores, actual Winsock/provider retirement and production Roughtime-to-NTS
+qualification retain their own evidence.
+
+The private result
+`~/.local/share/nevrotick/roughtime-wire-fuzz-current-20261128/result.json`
+(SHA-256
+`db018d3b977215fd7fb0a8a47605ea772e4810a5531e9586f749d9714ef1b694`)
+binds the admitted inputs, three initial seeds, tools, offline graph, distinct
+healthy/control binaries and closing bookends. Fixed valid-request and
+valid-response executions passed; their own output correctly says that these
+were fixed replays, not fuzzing. The seeded assertion control exited 77 with its
+expected marker, establishing accepted-input delivery and failure propagation,
+not ASan detector operation. The healthy guided row completed 256 callbacks
+with seed `2733597436`, final `cov: 139`, `ft: 180`, `corp: 7/4134b`, maximum
+input length 1,036 bytes and final RSS 38 MiB. These are finite libFuzzer
+feedback values, not line coverage or a coverage percentage. The complete
+bounded role took 250.445 seconds and reported no unexpected target failure.
+
+This result is a current bounded wire experiment, not the maintained fuzz
+selection required above. The temporary workspace was removed after recording
+the starting seeds and final counters, so the evolved seven-member corpus and
+its member digests were not retained. The receipt also lacks an artifact
+inventory and per-decoder accepted, refused and reached-check counts. Before the
+next maintained run, the reviewed runner must copy a bounded final corpus and
+any original and minimized failure artifacts to a private durable directory on
+both success and failure, record their SHA-256 manifest and replay recipe, and
+create durable files with mode `0600` under a `0700` owner directory. It must
+also record the full source/tree identity and separate request, response and
+header outcomes. Priorities 2–4, a representative ASan detector control,
+native Windows behavior, mutation gates and production Roughtime-to-NTS remain
+open; no universal malicious-input assurance follows from this experiment.
+
+**Keyed-verifier exploratory run and RSS triage — 28 November 2026.** A
+separate external, bounded semantic driver exercised the public
+`RootKey::from_bytes`, `PendingRequest::new` and `PendingRequest::verify`
+chain against the staged index tree
+`acce28e78472e8e708e2bba755f0d4c1985b57b9` at HEAD
+`172d03517123e6c4947fc94074b9b15a17dddc61`. It used independently checked
+local signed shallow, depth-two and depth-32 vectors, plus bounded mutations
+for nonce, response signature, Merkle commitment and truncation. All ten fixed
+seed replays passed. A separate seeded assertion control exited 77 with its
+expected marker. That establishes input forwarding for this temporary target,
+not an ASan detector result. A fresh-child LSan-enabled run preserved
+`ASAN_OPTIONS=detect_leaks=1` and the admitted 8,192-run, 64-byte, two-second,
+512 MiB RSS and 256 MiB allocation limits. It completed with `cov: 1019`,
+`ft: 2212`, `corp: 148/2172b`, fuzzer RSS 50 MiB and a child peak of
+52,256 KiB, with no unexpected sanitizer diagnostic. The raw log is
+`~/.local/share/nevrotick/roughtime-keyed-fuzz-run.Z3BVkx/guided-8192-lsan-fresh-child.log`
+(SHA-256 `c9de04446379811a0ce2403a38bda4466ad61fe7190d240646aaa512a3adfa30`).
+
+An earlier direct LSan launch stopped at 2,159 cases via libFuzzer's RSS guard
+and emitted one 11-byte artifact. Its fresh-child LSan replay executed the
+artifact once and exited zero at a 32,888 KiB child peak. Its log SHA-256 is
+`7f9ad8c937befd43f5792d041a3b060976531d41615d0fc3c04b1d0a6c92bf6d`.
+The retained triage control reproduced Linux `RUSAGE_SELF` high-water retention
+across `exec` (1,287,988 KiB before and after `exec`) while a fresh child
+measured 11,536 KiB. The source of the stop is therefore a temporary-runner
+measurement artifact, not a demonstrated target failure. The original artifact,
+replay and fresh-child log are retained in the private directory named above.
+The classification is in `rss-triage.json` (SHA-256
+`905cd2333d1ebca5e9f80222721acaef79480bd9272cadb4443b53422ce71732`).
+Its `SHA256SUMS` binds 220 retained files, including both binaries, the fixed
+seeds, the final on-disk corpus and the temporary driver inputs. The manifest
+SHA-256 is `713a2efbe0ac488188ef7b492ed0cea8b43430cf02a967ba6cbaacb82c1a2ace`.
+The private Linux copy matched the working files byte for byte.
+The future reviewed keyed-verifier runner must launch each libFuzzer target in
+a fresh child, retain the child-specific peak RSS and raw log, preserve ASan or
+LSan settings and every admitted resource flag, and replay any RSS-limit
+artifact in that same mode before classifying it. It must not weaken the
+512 MiB RSS limit or disable leak detection. This exploratory driver is not a
+maintained fuzz selection, raw-wire parser coverage, native transport evidence,
+leak-freedom qualification or a claim that all hostile inputs are safe.
+
+### 3.32 TA-W03 request-encoder cohort resource and input preflight
+
+CHECK-6/19/24/25/26. The first private whole-file candidate remains the eight
+generated descriptors for `request.rs`. Apply `qa-environment-preflight` and
+`qa-mutation-testing` before building its guarded execution role. Keep the
+seven-GiB work floor, separate five-GiB durable receipt floor, one mutation
+worker and 95% viable-kill gate. The full ten-file scope remains required.
+
+The current local ext4 and shared tmpfs paths were below their applicable
+floors. The paired canary used a fresh namespace-private tmpfs for work and
+a separately owned ext4 receipt image backed by the established C: lab
+directory. After each wrote and read back a small fixed file, work had
+8,690,757,632 bytes free and durable receipts had 9,927,118,848 bytes free.
+Read-only remount preserved the exact receipt and refused a new file. The
+5.440-second canary retired its image, mount, daemon and transient service.
+These are storage technique observations for the successful path. The
+campaign supervisor still needs failure and cancellation recovery. The
+actual source and tool copy, resource lease and baseline need admission
+under the private role.
+
+The candidate bookend matches the working bytes and index blobs of all
+837 distinct inputs across the retained ordinary, coverage and listing
+receipts. The retained GNU ordinary result covers 28 unit and 62 integration
+cases. The inventory reports 601 descriptors over ten owners. The eight
+request descriptors retain the checked descriptor digest and a separate
+binding over the rendered diffs. The first binder wrongly treated the
+835- and 836-input maps as nested. The next readback distinguished the
+existing descriptor digest from the separate diff binding. The final
+receipt records both corrections and the exact verified source identities.
+
+Re-entry requires a reviewed private singleton role that binds the actual
+`roughtime-verification` GNU commands for discovery, baseline and campaign.
+It must recheck its live work and receipt floors, run the ordinary baseline
+under its actual test command and account for all eight generated identities.
+Keep compiler-unviable, killed, survived, timed-out and incomplete results
+separate. No mutation ran in this preflight and the public inventory policy
+remains listing-only.
+
+| Evidence under `~/.local/share/nevrotick/roughtime-request-readiness.hXG9ZOPp/` | SHA-256 |
+| --- | --- |
+| `paired-storage.py` | `6fcd17c19107010181dc1ee86ada0cc8fb198406fead72b698cec524f4d63e4b` |
+| `paired-storage.json` | `95bd4773e664bdf97a1e05f94f8faa8639f625c4068c86efec94083a31bd0f37` |
+| `paired-storage.unit.log` | `0b937a668602b0566b6bab0ffdfefd9e2e809a60607c35e30c6ca642d9862160` |
+| `bind-request.py` | `835dc00bbea6f8aaf3c82f0216a16bed6b49d7d01f6167364d473e0b3ff227bd` |
+| `request-cohort.json` | `2b660456ba9eeeab5f8f32b495de82ff01e025d354cd2d3a236b31472bd44ee7` |
+
+### 3.33 TA-W03 private request-encoder command and result controls
+
+CHECK-6/19/24/25/26. The private command capsule binds the cohort from §3.32
+to the exact GNU target, Engine feature, request file, tool and all eight
+descriptors and rendered diffs. It requires both Cargo test binaries and
+the original 28 unit and 62 integration case names. Eight fixed command
+checks passed, including changed target,
+missing or repeated case, skipped baseline, foreign listing and diff drift.
+The pinned 27.1.0 help confirmed the shared Cargo argument option. A
+retained same-version GNU jobserver control supports one implicit Cargo
+slot with zero extra tokens. Observe the combined Cargo phase vectors in
+this cohort's own baseline before admitting them as runtime evidence.
+
+The result reader consumes the same command capsule. Eleven fixed Python
+controls passed, including foreign command, same-count wrong roster,
+failed baseline, unviable mutant, caught mutant, survivor, timeout and
+incomplete evidence. A counted native label still needs its causal log
+and exact phase observation. The reader cannot award a mutation score.
+
+The pinned Cargo 1.100.0 ran both phase vectors on a dependency-free
+workspace with smaller test rosters. Artifacts for the two binaries shared
+the expected package, source and GNU output paths across phases. The test
+phase forwarded both case names, quoting the name containing `::` in its
+verbose display. Each binary ran its intended case. The first probe was
+stopped by an LLVM linker thread creation failure under the 24-task
+canary cap. The follow-up used the existing 128-task runtime profile for
+the fixture. Retain both observations. The fixture supplied Cargo output
+shape evidence for the baseline reader.
+
+Twenty baseline-reader controls passed. The reader binds both phase
+banners, both matched Cargo compiler artifacts, their test invocations,
+the exact named passing cases and the 283/0 filter counts. The retained
+ordinary product output confirms the roster and filter counts. The direct
+Cargo fixture confirms the artifact paths and argument decoding. The
+combined cargo-mutants transcript with the product roster remains unobserved.
+
+The configured Linux runtime ran two harmless probes in separate short-lived
+user services. The first resolved the planned nested tool path, refused writes
+to the tool and sealed source, kept the checkout out of the inner namespace
+and read back the expected private worker output. The second observed a
+detached child's held lease, issued the runtime's resource stop and observed
+lease release before the outer supervisor exited. The service units and
+cgroups were retired. These observations qualify the two probe routes under
+their canary limits. They supply no Cargo, compiler or campaign result.
+
+Keep the public inventory role listing-only. Re-entry needs a reviewed
+private role in the existing execution gate, a supervisor that holds the
+original work and durable receipt identities through abnormal stop, and
+a fresh live reserve check. Before allowing the campaign, rehearse the
+two exact Cargo vectors on the unmodified frozen product, observing both
+complete rosters. The pinned mutation tool has no baseline-only switch.
+Use its normal `--baseline run` in the later campaign and independently
+bind the forwarded phases, native results and original logs. If the
+campaign executes, account for all eight descriptors and review the cause
+of each outcome before calculating the viable denominator. The ten-file
+requirement and 95% per-file threshold remain. The bounded priority-1 wire
+experiment is recorded in §3.31; its maintained corpus/artifact replay and
+priorities 2–4 remain open.
+
+| Private evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `roughtime-request-command.H2yfonha/command_contract.py` | `1a760f59bc32f76b491a03a9daf164c7045144e518780b3b8da0833732149f44` |
+| `roughtime-request-command.H2yfonha/command-contract.json` | `46ca89b7ce1cb3b7f4c099e818e3b9da7e0ac1acf073c8435b654b4962637510` |
+| `roughtime-request-command.H2yfonha/test_command_contract.py` | `ac3c2b0652f71f42210b694e8a5a0ecae3a09aaa5cc5edd7bb74c5a0a9fcd9e6` |
+| `roughtime-request-command.H2yfonha/python-controls.log` | `a9435520f84e2e342f148a210059c33fb6db7b5cd9cc5ce6061cacccf17504a1` |
+| `roughtime-request-command.H2yfonha/mutants-help.stdout` | `cc1de762d004b8b74204bf940705c1142f5515b35841ba5c8df5b9863216914e` |
+| `roughtime-request-command.H2yfonha/runtime-envelope.py` | `d3fd141d150546c4053e5b92e0ae07c5e6a73719cdf779da9b76726c9555b0e8` |
+| `roughtime-request-command.H2yfonha/runtime-envelope.log` | `e8556bf6560bfc9b5277ee0a7570e13adb78a3df112b5321afba846f5b27fd32` |
+| `roughtime-request-command.H2yfonha/runtime-stop.py` | `ed3492f8fefc6feaf145b21c0ca701dc1cdf829cce36fd3233093a4bf1993dd0` |
+| `roughtime-request-command.H2yfonha/runtime-stop.log` | `140da5d0c9bf129001deaab1a699ca925d30a9e6f3e6e76f0165de210f704605` |
+| `roughtime-request-command.H2yfonha/cargo-dialect-low-tasks.py` | `d3be7b2cdf9521e3a1f7877ad76b5dbfeb44c3173f28434116c1c93ad2e058bc` |
+| `roughtime-request-command.H2yfonha/cargo-dialect-low-tasks.log` | `d3376fb133583db06f0005b553bf83f6a9ad5922600a35caa8c89d68226b48e8` |
+| `roughtime-request-command.H2yfonha/cargo-dialect.py` | `c12a6786e966979210f19aaf312586f3ea7241e289e59539e04b832bbf1508d7` |
+| `roughtime-request-command.H2yfonha/cargo-dialect.log` | `55785318e65526720e2c0eb98ba5b5d7817083309e25123b992a06f8de4fd2ec` |
+| `roughtime-request-result.UjtBBn9E/request_result.py` | `01d079e8622935f41500cc5145a90146e0eb56002baae89a72239b22550ca31f` |
+| `roughtime-request-result.UjtBBn9E/test_request_result.py` | `799ce292adcc6087de9206910942c1e533c67b934e5aad7b5754e20181874dfb` |
+| `roughtime-request-result.UjtBBn9E/python-command-controls.log` | `6468dfafde9e4fbdd1d2a87306f1671664a5ad3571a9afd4ab16798febe98ffb` |
+| `roughtime-request-baseline.sZ02mgQU/baseline_observer.py` | `e06b823b7d59df820e6fd90a8f1945b6b3184fe57b858a99cd3b81f95f61b6e1` |
+| `roughtime-request-baseline.sZ02mgQU/test_baseline_observer.py` | `7da7549d12d07c9469ad87e771a2c66e7f12fb0f32c67bf4cfbb387159851549` |
+| `roughtime-request-baseline.sZ02mgQU/python-controls.log` | `bc5c73769caae7bcf9dc7fe8176720cf2b56991d7a8974db14d06be877639235` |
+| `roughtime-request-baseline.sZ02mgQU/reference-readback.json` | `75703119399291da878d213afb422cc1a98d8f90df23e36ff0b670bbc9f7e1a3` |
+
+### 3.34 TA-W03 exact unmodified request-encoder rehearsal
+
+CHECK-6/19/24/25/26. The two pinned direct Cargo commands passed on the
+unmodified Engine Roughtime GNU candidate from §3.32. The selected Build
+and Test phases exited zero and joined in 30.691 and 44.988 seconds.
+The independent reader matched the same two compiler executables across
+both phases and every named passing case in the original captures. The
+unit binary passed 28 with 283 filtered. The integration binary passed
+62 with zero filtered. Neither binary reported an ignored or failed
+selected case. Eight fixed observer controls passed.
+
+The first admission stopped before Cargo. The 827-file product copy lacked
+four manifests that the configured cooldown checker reads from the full
+resolution context. The successful retry verified each supplemental
+manifest against the staged blob, working file and policy digest. It
+passed frozen-tree admission before opening storage and retained the
+unchanged 827-file product map. Source, toolchain, target libraries,
+vendor and graph identities matched after both phases.
+
+The owner observed separate tmpfs work and ext4 receipt mounts throughout
+the 101.347-second inner run. The lowest sampled free space was
+8,323,293,184 bytes for work and 9,926,926,336 bytes for receipts. The
+lowest sampled host memory availability was 6,998,364,160 bytes. The
+worker service used the 6 GiB memory, 512 MiB swap and 128-task limits,
+with no change in its monitored memory or task events. The supervisor
+read back the fsynced original reports after a read-only remount, copied
+and rehashed them, and retired the worker and disposable image.
+
+The unmodified direct rehearsal prerequisite is satisfied. The next
+private effect needs source-reviewed one-shot admission under the existing
+isolated runtime, a fresh listing of the exact eight descriptors and
+rendered diffs, and live resource and receipt custody. The later
+cargo-mutants run still needs its own baseline and causal observation of
+each disposition before scoring. The public inventory remains listing-only.
+
+| Private evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `roughtime-request-rehearsal.pg6CmaqQ/reports/native.json` | `35e7c63c0ab1e0970fc5af87938b537f374bcaf84071363f552799d96f22252b` |
+| `roughtime-request-rehearsal.pg6CmaqQ/supervisor.json` | `5d75167ecb4dbce32e85f25e8f430596b23db7098992ad02cc6c128e2daba446` |
+| `roughtime-request-rehearsal.sPDrbImi/launch.py` | `bf26722b4ac4072ec9bb192bddce12b5f8c360f702aea6cdcc1831ea191e974b` |
+| `roughtime-request-rehearsal.sPDrbImi/rehearsal.py` | `8cfe399f61084d2302c3e6e8e239e0e2f95b1b96f5bb0217e8da34d83d42bed7` |
+| `roughtime-request-rehearsal.sPDrbImi/admit_rehearsal.py` | `fc90ac1a0dd355ab0d0f74e45b02ef348ee9edf6577febda813afce7a5d75df2` |
+| `roughtime-request-rehearsal.sPDrbImi/frozen-inputs.json` | `327e97ae49f8361fd9f986035555b8d2fac24d268bb5498e951cebc4380ee6ec` |
+| `roughtime-request-rehearsal.sPDrbImi/supervisor.json` | `58125901338d5d71dad952eadd083b3ff7aad5ca92863a4d211c9b1bb41815c0` |
+| `roughtime-request-rehearsal.sPDrbImi/reports/native.json` | `7792fdc7ef9390a691eee26c8fc84c6a3204f83dc76c3794ca1009ed229aaafc` |
+| `roughtime-request-rehearsal.sPDrbImi/reports/build.log` | `a762d9cc98e713ce32a914256ec3b0cca6a2b5265fd76a28e6ea9d6944207f73` |
+| `roughtime-request-rehearsal.sPDrbImi/reports/test.log` | `d476cfe323d100cd707ba9f8f010eff13d3e928224e41a5f2335e7258ee59adb` |
+| `roughtime-request-rehearsal.sPDrbImi/rehearsal-receipt.json` | `98ab13c7e8067ed496a72152ace0bcc6a1e3b68cd44c5183ecaae77753c26a46` |
+| `roughtime-request-baseline.sZ02mgQU/direct_baseline.py` | `5fa9b1833e5bfcd2166f2217320eea445539844ac686059d3d1020989f70b1a9` |
+| `roughtime-request-baseline.sZ02mgQU/direct-python-controls.log` | `5614057e33da8ce7d011ed5d703556292d8f73e0b155e9fc339c3554ee925105` |
+
+### 3.35 TA-W03 request-encoder per-file mutation result
+
+CHECK-6/19/24/25/26. The private GNU `roughtime-verification` campaign
+met the 95% per-file mutation gate for `request.rs`. The selected
+source identity is
+`49ee4580b42dbbcf1795953909932b27be2458690dfe0ac44c7fcede519a0bfe`.
+All eight descriptors and their rendered diffs matched the pinned
+inventory before dispatch. The fresh cargo-mutants baseline used the
+reviewed Build and Test vectors and passed all 90 named cases. The
+unit binary passed 28 with 283 filtered. The integration binary passed
+62 with zero filtered. Neither binary reported a selected failure or skip.
+
+The original Cargo logs and diffs supplied a cause for every disposition.
+Five variants compiled and were caught by selected tests. Three failed
+at Build before any test could run. The viable score is **5/5 (100%)**,
+with zero survivors, timeouts or equivalent exclusions.
+
+| Encoder change | Count | Observed cause |
+| --- | ---: | --- |
+| Length addition replaced with multiplication | 1 caught | The UDP peer refused the emitted request profile. The TCP partial-write test observed a write of 1,071 bytes against its 1,036-byte expectation. |
+| Server commitment or nonce boundary addition replaced with subtraction or multiplication | 4 caught | The selected TCP partial-write control reached the changed encoder and failed on its corresponding invalid slice bounds. |
+| Length addition replaced with subtraction | 1 compiler-unviable | Rust reported `E0080` from constant subtraction overflow in the encoder. |
+| Encoder body replaced with a constant array | 2 compiler-unviable | The checked lint policy denied the unused import, both arguments and four constants. |
+
+The private gate spent its single dispatch before the campaign process
+started. Eight fixed gate controls and eight fixed harvest controls passed.
+The campaign exited zero in 174.075 seconds. Its original resource limits
+held with no increase in memory or task events. The minimum sampled work
+and durable receipt reserves were 8,225,984,512 and 9,927,098,368 bytes.
+The supervisor read back and rehashed the receipts after a read-only
+remount, then retired the worker and disposable image. Source, tools,
+vendor and graph matched at the closing check. The campaign remained
+inside the GNU fixture scope. The existing independent emitted-byte
+oracle and signed receipt controls cover literal profile bytes and
+padding that the generator did not change in this inventory.
+
+The public mutation inventory remains listing-only. Nine Engine Roughtime
+critical files still require their own reviewed denominators and per-file
+scores. The bounded priority-1 wire experiment is recorded in §3.31; its
+maintained corpus/artifact replay and priorities 2–4 remain open. Windows native,
+production catalogue, DATA-18 and whole-interval NTS receiving qualification
+remain open.
+
+| Private evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `roughtime-request-gate.YIKUdCHf/python-controls.log` | `ab5e7e1a7b7ce62dfb115c69b59bcce5a97eb9ff6f3718cfedd9ee8ddb1ad285` |
+| `roughtime-request-harvest.T2KFxF5b/python-controls.log` | `9e6ecb8b676b5c0a1c1872a503ba2ca950fdf9449fec89aabb63b7de338de161` |
+| `roughtime-request-campaign.fo5wNtcK/reviewed-inputs.json` | `0ec7a017ac76b9fafa33e3bd604cb1222051898b965f9203e0ab73953803b75c` |
+| `roughtime-request-campaign.fo5wNtcK/reports/listing.stdout` | `7d3592c46a1d567901d56dbe27f89cae0109bf1ffa712cff0ecd5db5387aaac7` |
+| `roughtime-request-campaign.fo5wNtcK/reports/dispatch.json` | `b80a7c31a7b61b75ac6109ff389a995bc4a1a9c4e46d3a09865c466be883ba06` |
+| `roughtime-request-campaign.fo5wNtcK/reports/native.json` | `30b4106349f871950a170ab466dd48aaa27ef63728e381952c9b17febf4af86e` |
+| `roughtime-request-campaign.fo5wNtcK/reports/campaign.stdout` | `10207302ff0525b063b0abf3a4713553674a161e6b4d5d99746c477604c1f47f` |
+| `roughtime-request-campaign.fo5wNtcK/reports/mutants.out/outcomes.json` | `67419cc8ae5ebc93ceb9c5556136789b3bf84ce13837a4920fe31e9de8f85e5c` |
+| `roughtime-request-campaign.fo5wNtcK/reports/mutants.out/log/baseline.log` | `9239fc51ce4af6b4be6c90ac7773ba18e85c94f9e98275aa375ba84f78ff5df9` |
+| `roughtime-request-campaign.fo5wNtcK/supervisor.json` | `7afc7453cef6d431ecf8c404b702c4591a96fa8437ae441f3f12bba3398817e5` |
+| `roughtime-request-campaign.fo5wNtcK/campaign-observation.json` | `3af327edf28483bba98aa1b7a130fefc25b3f53d3896eb9257ea07f7d0b4f451` |
+| `roughtime-request-campaign.fo5wNtcK/verify_causes.py` | `dc66090c2983a7f8ab6b5232d3f5bd09175101bf30a5b886bc7130a99c259280` |
+| `roughtime-request-campaign.fo5wNtcK/request-file-causal-review.json` | `df7d55ec90bc8e50b8850e03eb41776dd67fe3446691bc34bf98def743fb945e` |
+
+### 3.36 TA-W04 conflict proof baseline and campaign boundary
+
+CHECK-6/19/24/25/26. The next complete critical-file cohort is
+`round/recovery/proof.rs`, with 26 descriptors at 19 distinct span starts.
+The descriptor and rendered-diff readback binds the exact §3.35 source,
+tool and vendor identities. The public inventory remains listing-only.
+
+The private unmodified GNU rehearsal ran the two frozen Cargo commands
+under `roughtime-verification`. The Build phase joined in 31.391 seconds.
+The Test phase joined in 4.137 seconds. The independent reader matched
+the actual executables to both compiler outputs and verified all eight
+named passes. The unit binary passed four with 307 filtered. The integration
+binary passed four with 58 filtered. Both reported zero failures or ignores.
+The 90-case baseline and per-file line gates retain their earlier broader
+scope on the same product source.
+
+The focused unit tests exercise signed inputs, the exact first witness,
+shape and identity failures, corrupted responses and missing, wrong or
+repeated link values. Integration exercises public reconstruction of
+two- and nine-receipt prefixes and readback after a timeout, a healthy
+follow-up or a second conflict. These four public callers cover successful
+reconstruction. Add a direct refusal through the public wrapper with
+genuine signed receipts and a test-owned wrong claim to discriminate an
+omitted `verify_prefix` call. That call has no individually generated
+descriptor. An isolated malformed-request case and precise shape edges
+remain additional coverage gaps. Strict causal comparison belongs to
+`round.rs` and retains its own gate.
+
+The observer passed 33 fixed synthetic controls, including a substituted
+test with an unchanged count. The runtime guard refused an expired spawn
+and a linked report in local controls. Both actual phases wrote and
+fsynced their original intent before spawn. The isolated owner sampled
+at least 8,318,840,832 bytes of free work storage and 9,926,934,528 bytes
+of free durable storage. It finished in 61.417 seconds with no new memory
+or task events. The supervisor rehashed all five reports on read-only
+remount, observed cgroup retirement and retired the owned receipt image.
+
+Use the focused roster for reviewing the next private single-worker role.
+The 4.137-second test phase and the longest comparable warm build in
+§3.35 give a rough 530-second whole-file estimate, including the observed
+rehearsal overhead. This is a planning estimate. Keep the original
+1,200-second aggregate effect limit, 90/60-second child limits, resource
+reserves and one attempt. Adapt the private identity gate and artifact
+reader to the exact 26 descriptors before dispatch. Scoring requires a
+fresh cargo-mutants baseline and causal accounting of the original logs.
+The proof file's 95% mutation gate remains open. Priority-3 conflict-evidence
+fuzzing remains planned under §3.31; the bounded priority-1 wire experiment
+does not cover it.
+
+| Private evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `roughtime-conflict-proof-readiness.gh12y_fb/proof-cohort.json` | `c5a5774b7f342abd164cd9daf0f1b20a8f2095dcadc779094c6af16317443892` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/proof-commands.json` | `b4488f1ca92c0e038043f770b96aa62ff1411e3c92691c3b7869268530a43b5f` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/launch_proof_rehearsal.py` | `6661c921f934f44b6bcd4ae08f912bb72c396d194228665ac1f9124d23fca0b0` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/proof_rehearsal.py` | `a38eb74765d6f606fb9d944a9dcbde1ed85ca250c1a6ebd3d6c47d78c91e1959` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/proof-rehearsal-controls.log` | `8cee40b1f63dcbffaa5a72ab88b596360b598e2f37920a467aef2ddff83cd0c9` |
+| `roughtime-conflict-proof-baseline.bxYEoL8m/reader-receipt.json` | `66b7bcfd62a8a139abc85dd2b93bae28b73fd246c16324f7f8b5f5fe5d7d1416` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/reports/native.json` | `4e2ac73cd5f2c153f8637f006be2d7ab223c90f279cdc5b5b1237d981dc07056` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/supervisor.json` | `ac62fd0370ef54cc887be791e9e21c05ab943ebf508ab3e94eb0e58f69da212b` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/observe_proof_rehearsal.py` | `98f8c66135625645b961a1378f18b236c4414bd16b0326e22e9eaf1b76bd0a0a` |
+| `roughtime-conflict-proof-readiness.gh12y_fb/proof-rehearsal-receipt.json` | `0f90eb48683d359ae7cc63448cc735365ee4952723027a8ce5909af972bea633` |
+
+### 3.37 TA-W04 campaign preflight refusal after the host linker update
+
+The first private conflict-proof campaign stopped in graph input admission
+before fresh listing, Cargo or mutation. Ubuntu’s unattended Noble security
+update installed Binutils `2.42-4ubuntu2.11` after the §3.36 rehearsal.
+The previous Roughtime graph receipt binds the linker from `2.42-4ubuntu2.10`.
+The refusal preserved the original reports and retired the process and
+mount. The owned image remains with its refusal evidence. The attempt spent
+preflight work only. It produced no mutation outcomes or score.
+
+P0 DEV-01 verified the new linker against the Ubuntu-signed package index
+and exact package archive. The [tooling record](../TOOLING.md#local-gnu-linker-pin-refresh--28-november-2026)
+records the canonical pin and passing dependency-free controls.
+The eight-case rehearsal in §3.36 retains its original toolchain identity.
+Both affected dependency profiles passed all 30 lanes on an exact staged
+projection. One of its 827 product inputs changed, `policy/tool-manifest.json`.
+The refreshed product digest is
+`bf7964d9c4ad856a4c503a1e141c90127c35d2a43fc6c0a3cc8707a9991a8fc8`.
+The new graph receipts both bind that manifest and the authenticated linker.
+The graph owner retired its worker and scratch before the closing check.
+
+The line and inventory policies now bind the refreshed product digest.
+The inventory binds the new exact line-policy bytes. Twelve policy controls
+passed. Both thresholds, all ten critical files, the 90-case line roster and
+the listing-only public role remain in force. The previous scores and baseline
+retain their original tool identity. Renew the affected current baseline,
+line and listing evidence before dispatching the private conflict-proof cohort.
+
+The analysis-runtime regression suite also exposed two fixture defects.
+The hand-built session lacked its Core scope. The host-access assertion
+treated a directory created as a mount ancestor as evidence of host access.
+The control now checks a real private host canary outside the mounted inputs.
+Both repaired controls and the other 26 cases passed. The first run under
+`/dev/shm` refused the fixture path before the affected children could start.
+
+| Private evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `roughtime-conflict-proof-campaign.sGJwJkGC/reports/native.json` | `3ec921d6cda15d657375eb0ef1b99c15266ca685e83da1f33096cba6fc2272e8` |
+| `roughtime-conflict-proof-campaign.sGJwJkGC/supervisor.json` | `94d9e2104162885458b786623da124ba02a206d436fb6cb5eac3e4fed589be74` |
+| `roughtime-conflict-proof-campaign.sGJwJkGC/campaign-observation.json` | `a46f31d91d503431be80ddaaa8bac747e6b1f5e172b051e15a00a7ba07cc7982` |
+| `gnu-ld-refresh.iySMyPNg/graph-candidate.json` | `4ab1d080f64816604abc5f4264728a47758203f066354567aebcf9f414bf791f` |
+| `gnu-ld-refresh.iySMyPNg/engine-roughtime-verification.json` | `9685284818fd35646b1c276c83b69e6c206de16cdecc66498f5910e7d3ffa9d0` |
+| `gnu-ld-refresh.iySMyPNg/engine-ke-roughtime-verification.json` | `9e77a47df4399fc4448d8b86d165781599e52755c710416426993820f709c5cb` |
+| `gnu-ld-refresh.iySMyPNg/graph-refresh.json` | `f1de8d2e0e1a3fffdb4da898c2d46019d7ebe2fc552b6c0232ffdb5bdb123533` |
+| `gnu-ld-refresh.iySMyPNg/analysis-runtime-controls.log` | `28e13ab00d61e6e7ba54cdb6cd357a7e8e19a33ee6d2553e6d5a8d3005950d6d` |
+| `gnu-ld-refresh.iySMyPNg/analysis-runtime-controls-current.log` | `594d530358c28ab95cc8c3058221ed36d27e2a44e60200d287200da1c0e633e1` |
+| `gnu-ld-refresh.iySMyPNg/analysis-runtime-controls-repaired.log` | `ce0572212fe2846b26c9cd7d017d2b2a2b7ef5bfe96c5fe623bafc8647559e1e` |
+| `gnu-ld-refresh.iySMyPNg/roughtime-policy-controls.log` | `a6f6d2bacc89430af974ad93fe311a56d19527c084705c56e40793b91fd13a70` |
+
+### 3.38 TA-W03/04/06 renewed GNU metrics and proof cohort after linker refresh
+
+CHECK-6/19/24/25/26. The configured GNU stable-core coverage and listing
+lanes ran on the exact staged product from §3.37. The coverage run admitted
+835 inputs. The listing admitted 836. Both retained the same vendor and
+analysis tool identities as their predecessors. The changed inputs were
+the linker manifest and the applicable candidate-bound policy files.
+
+All 90 named instrumented tests passed. Every critical file cleared the
+90% executable-line gate. TCP had the lowest result with 324 of 357 lines
+(90.76%). Conflict proof reached 63 of 65 lines (96.92%), and the request
+encoder reached all eight lines. These are GNU executable-line results.
+
+The fresh listing reproduced all 601 descriptors and rendered diffs across
+the same ten owners, including all 26 conflict-proof descriptors. The full
+inventory still exceeds the 512-descriptor campaign reference. The public
+launch executed only the ten listing commands and gives no mutation score.
+
+The first outer launch refused a mistyped launcher hash before any tool
+started. A later receipt reader looked for a standalone candidate field
+that the configured results do not emit. The coverage run had already
+completed. The corrected reader reused its original hashed export and
+checked the complete input map and selected policy digest. Coverage ran
+once. The two workers and private scratch were retired after their checks.
+
+The refreshed product, line and listing inputs agree on the complete
+837-file union. The successor proof cohort binds the staged blobs, present
+working bytes and fresh listing. The four unit and four integration cases
+and their exact direct Cargo vectors retain the same selection.
+The successor uninstrumented rehearsal passed all eight cases with the new
+linker and both refreshed graph receipts. It observed four unit passes with
+307 filtered and four integration passes with 58 filtered, zero ignored
+and zero failed. The Build and Test phases joined in 37.118 and 4.298
+seconds. The observer matched both test executables across the original
+and test phases. The owner completed in 59.845 seconds with at least
+8,323,293,184 bytes of free work storage and 9,926,934,528 bytes of free
+durable storage. It retained both phase intents and logs, observed actual
+worker exit and read-only export, and retired the original image. The
+reader rebinding passed eight identity controls and the inherited 33 fixed
+transcript controls using synthetic successor inputs.
+
+The private campaign preparation now pins the refreshed rehearsal and all
+26 exact descriptors. Rebind the private execution gate and result reader
+before dispatch. The proof campaign still needs its fresh cargo-mutants
+baseline and per-file outcome accounting. Report survivors, timeouts and
+compiler-unviable cases separately. The 95% mutation threshold and fuzzing
+plan remain in force.
+
+| Private evidence under `~/.local/share/nevrotick/gnu-ld-refresh.iySMyPNg/` | SHA-256 |
+| --- | --- |
+| `roughtime-metrics/coverage/verification.json` | `786ef8c98b7547b16217d4a3ac326afef2fe2112b40d811097a454ce0e81c135` |
+| `roughtime-metrics/coverage/coverage.json` | `5730b9ac600ab066f392ea7b1d3918937f04fabc2fb18855ab1b34fb162ef55a` |
+| `roughtime-metrics/enumerate/verification.json` | `2b3424188d892138ae76c5631efb602208a43ad92e466c6370898931a0c88726` |
+| `roughtime-metrics/refresh.json` | `69d9e27ca6810d1baa5f83d7c3ed628586462c4bc3a86afbb5eb7c131aaa59f8` |
+| `roughtime-metrics-launch.log` | `a82576c284c5cfbd8ebd3f3c05669016ece2ec653ef6a4c3c195eb468432fa89` |
+| `roughtime-metrics-launch-current.log` | `6ae412bf6415c66984261f421be10e5abf1add732e3256d0674769a1a0dfe82f` |
+| `proof-baseline-successor/binding.json` | `8be4087d35ff0f5a8289707767a40faa4048ea951438766c60b0425f868ce932` |
+| `proof-baseline-successor/proof-cohort.json` | `206af774c2d3fdd7289718fee5ab5d44f5e05ab6573ddb961801412a1993cd19` |
+| `proof-baseline-successor/proof-commands.json` | `ef3bc60f61843d6223b391484c7b615cbf0c896b88b9920f30e5ccf979551a3b` |
+| `proof-baseline-successor/reports/native.json` | `3c0bde91982fb5099f8838a11bc4e5ae7b97d9d5e7682b3a0144eca1cb0fad1d` |
+| `proof-baseline-successor/supervisor.json` | `b48fd53eb3ce03ca6651a0c8c2af7595dcd3617dd18a71b008316710cddc99af` |
+| `proof-baseline-successor/proof-rehearsal-receipt.json` | `1e023c889e0df67fba375b33e69156065c38ecfd3194fa367889046d2ec993e5` |
+| `proof-baseline-successor/campaign-preparation/proof-listed-descriptors.json` | `073bcdbc433bb88bc92c7f0decab1500dd1b92ddf2b98569a2af64c7f527421f` |
+| `proof-baseline-successor/campaign-preparation/command-contract.json` | `b64f5d8798759923407221fd67ed3ddb375bcc82806dee132cbbdb95414f092d` |
+
+### 3.39 TA-W04 conflict-proof per-file mutation result
+
+CHECK-6/19/24/25/26. The exact GNU `roughtime-verification` proof cohort
+met the 95% per-file mutation gate on product digest
+`bf7964d9c4ad856a4c503a1e141c90127c35d2a43fc6c0a3cc8707a9991a8fc8`.
+The private gate compared the fresh listing with all 26 descriptors and
+rendered diffs and recorded its single dispatch before starting the campaign.
+The fresh cargo-mutants baseline matched both original compiler artifacts,
+command vectors and all eight named passes. It observed four unit passes
+with 307 filtered and four integration passes with 58 filtered, zero failed
+and zero ignored. It used the refreshed linker and both current graph receipts.
+
+The raw outcome reader and causal readback agree on **22/22 viable
+mutants caught (100%)**, four compiler-unviable, zero survivors, zero
+timeouts and zero equivalent exclusions. Every caught mutation built and
+failed a named selected test. The original logs identify the precise
+assertion or source-local compiler diagnostic for all 26.
+
+| Changed behavior | Count | Observed cause |
+| --- | ---: | --- |
+| Exact prefix size and claimed positions | 14 caught | Signed healthy, short, oversized and equal-position controls observed a wrong `Shape`, `Incomplete`, `Identity` or `Witness` outcome. |
+| Original roster and identity | 5 caught | Roster division selected the wrong slot. Roster addition reached the invalid index in all eight selected tests. Identity predicate changes refused valid slots or accepted an isolated wrong root. |
+| Link and first contradiction | 3 caught | Valid controls refused the original link or witness. The relaxed link predicate accepted both an altered link and correctly chained repeated randomness. |
+| `Default` body replacements | 3 compiler-unviable | `E0277` at the replaced body reported no `Default` implementation for `ConflictEvidence`, `ConflictProof` or `ProofEntry`. |
+| Whole verifier body replaced with `Ok(())` | 1 compiler-unviable | Denied unused imports, arguments and unread `ProofEntry` fields prevented the selected Build from completing. |
+
+Eight gate controls, ten harvest controls and 15 result-reader controls
+passed on the successor bindings. The isolated campaign completed in
+525.396 seconds with one worker and the 90/60-second child caps. The minimum
+sampled work and durable reserves were 8,223,350,784 and 9,927,065,600
+bytes. The live owner accepted each memory and task counter check. The
+supervisor rehashed all 65
+retained files after read-only remount, observed the original worker and
+cgroup retirement and removed the owned image. The closing source and tool
+bookends matched the refreshed candidate.
+
+The score covers the generated inventory for this GNU proof file. The
+public reconstruction call still needs the direct refusal control from
+§3.36. The nine other critical files need current per-file mutation evidence.
+The request-encoder score in §3.35 remains bound to its earlier linker.
+The public role remains listing-only. Priority-3 conflict-evidence fuzzing
+remains planned under §3.31; the bounded priority-1 wire experiment does not
+cover it. DATA-18 export and native Windows qualification remain open.
+
+| Private evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `roughtime-proof-gate-successor.UEBhxjZ7/python-controls.log` | `051c4325ce25295bfa8176cd8cb1ed88d899c34789a26679720eade87d9cc051` |
+| `roughtime-conflict-proof-harvest-successor.gwZ61KlW/python-controls.log` | `7d47b70034bcbf0d93c56500f1989545ba591b46e49b78769099e7d7cf9485bb` |
+| `roughtime-conflict-proof-result-successor.7oGePN8e/result-reader-receipt.json` | `803603e6b8b11dba3422748b32bb7147abafa758616110ddc13b1dd921432165` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/reviewed-inputs.json` | `6e5859b0a33685d6805a11880471caad649821c2742135d224a1a838a60a6e66` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/reports/dispatch.json` | `93b107c5aa05dc5ec0fdc155f6850fa728b8c4ef71634a9020f56d007ed9d8ad` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/reports/listing.stdout` | `3f8926999ec7e5af6eaeb79af44a2b993eb1fbb7aa2a1fddd7e4e3608670b40d` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/reports/native.json` | `615d56e2364dd8358a593e0e1dc34f8840c3a2bc73a6c34729ff05c1c41d95e7` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/reports/mutants.out/outcomes.json` | `908a168c9607d6d83bf45d92cfb4680c915f04a420fdcc3445fc40f0a7807ce9` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/reports/mutants.out/log/baseline.log` | `6a39c2e02536cf6611691ad14235f9e1391613fb15ecc77fbd66af48115cd97e` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/supervisor.json` | `a781b1ad70a541411c9e61c48000ccd1fdbb6eef45d4658ba7e6bc117d71a5a5` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/campaign-observation.json` | `e3d08f06b9a16f9873a49e39be3928b95fcac3d2d3abe220891892ac1329b254` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/proof-cause-readback.json` | `24491c25823b1a235981e85d1be4c6e0eb0a87f7d29d7c2f4fc3e157adcd27ba` |
+| `roughtime-conflict-proof-campaign-current.6ZRJdPZG/proof-file-causal-review.json` | `563025a4ffb672572c47461836d118494473a325d7ba8c9a9d0d875ce66e2433` |
+
+### 3.40 TA-W04 public conflict reconstruction refusal
+
+CHECK-6/19/24/25/26. The existing proof regression now sends three real
+loopback requests through `ControlledRecovery`, authenticates the signed
+responses and retains all three original receipts. With radius three seconds,
+the signed intervals are `(1017, 1023)`, `(1016, 1022)` and `(1006, 1012)`.
+Both earlier lower bounds exceed the final upper bound. The public receiver
+first reconstructs `(0, 2)` and returns a proof that borrows that same evidence.
+Changing only the fixture's claimed earlier position from `0` to `1` then
+requires `ConflictProofError::Witness` through the same public method. This
+exercises the wrapper call identified in §3.36 and preserves the existing
+test name and rosters.
+
+The first isolated snapshot omitted supplemental cooldown manifests and
+stopped before Cargo. With those exact files admitted, the focused test passed
+and the original runner output retained its one selected pass. Clippy then
+diagnosed two test style issues and repeated loading of the existing signer.
+The three unit-test modules now share one signer under `cfg(test)`. The
+separate integration test retains its own module. The final GNU product
+`17c69e3b30cf23b9f0a936dfe3f7cc68e0e0d92fae694af73de849c89df7c6ad`
+passed the exact test with 310 filtered, zero failed and zero ignored. GNU
+Clippy for the selected library and tests and Rustfmt also passed. Independent
+source review confirmed the first-pair expectation, authentic receipt custody
+and test-only signer ownership.
+
+The line and inventory policies bind that product on alternate index tree
+`294e2f83dc824434ba081cf031e940cea7657e73`. Five line-reader controls
+passed. All 90 named GNU tests passed under coverage instrumentation and all ten
+files retained their line counts above the 90% gate. The new listing reproduced
+all 601 descriptors. Two rendered diffs include the same appended test-only
+module as context. A readback of the original output confirmed that the changed
+lines and every other descriptor and diff are identical.
+
+The §3.39 generated score retains its original candidate. Run later per-file
+mutation cohorts against the updated exact test inputs. The public role remains
+listing-only. Priority-3 conflict-evidence fuzzing remains planned under §3.31;
+the bounded priority-1 wire experiment does not cover it. DATA-18 and
+supported-Windows qualification remain open.
+
+| Private development evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `roughtime-public-witness.pyZpupfF/result.json` | `7d697aead96206d4c30143e777537140a799006fe444811acc2a43a0a9e812ec` |
+| `roughtime-public-witness.TbB30qJY/result.json` | `faba9e4914802a06d526d8539fa8b2adf486a411949761c130b1ae840bb69e78` |
+| `roughtime-public-witness.MzymMi66/result.json` | `9e02492fb3d84388a2ca75350d30955bf683280de49c6c1d67e6a68a8bc3217d` |
+| `roughtime-public-witness.MzymMi66/test.log` | `1785f8e91d57ddde826e1d2c4676f575b2ec3310968aed308d1ddcd8e14823a4` |
+| `roughtime-public-witness.MzymMi66/clippy.log` | `b5b1ab48c848810b7efca9ef9676fce9d1de71742607184659ff9851f338a9c4` |
+| `roughtime-witness-metrics.nnDBEgg7/controls.log` | `e278d3c5eb76feb733c76182c825b2e5a88751542440797a86e517f25a0f0910` |
+| `roughtime-witness-metrics.nnDBEgg7/coverage/verification.json` | `6a170b13e57c0f1f0e8e499109a9b9ffecac63a46176a0b51ce2f1bab10103f9` |
+| `roughtime-witness-metrics.nnDBEgg7/enumerate/verification.json` | `5e7cfe41102242191aa1005508e24079641f14daddb524604d01814da4d20ea6` |
+| `roughtime-witness-metrics.nnDBEgg7/verified.json` | `41665cf2cefd94048c6d732f93f6531bda3a1745d4f8d2d910eb16aac757bcd3` |
+
+### 3.41 TA-W02/04/08 controlled DATA-18 disclosure boundary
+
+RFC-M01, DATA-18/23, TA-C06/13/19/21, CHECK-6/14/17/21/24/25/27.
+The selected source is index tree `c145c3eac5558e3c47d7dbdf186142275b45d722`
+at `172d03517123e6c4947fc94074b9b15a17dddc61`.
+`RecoveryRound::poll` moves the first signed contradiction into the original
+`ControlledRecovery`. `ConflictEvidence::reconstruct` replays the exact
+prefix and returns a borrowed proof. Current proof consumers are controlled
+tests. DATA-18 still needs the receiver that authorizes handoff of those bytes.
+[Recovery owner](../crates/nevrotick-engine/src/roughtime/round/recovery.rs)
+and [proof receiver](../crates/nevrotick-engine/src/roughtime/round/recovery/proof.rs).
+
+The controlled portable slice joins the proof receiver to a local in-memory
+disclosure receiver. The original recovery invocation remains the sole holder
+of its first conflict and original receipt prefix. The disclosure receiver
+borrows that slot and reuses reconstruction before encoding. Maintain one
+current action in the local disclosure owner. The action binds the exact
+recovery and evidence slot to the controlled session and its fixed local
+recipient. The current session and recipient are owned by the evidence slot;
+they do not identify an OS user or a production IPC peer. A unique nonreused
+generation identifies the action and its binding. The controlled caller
+issues it by confirming that evidence.
+A scan, a proof ID, or a previously accepted response cannot issue an action.
+Replacement, dismissal and session retirement revoke both unused and in-flight
+actions. The controlled fixture uses a finite monotonic action deadline.
+Historical evidence remains eligible for separate disclosure while
+the invocation still holds it and a current action exists. This works after
+the acquisition cutoff without refreshing acquisition or date authority.
+
+The receiver consumes the matching action into the only in-flight reservation
+before reconstruction and encoding. At the serialized handoff, it rechecks that
+exact reservation, its generation, recovery, evidence, session, recipient and
+monotonic deadline under the same guard that commits the transfer. Replacement
+with identical session and recipient still revokes the earlier generation.
+Do not run callbacks or wait for I/O inside the
+handoff guard. A bounded private buffer is transferred once to the controlled
+local recipient. This stage uses a one-slot in-memory recipient that refuses
+another transfer while full. At most one buffer per controlled evidence slot
+is live across encoding and recipient custody. Check for a full slot before
+allocating, and retain the reservation through cancelled encoding cleanup even
+after revocation. Release
+it on every exit and admit checked output size before allocation or growth.
+Incomplete proof,
+expired action, invalidated session, memory refusal or failed encoding yields
+a bounded cause and no handoff. The receiver discards partial output; an
+attempted disclosure never clears the retained conflict. The production UI
+and ordinary-user file writer need their own current IPC, exact recipient and
+publication evidence under DATA-23 and architecture §12.3. The ordinary
+status and diagnostic paths receive only a redacted incident reference and
+state. The encoded report includes original bytes which can carry private
+context even when Base64-encoded. Keep the path user-initiated and local.
+[ASVS applicability V14.1.1 and V14.2.3–7](../docs/asvs-5.0.0-applicability.md#v500-1423).
+
+Bound the current controlled form to one borrowed prefix of two through nine
+entries and one private output buffer of at most 65,536 bytes per action.
+Each request is exactly 1,036 bytes, each response at most 4,096 bytes, each
+root 32 bytes and each later link 32 bytes. Compact `responses` JSON with
+padded Base64, the first `rand` omitted and the later `rand` fields present
+takes at most 62,871 bytes. An independent standard-library size calculation
+confirmed that envelope. Enforce the output cap before publishing. The bound
+is for the controlled emitter and first-conflict prefix. General RFC imports,
+larger rosters and aggregate installation retention have separate limits.
+
+| Selected control | Independent observation required at the receiver |
+| --- | --- |
+| First signed contradiction, current explicit action | Read back the actual recipient's JSON independently. Require the exact original roots, request/response bytes and later links in original order, with first `rand` absent. Reconstruct the same first pair independently. Reusing the action yields no second handoff. |
+| Current action after acquisition retirement | A retained historical proof reaches the same recipient while date admission stays refused. Earlier signed disagreement survives a later timeout or healthy round. |
+| Missing or foreign action, replacement or dismissal with the same session and recipient, retired session, changed recipient, or expiry exactly at handoff | The recipient remains empty. Hold a deterministic control immediately before handoff to distinguish entry-time approval from current approval. A fresh action on the same proof succeeds. |
+| Incomplete evidence, consistent evidence, or failure at the output cap | No report or partial bytes reach the recipient. A valid report at its exact required size proceeds. Compare the compact size ceiling separately using inert bounded data. Inspect retained conflict and subsequent date refusal before fixture teardown. |
+| Full recipient or overlapping confirmation | A full slot refuses a second transfer without replacing its bytes. A second encoder cannot overlap the original reservation. After observed retirement, a fresh current action can transfer once. |
+| Redacted summary and direct caller | Ordinary status, diagnostics and error results omit packet/key/link bytes. Test privacy at the audience-facing projection. Pair forbidden direct action construction with legal consumer use. |
+
+Implementation entry requires the configured isolated GNU Roughtime lane,
+read-only admitted source and graph, and current scratch capacity. Allow one
+focused baseline and one causal repair within 240 seconds of product
+verification work, with no concurrent build in that lane. Freeze the selected
+case roster and tool inputs before execution. The later exact-candidate GNU
+and MSVC checkpoints, applicable per-file coverage and mutation gates,
+native UI/file lifecycle, OPEN-DATA-05 restart safety and clearance, and OPEN-8
+whole-interval NTS admission remain with their existing owners. This design
+checkpoint has no Rust execution credit.
+
+**Fresh independent review.** The reviewer read the revised task at SHA-256
+`2fefb883cda796d9b59c76a589b9bdecbcb190c610626cc9d2e1cf22d5020bf7`
+against the cited index tree and completed a read-only review. Their initial
+understanding was that the planned receiver borrows and reconstructs the first
+conflict, then transfers one bounded RFC report after explicit confirmation;
+disclosure does not refresh date authority or clear conflict. They described
+the current recovery owner as retaining the original signed prefix, refusing
+date admission during conflict, and providing historical reconstruction without
+an existing disclosure publisher. The reviewer first identified missing
+in-flight revocation and aggregate buffer limits. The revised contract and
+controls address both. The reviewer independently reproduced the 62,871-byte
+ceiling and found the bounded portable source stage ready after its existing
+execution preflight. The receiver oracle must use fixture signer roots and
+peer-observed bytes, and independently decode the actual recipient output and
+check links and first witness. No Rust or native execution occurred in review.
+
+**Source-stage preparation.** The coordinator copied the staged tree into a
+private source workspace and checked the recovery, proof, test, task and Cargo
+inputs against the original tree. The existing GNU recipe's isolation-only
+preflight passed its boundary control and retired its scratch. Its receipt is
+`~/.local/share/nevrotick/data18-preflight.88C6VJ3U/preflight.json`, SHA-256
+`27ef102a555c81b25b4bb731beb418d3868761abb02a712a53868d6953f078c1`.
+This observed credential, filesystem and loopback isolation only; it executed
+no product case or graph admission. The selected source writer owns the private
+workspace `/dev/shm/nevrotick-data18-source.Zs1myNRp` and its bounded output.
+The main checkout and index remain under coordinator ownership. The completed
+keyed-fuzz build caches were relocated to the private temporary directory
+`/dev/shm/nevrotick-keyed-build-cache.MgrfU8ve` after checking for consumers;
+the original logs, binaries, corpus and fixture inputs have a separate durable
+copy listed in §3.31. Source, graph, tool and current scratch admission must be
+checked again before executing the actual product candidate.
+
+**First source candidate and focused GNU checks.** The isolated draft adds a
+single evidence-bound disclosure owner and selected tests. Its frozen product
+input map was
+`aba04b4fe0fabbf49fb20cf0ff328bd666a5ea517b6d0feba9e0bffddcc7475d`.
+The first focused invocation stopped at Clippy with 34 missing private-item and
+error-contract documentation diagnostics before tests. The same repair also
+corrected the new integration tests' error conversion. The repaired invocation
+passed format, selected GNU Clippy, two selected library tests and two selected
+integration tests. It rechecked source, graph, vendor and tool identities and
+retired scratch. The first attempt took 30.047 seconds; the repaired receipt
+charges 31 seconds and records 47.137 further seconds. The original 240-second
+verification allowance and first failure remain in force.
+
+A fresh read-only source reviewer inspected the five selected file hashes and
+the raw test logs. They described a borrowed evidence-bound action, nonreused
+generation, serialized final deadline and transfer, and a reservation retained
+through buffer drop or transfer. The independent recipient oracle compares
+decoded bytes with fixture signer roots and actual peer-observed frames, links
+and the first causal witness. They found no demonstrated source defect in this
+controlled path. The public historical receipt getters and controlled
+confirmation do not establish production user authorization. UI/IPC identity,
+actual recipient and file publication remain with their owners.
+
+The same review found planned controls still incomplete: actual acquisition
+cutoff expiry and subsequent date refusal after disclosure, unchanged full-slot
+bytes, retirement during the precommit window, the new external doctest and an
+audience-facing redaction projection. Allocation failure and an independently
+constructed maximum-size encoded report are also unobserved. Complete the
+reachable controls and identify absent actual consumers explicitly. The
+verification budget remains shared across that continuation; do not credit this
+focused receipt as the complete §3.41 exit. The reviewed candidate is preserved
+under `~/.local/share/nevrotick/data18-source-draft.F4JvJug3/`; its five-file
+manifest SHA-256 is
+`960cd080f66010f7b768975a937ba8f867a7acf1ebe797cd0ac9048560eb0709`.
+The initial generated manifest accidentally included itself and failed its
+check; `SHA256SUMS.first-incomplete` retains that observation. The corrected
+manifest verified all five files.
+
+| Evidence under `~/.local/share/nevrotick/` | SHA-256 |
+| --- | --- |
+| `data18-focused-attempt.77TCTSzd/result.json` | `c96621ad56589d2b5e7f34315c8600dcc685dbba55f7b240b87e75db9e9a82c2` |
+| `data18-focused-attempt.77TCTSzd/gnu-clippy.log` | `80602a6007e8110da135585672eec78a23c61a43aaa43d6978380c096140c655` |
+| `data18-focused-repair.GFhYkWFR/result.json` | `00423f0cf52a335439e57d26be9e30801acb212184608e83bd22db46a8f8b2fb` |
+| `data18-focused-repair.GFhYkWFR/gnu-lib-tests.log` | `b2ba8cfd276af74d4861130a58ec8117455fede62921cf9030a98d1c50e618ae` |
+| `data18-focused-repair.GFhYkWFR/gnu-integration-tests.log` | `71e14eea088045db6b36d17c2021392aecb68bc601601be171bc75218ede96ea` |
+
+**Expanded controls and critical-file registration.** The source test owner
+added direct observations of the original recipient bytes after a full-slot
+refusal, both date refusals after disclosure, session retirement immediately
+before transfer, and the existing actual acquisition-cutoff expiry path. The
+last case uses its pre-existing host-timed wait. A separate inert maximum-size
+specimen checks the 62,871-byte envelope. The resulting four library and three
+integration cases passed selected GNU Clippy and tests. A fresh reviewer read
+the changed tests and raw logs and confirmed those four added observations.
+They found no new source-proven defect. The independently measured maximum
+does not exercise an actual maximum-size signed response, and allocation
+failure and an audience-facing privacy projection remain unobserved.
+
+The disclosure source is now individually registered as one security module
+and one critical file. The existing 90% and 95% thresholds remain unchanged.
+The ten-file Roughtime metrics role fails closed by source inspection until its
+selection and policies are rebound to all eleven registered files. Independent
+read-only review checked the registration and its scope. It did not execute the
+metrics admission. The registered candidate's source map is
+`1603f9e7e12c7fc8e5ef8d21be09fcb6ee14e5cf937b71e608824d9b27948d16`.
+Its seven focused cases, Clippy, source/tool/graph bookends and scratch
+retirement are in
+`~/.local/share/nevrotick/data18-registered-controls.qzC4kYwz/result.json`
+(SHA-256 `f11bafc2c45f64c974085981172738532ad5175ed62c48921d7719300397aaf8`).
+The receipt records 178.587 seconds consumed against the original 240-second
+work allowance, including the first refusal and all earlier focused runs. The
+two new API doctests retain their own execution and diagnostic obligations.
+
+**Doctest reader failure.** The selected isolated Cargo doctest command exited
+zero. Its raw log contains 100 distinct passing cases in two rustdoc batches,
+21 and 79, including the new legal-use and compile-fail examples. The private
+reader expected one terminal summary and therefore stopped before its closing
+source, tool and cgroup bookends. The isolated tested scratch was retired.
+The outer receipt remains incomplete, and the raw result is an attributed
+observation rather than a complete source-bound doctest checkpoint. Rustdoc's
+normal output does not identify the negative case's actual compiler diagnostic;
+the intended E0451 remains unverified. The later checked 828 candidate file
+digests cannot reconstruct the original omitted closing snapshot.
+
+The attempt used 22.742 seconds, with the cumulative receipt charging 201.742
+of the original 240-second allowance. No budget is reset. Both failure receipt
+and raw output remain at `~/.local/share/nevrotick/data18-doctests.esNqQZB6/`.
+Their SHA-256 values are
+`ddf372723f31077ec24296739b1c4331c414fc5bcc78ac2020d6896e7e1cbe68` for
+`result.json` and
+`2f80aad329acd55062e2cb605c55379a97eda407260f17b3f4900f311291962b` for
+`gnu-doctests.log`. Correct the reader to reconcile both rustdoc batches and
+challenge its controls before any permitted continuation. Retain the exact
+diagnostic obligation separately and observe the remaining shared work bound.
+
+**Doctest reader continuation.** The repaired reader reconciles each rustdoc
+batch's announced count, individual case results and terminal summary. Its
+inert controls accepted the original complete log and rejected 13 altered
+batch, count, result, duplication and selected-case specimens. A new isolated
+run then passed all 100 Engine doctests in the two 21- and 79-case batches,
+including both new `DisclosureAction` examples. The complete source, graph,
+tool, vendor and cgroup closing checks passed, and scratch retired. The receipt
+charges 234.067 seconds against the original 240-second allowance. Ordinary
+rustdoc output still does not expose the compile-fail case's compiler
+diagnostic. An exact E0451 external-consumer observation remains open.
+
+The repaired result is
+`~/.local/share/nevrotick/data18-doctests-repaired.drNuiIie/result.json`
+(SHA-256 `c890f695797622ec33c8ad5f14707451bbaaca5f67e9277dfeed5846c4ad41f6`).
+Its raw `gnu-doctests.log` SHA-256 is
+`b02def6c31c5edd799792c513960cdddbba3e465e0c694150b808d7c6ae0ad58`.
+
+### 3.42 DATA-18 metrics-role reconciliation
+
+CHECK-19/24/25. The disclosure owner adds an eleventh registered Roughtime
+security and critical file. Its focused source result in §3.41 does not
+requalify the earlier ten-file coverage or mutation inventory. The independent
+static role selects each exact registered owner, the current product identity,
+and the named per-binary test roster. It must refuse a missing, duplicated or
+substituted owner and a malformed, reassigned or substituted roster. A healthy
+role remains eligible for its separately admitted coverage or listing run.
+
+`qa-regression-selection`, `qa-static-checks` and `qa-mutation-testing` own
+this accounting change. Exercise the actual Python admission and result readers
+with bounded synthetic controls and an independent expected roster identity;
+bind the inventory role to the exact line-policy bytes. The expected 32 library
+and 63 integration cases are derived from the prior selected roster and the
+five additional source cases. The focused run observed those five cases and
+the binary totals; a complete current-roster discovery remains pending. Python
+reader checks have a separate 30-second watchdog and create no product-build
+credit. The preceding source slice's 240-second allowance is not reset.
+
+Coverage and mutation enumeration require their existing independent resource
+preflight, exact candidate and source/tool/graph custody. The former retains the
+90% per-file line gate; mutation retains the 95% per-critical-file requirement
+and the public inventory role remains listing-only. The earlier 601 descriptors
+and scores belong solely to their recorded candidate. No new listing, score,
+native result or production DATA-18 qualification follows from role repair.
+
+The shared scope and both policies now select eleven owners and bind the
+registered source candidate. A code-owned canonical digest binds the planned
+95 named cases independently of the mutable policy roster; the live reader
+still requires those cases to execute. An independent reviewer checked that
+the prior 90 names and ten owners remain, the five disclosure cases and owner
+are added, the policy hashes match and no historical inventory is imported.
+The reviewer identified a wrong-binary control whose changed counts caused an
+earlier refusal; it was corrected to swap two cases while retaining 32/63 and
+to require the assignment-specific error. No further source finding remained.
+
+The final synthetic Python controls passed: six line-reader and seven inventory
+tests, zero skipped or failed. The isolated Python 3.12 invocation used a
+30-second watchdog, consumed 0.934 seconds, and matched all 202 recorded
+Python/policy file hashes before and after; its temporary directories retired.
+The retained receipt is
+`~/.local/share/nevrotick/data18-metrics-python.uzxtwe2s/result.json`
+(SHA-256 `66c729bc6370e53e3108a4d9f0f2168ced274dd6648054fcbb830b435888a3ab`).
+This checks the reader's synthetic healthy and refusal paths only. Complete
+95-case discovery, current coverage, current mutation listing and per-file
+mutation campaigns are still unexecuted. The last preflight observed roughly
+275 MiB free on the durable filesystem, 5.6 GiB on `/dev/shm`, and 4.1 GiB on
+`/mnt/wsl`; those observations do not meet the existing campaign reserves.
+The public coverage and listing roles separately require a private canonical
+Linux output parent with at least 2 GiB free. They reject a direct `/mnt/wsl`
+output, while their runtime reserves `/dev`. Historical namespace launchers
+used a private `/tmp`; their tool hashes still match, but they do not themselves
+provide an outer memory/task supervisor or durable fsynced receipt custody.
+Fresh resource, source, graph and vendor admission remains necessary.
+An independent preflight found that the historical launchers may lose their
+private progress files on timeout, and the old storage canary lacks an owner
+ledger and full-transaction cleanup for interrupted setup. Do not run either
+unchanged as a failure-safe supervisor. Before a new campaign, qualify a
+bounded owner that records its unique image, mount, daemon and cgroup before
+effects, supervises the actual work namespace, preserves incomplete results,
+and proves durable readback and retirement. The previously retained C:-backed
+image and other owners' processes are not scratch. The Linux mount's access
+mode alone does not establish the backing image's Windows ACL.
+
+A private first-step ledger now records intended resource identities and
+planned, created, incomplete and retired assertions. It performs no image,
+mount, process, cgroup or cleanup operation and does not observe OS completion.
+An independent source review identified and the author corrected strict
+boolean identity handling, nonblocking lock admission, indeterminate post-write
+failures, root-path admission, typed malformed JSON, caller-input snapshots,
+parent fsync and a same-byte publication replacement. The coordinator reran
+23 synthetic tests with exact source bookends; all passed. The private files
+are under `~/.local/share/nevrotick/resource-ledger.pVX5dNk5/`: `ledger.py`
+SHA-256 `16490088041f7b7b6feac1badb07eae269a6796c9d8eabff7bc2de4b173bd7a5`,
+`test_ledger.py` SHA-256
+`4b7aa2d54dcca75502e7a9b3fe38cedfa9da253cbd7687df390e6dcff894fe05`, and
+`coordinator-result.json` SHA-256
+`84dddf8824821d9d801ea024806a98c844bf3394c35ac0a6349c93eecfb2cb59`.
+This prototype is not an admitted supervisor. External trusted recovery pins,
+the planned-to-effect crash gap, real OS identity and retirement observations,
+namespace monitoring, resource-stop controls and durable receipt recovery all
+remain open. Device/inode readback does not prove universal object continuity
+against inode reuse, same-inode writes or changes after a check.
+The next inert supervisor slice is a separately durable owner-pin journal:
+bind the exact run, ledger and lock identity, cumulative history, previous
+pin and intended target/token before any corresponding effect. Exercise
+healthy append/readback and stale, torn, forked, substituted and fsync-failure
+controls using owned temporary files. A pin journal on the same filesystem
+does not provide rollback resistance against its owner or administrator. An
+effect completed before its dynamic identity and matching pin are durable is
+indeterminate; it is not permission to delete a same-named resource.
+Any real recovery owner must also bind the operating-system boot identity and,
+for a service, its systemd invocation to fresh live observations; a run ID,
+PID/start pair or mount ID by itself does not establish continuity across boots.
+
+The separate inert pin-journal prototype now composes the original ledger's
+checked state with append-only pin assertions. Twenty-two synthetic controls passed
+on the independently reviewed bytes, with the ledger and journal sources
+bookended. A deliberate competing-coordinator interleaving can still append an
+extra unpinned assertion after a precheck; it leaves the caller indeterminate
+and reopening refuses. Shared transaction serialization is required before any
+real effect can rely on this design. The prototype does not issue effect or
+cleanup authority and does not establish external recovery-pin custody or
+anti-rollback. Its private sources and receipt are under
+`~/.local/share/nevrotick/owner-pin-journal.IQi4yKMc/`: `pin_journal.py`
+SHA-256 `d2bbcf90f08922abc2cb665a360aa01dbf01ce71d03965eeaab001bef02f19e7`,
+`test_pin_journal.py` SHA-256
+`6af4a08b59211dfa801cc3126b47a6a306e967876d85cb58c8e8048d4c1d5a15`, and
+`coordinator-final-v2-result.json` SHA-256
+`d45314773dbf9ae143e5d0fc27b6da6745537c372aa63ad6a19a08774deabd2a`.
+The previous 18- and 20-control receipts remain intermediate candidates.
+
+A later private candidate and its test receipt are retained under the
+`transaction-pins-nonblock.KNvKYlkT` directory in the existing evidence store.
+Its 54 synthetic controls passed; it remains unqualified for real operations.
+The coordinator result SHA-256 is
+`532a10679fa7dd9998f7932e4e106a685d7f6fe0ee4f54fa8d97c1de3bdbb501`.
+Independent source review found no further issue within this inert scope.
+The newer candidate holds the ledger guard through record and pin publication
+for cooperating callers and captures its own revision while guarded. Direct
+use of the ledger after unlock remains separate; neither prototype issues
+authority for a real resource operation.
+Current resource identity, crash recovery, effect admission, durable receipt
+custody and coverage/listing execution remain separate open work.
+
+### 3.43 Roughtime local audit repairs
+
+CHECK-19/24/25. The local audit found that the eleven-owner line reader used
+whole-file LLVM summaries containing inline fixture code. The affected tests
+now reside in separate test-only source files. Test-only dispatch and write
+fixtures also have separate implementations, while their production paths use
+the same remaining request slice and original dispatch claim. The Roughtime
+line-reader controls check the source separation and require the production
+file itself to meet the 90% threshold even when a fixture file is fully covered.
+The TCP fixture observes actual progress, including bounded no-progress polls,
+before comparing peer bytes and testing withdrawal.
+
+The disclosure controls now exercise cross-thread reservation and recipient
+contention, lifetime boundaries, deterministic allocation refusal and a
+62,871-byte report holding nine authenticated exact-cap response frames.
+The response padding is an artificial client-boundary fixture. Independent
+readback checks original frames, roots, nonce ancestry and the conflict.
+
+The candidate source map is
+`24c675d9af83d5b95a85ac2db5a5a7c90464cfff6e06af9dfa8e220c49501b1e`.
+An isolated GNU development run passed Clippy and all 95 selected cases,
+with 32 library and 63 integration cases. Its LLVM export contained exactly
+the eleven selected source files, with no test functions mapped to them.
+Each observed file exceeded 90%; the lowest was exchange at 312/339.
+The isolated run is development evidence and does not replace the configured
+coverage checkpoint, current mutation campaigns or native qualification.
+Fifteen focused Python reader and inventory controls passed. The source
+layout check is a targeted regression control, not a complete Rust parser.
+
+The initial final-candidate Clippy attempt refused a complex fixture return
+type. A named test type corrected it before the successful run. The retained
+development outputs are under
+`~/.local/share/nevrotick/local-audit-fixes.wua2puuf/`.
+`inputs.json` has SHA-256
+`2790366b01f22afe82bec2a479c4b92f060beebba9b15485febc34489bc5fb48`,
+`instrumented.log` has
+`e977919a8db08dc10f7da63c416942d8f5b40842fca6059f7a2ece1f925d9669`,
+and `coverage.json` has
+`d1851f2387005118fa1278bd3c3fa34149271145673ae86afbd3ee0bef5b7500`.
+The original unmodified checkpoint and its consumed budget retain their
+recorded identity. This repair does not refresh historical per-file scores.
 
 ## 4. Independent acceptance cases
 

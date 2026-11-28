@@ -7,7 +7,7 @@ use crate::roughtime::{PendingRequest, RootKey, VerifiedResponse, VerifyError, t
 use std::net::SocketAddr;
 
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;
 
 /// A refusal to reconstruct the controlled round's original signed conflict.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

@@ -207,7 +207,7 @@
     },
     "ld": {
       "path": "/usr/bin/x86_64-linux-gnu-ld.bfd",
-      "sha256": "e9ceb054c12207970f2726dfc07e9a66b411602748628baf27399f02a9bbb31b",
+      "sha256": "53573e462af34c7f18048f8f497cc1c8ce586ce398148f40e222d33b58459abb",
       "version": "GNU ld (GNU Binutils for Ubuntu) 2.42"
     },
     "python3": {

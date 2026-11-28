@@ -20,6 +20,27 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[cfg(test)]
+use self::partial_write_tests::RequestWriteLimit;
+#[cfg(test)]
+pub(in crate::roughtime) use self::tests::BeforeConnectDispatch;
+
+/// Production offers the entire unsent tail to the native writer.
+#[cfg(not(test))]
+struct RequestWriteLimit;
+
+#[cfg(not(test))]
+impl RequestWriteLimit {
+    /// Apply no fixture cap.
+    const UNLIMITED: Self = Self;
+
+    /// Preserve the full unsent request slice.
+    fn apply<'b>(&self, remaining: &'b [u8]) -> &'b [u8] {
+        let Self = self;
+        remaining
+    }
+}
+
 /// One bounded stream request and at most one response.
 #[must_use = "drive or retire the original Roughtime stream attempt"]
 pub struct PendingTcpExchange<'a> {
@@ -127,6 +148,7 @@ impl<'a> PendingTcpExchange<'a> {
                 stream,
                 request,
                 written: 0,
+                write_limit: RequestWriteLimit::UNLIMITED,
                 sent: None,
                 response: [0; RECEIVE_BYTES],
                 received_bytes: 0,
@@ -178,17 +200,34 @@ impl<'a> PendingTcpExchange<'a> {
     }
 }
 
-/// Fixture hook for the reservation before the actual worker dispatch claim.
-#[cfg(test)]
-pub(in crate::roughtime) type BeforeConnectDispatch = Box<dyn FnOnce() -> io::Result<()> + Send>;
+/// The production worker proceeds directly to the original clock sample and claim.
+#[cfg(not(test))]
+pub(in crate::roughtime) struct BeforeConnectDispatch;
 
-/// The real connector and its optional per-attempt fixture hook.
-#[cfg(test)]
-pub(in crate::roughtime) struct ConnectFixture<C> {
-    /// Where the worker would actually connect.
+#[cfg(not(test))]
+impl BeforeConnectDispatch {
+    /// An attempt that can proceed directly to its dispatch claim.
+    pub(in crate::roughtime) const READY: Self = Self;
+
+    /// Run the worker's original dispatch transition.
+    ///
+    /// # Errors
+    /// Returns the original dispatch refusal.
+    fn then<T>(
+        self,
+        dispatch: impl FnOnce() -> Result<T, ExchangeError>,
+    ) -> Result<T, ExchangeError> {
+        let Self = self;
+        dispatch()
+    }
+}
+
+/// Connector and dispatch preparation retained together by the worker.
+pub(in crate::roughtime) struct ConnectAttempt<C> {
+    /// Actual connector used after winning dispatch.
     pub(in crate::roughtime) connect: C,
-    /// Gate before the worker's dispatch clock sample and claim.
-    pub(in crate::roughtime) before_dispatch: Option<BeforeConnectDispatch>,
+    /// Preparation immediately before sampling the dispatch clock.
+    pub(in crate::roughtime) before_dispatch: BeforeConnectDispatch,
 }
 
 /// Borrow the round inputs while one owned native job establishes its stream.
@@ -217,18 +256,14 @@ impl<'a> PendingConnect<'a> {
         cutoff: Instant,
         history: &[Receipt],
         retry: &'a mut RetryState,
-        #[cfg(not(test))] connect: impl FnOnce(SocketAddr, Duration) -> io::Result<TcpStream>
-        + Send
-        + 'static,
-        #[cfg(test)] fixture: ConnectFixture<
+        attempt: ConnectAttempt<
             impl FnOnce(SocketAddr, Duration) -> io::Result<TcpStream> + Send + 'static,
         >,
     ) -> Result<Self, ExchangeError> {
-        #[cfg(test)]
-        let ConnectFixture {
+        let ConnectAttempt {
             connect,
             before_dispatch,
-        } = fixture;
+        } = attempt;
         retry.prepare_worker(Instant::now())?;
         let request: OriginalRequest<'a> = prepare(
             authority,
@@ -241,18 +276,16 @@ impl<'a> PendingConnect<'a> {
         let job: NativeJob<Result<TcpStream, ExchangeError>> = NativeJob::start(
             "nevrotick-rgt-connect",
             move |dispatch: DispatchAdmission| {
-                #[cfg(test)]
-                if let Some(wait) = before_dispatch {
-                    wait().map_err(|_| ExchangeError::ConnectWorker)?;
-                }
-                let before: Instant = Instant::now();
-                if before >= cutoff {
-                    return Err(ExchangeError::Expired);
-                }
-                if !dispatch.admit_at(before) {
-                    return Err(ExchangeError::Spent);
-                }
-                connect_checked(peer, cutoff, before, connect)
+                before_dispatch.then(|| {
+                    let before: Instant = Instant::now();
+                    if before >= cutoff {
+                        return Err(ExchangeError::Expired);
+                    }
+                    if !dispatch.admit_at(before) {
+                        return Err(ExchangeError::Spent);
+                    }
+                    connect_checked(peer, cutoff, before, connect)
+                })
             },
         )
         .map_err(worker_error)?;
@@ -391,6 +424,8 @@ struct Connection<'a> {
     request: OriginalRequest<'a>,
     /// Count of successfully submitted request bytes.
     written: usize,
+    /// Applies the selected offer limit after taking the real remaining slice.
+    write_limit: RequestWriteLimit,
     /// Bracket of actual successful request writes.
     sent: Option<Capture>,
     /// Exactly one response and no subsequent frame bytes.
@@ -436,7 +471,8 @@ impl<'a> Connection<'a> {
             return Err(ExchangeError::Expired);
         }
         let result: io::Result<usize> = if writing {
-            self.stream.write(&self.request.frame[self.written..])
+            let remaining: &[u8] = &self.request.frame[self.written..];
+            self.stream.write(self.write_limit.apply(remaining))
         } else {
             self.stream
                 .read(&mut self.response[self.received_bytes..self.target])
@@ -520,51 +556,7 @@ impl<'a> Connection<'a> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::{ExchangeError, PendingTcpExchange, Phase, RootKey, RoundAuthority};
-    use ed25519_dalek::SigningKey;
-    use std::{
-        error::Error,
-        io::Read,
-        net::{Ipv4Addr, SocketAddr, TcpListener, TcpStream},
-        sync::MutexGuard,
-        time::Duration,
-    };
+mod partial_write_tests;
 
-    /// Exercise a refused authority acquisition on an actual owned stream.
-    ///
-    /// # Errors
-    /// Returns an unexpected fixture, authority or socket failure.
-    ///
-    /// # Panics
-    /// Panics if the refused poll leaves the connection live or permits a later poll.
-    #[test]
-    fn closes_original_stream_when_guard_acquisition_is_refused() -> Result<(), Box<dyn Error>> {
-        let budget: Duration = Duration::from_secs(2);
-        let listener: TcpListener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
-        let endpoint: SocketAddr = listener.local_addr()?;
-        let client: TcpStream = TcpStream::connect_timeout(&endpoint, budget)?;
-        listener.set_nonblocking(true)?;
-        let (mut server, _): (TcpStream, SocketAddr) = listener.accept()?;
-        server.set_read_timeout(Some(budget))?;
-        let signer: SigningKey = SigningKey::from_bytes(&[39; 32]);
-        let root: RootKey = RootKey::from_bytes(signer.verifying_key().as_bytes())
-            .map_err(|error| format!("unexpected fixture root refusal: {error:?}"))?;
-        let authority: RoundAuthority = RoundAuthority::new();
-        let mut pending: PendingTcpExchange<'_> =
-            PendingTcpExchange::start(&authority, client, endpoint, &root, budget)
-                .map_err(|error| format!("unexpected fixture start refusal: {error:?}"))?;
-        let held: MutexGuard<'_, Phase> = authority
-            .phase()
-            .map_err(|error| format!("unexpected fixture guard refusal: {error:?}"))?;
-        assert!(matches!(
-            pending.poll(),
-            Err(ExchangeError::AuthorityUnavailable)
-        ));
-        let mut unexpected: [u8; 1] = [0];
-        assert_eq!(server.read(&mut unexpected)?, 0);
-        drop(held);
-        assert!(matches!(pending.poll(), Err(ExchangeError::Spent)));
-        Ok(())
-    }
-}
+#[cfg(test)]
+mod tests;

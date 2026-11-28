@@ -6,7 +6,10 @@ use super::{
     PEERS, ProbeProgress, RetryBinding, RetryRoundPeer, RetryState, RootKey, RoundControl,
     RoundStatus,
 };
-use crate::roughtime::exchange::{PendingExchange, RoundAuthority, retry::RetryRoute};
+use crate::roughtime::{
+    exchange::{PendingExchange, RoundAuthority, retry::RetryRoute},
+    signed_reply,
+};
 use ed25519_dalek::SigningKey;
 use ntp_wire::roughtime::{Request, decode_request};
 use std::{
@@ -20,9 +23,6 @@ use std::{
     time::{Duration, Instant},
 };
 use time_domain::{EraWindow, LeapDateScope, LeapKnowledge, bundled_leap_knowledge};
-
-#[path = "../../../tests/fixtures/roughtime/signed_reply.rs"]
-mod signed_reply;
 
 /// Literal fixture date in Unix seconds, safely inside the bundled calendar.
 const MIDPOINT: u64 = 1_483_228_900;

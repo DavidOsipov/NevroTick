@@ -76,6 +76,7 @@ class RuntimeControls(unittest.TestCase):
         portable = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(portable)
         session = portable.Session.__new__(portable.Session)
+        session.scope = portable.Scope("time-core", portable.CORE_H02_SUBJECTS, portable.CORE_H02_POLICY)
         session.root, session.work, session.output = ROOT, self.work, self.scratch
         session.base, session.stable = self.scratch / "payload", self.scratch / "stable"
         canary = session.base / "common/bin/omitted-canary"
@@ -445,6 +446,10 @@ class RuntimeControls(unittest.TestCase):
     def test_actual_namespace_has_healthy_output_and_rejects_host_access(self):
         protected = self.source / "protected"
         protected.write_text("unchanged")
+        host_private = tempfile.TemporaryDirectory(prefix="nevrotick-runtime-home-", dir=Path.home())
+        self.addCleanup(host_private.cleanup)
+        host_canary = Path(host_private.name) / "canary"
+        host_canary.write_text("host-only fixture input")
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             listener.listen(1)
@@ -461,7 +466,7 @@ class RuntimeControls(unittest.TestCase):
                 "assert resource.getrlimit(resource.RLIMIT_NPROC) == (128,128)\n"
                 "assert resource.getrlimit(resource.RLIMIT_NOFILE) == (256,256)\n"
                 "assert resource.getrlimit(resource.RLIMIT_FSIZE) == (268435456,268435456)\n"
-                f"assert not pathlib.Path({str(Path.home())!r}).exists()\n"
+                f"assert not pathlib.Path({str(host_canary)!r}).exists()\n"
                 f"protected=pathlib.Path({str(protected)!r})\n"
                 "assert protected.read_text() == 'unchanged'\n"
                 "try: protected.write_text('modified')\n"

@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import re
 import shutil
 import tempfile
 import unittest
@@ -23,8 +24,8 @@ SPEC.loader.exec_module(MODULE)
 LIBRARY: str = "src/lib.rs"
 INTEGRATION: str = "tests/roughtime_verification.rs"
 ROSTER: dict[str, list[str]] = {
-    LIBRARY: [f"roughtime::fixture::unit_{index:02}" for index in range(23)],
-    INTEGRATION: [f"fixture::integration_{index:02}" for index in range(60)],
+    LIBRARY: [f"roughtime::fixture::unit_{index:02}" for index in range(32)],
+    INTEGRATION: [f"fixture::integration_{index:02}" for index in range(63)],
 }
 LIB_HEADER: str = (
     "     Running unittests src/lib.rs "
@@ -69,7 +70,7 @@ class RoughtimeLineExecutionTests(unittest.TestCase):
             "wrong executable in correct header": text.replace(
                 "/out/nevrotick_engine-", "/out/roughtime_verification-", 1),
             "ignored case": text.replace(f"test {unit} ... ok", f"test {unit} ... ignored", 1)
-            .replace("23 passed; 0 failed; 0 ignored", "22 passed; 0 failed; 1 ignored", 1),
+            .replace("32 passed; 0 failed; 0 ignored", "31 passed; 0 failed; 1 ignored", 1),
             "undeclared ignored case": text.replace(
                 f"test {unit} ... ok", f"test {unit} ... ok\ntest extra ... ignored", 1),
             "misstated filtered count": text.replace("283 filtered out", "282 filtered out", 1),
@@ -87,6 +88,31 @@ class RoughtimeLineExecutionTests(unittest.TestCase):
 class RoughtimeLineAdmissionTests(unittest.TestCase):
     """Check policy, manifest and CLI role isolation without opening a Session."""
 
+    def test_registered_sources_separate_fixture_implementations(self) -> None:
+        policy, _ = MODULE.read_roughtime_line_policy(ROOT)
+        fixture_declarations: str = (
+            r'(?:#\[path = "[^"\n]+"\]\s*)?'
+            r"(?:pub\([^)]+\) )?(?:mod \w+;|use [^;]+;)"
+        )
+        for path in policy["critical_files"]:
+            source: str = (ROOT / path).read_text()
+            for attribute in re.finditer(r"(?m)^[ \t]*#\[cfg\(test\)\]\s*", source):
+                with self.subTest(path=path, line=source.count("\n", 0, attribute.start()) + 1):
+                    self.assertRegex(source[attribute.end():], "^" + fixture_declarations)
+
+    def test_test_source_does_not_supply_production_line_credit(self) -> None:
+        scope = MODULE.ROUGHTIME_LINE_SCOPE
+        disclosure: str = "/work/source/" + scope.select("all")["disclosure"]
+        fixture: str = disclosure.removesuffix(".rs") + "/tests.rs"
+        report: dict[str, object] = {"data": [{"files": [
+            {"filename": disclosure, "summary": {"lines": {"count": 100, "covered": 89}}},
+            {"filename": fixture, "summary": {"lines": {"count": 300, "covered": 300}}},
+        ]}]}
+        with self.assertRaisesRegex(MODULE.Incomplete, "below 90 percent"):
+            MODULE.COMMON.coverage_counts(scope, report, disclosure)
+        report["data"][0]["files"][0]["summary"]["lines"]["covered"] = 90
+        self.assertEqual(MODULE.COMMON.coverage_counts(scope, report, disclosure)["covered_lines"], 90)
+
     def test_reads_current_policy_and_challenges_threshold_and_manifest(self) -> None:
         scope_path: Path = Path("policy/engine-roughtime-line-analysis.json")
         manifest_path: Path = Path("policy/verification-manifest.toml")
@@ -99,9 +125,9 @@ class RoughtimeLineAdmissionTests(unittest.TestCase):
             shutil.copyfile(ROOT / manifest_path, manifest_file)
             policy, roster = MODULE.read_roughtime_line_policy(root)
             self.assertEqual({name: len(cases) for name, cases in roster.items()},
-                             {LIBRARY: 23, INTEGRATION: 60})
+                             {LIBRARY: 32, INTEGRATION: 63})
             self.assertEqual(policy["line_minimum_percent"], 90)
-            self.assertEqual(len(policy["critical_files"]), 10)
+            self.assertEqual(len(policy["critical_files"]), 11)
 
             policy_bytes: bytes = policy_file.read_bytes()
             policy_file.write_text(json.dumps({**policy, "line_minimum_percent": 89}))
@@ -121,6 +147,55 @@ class RoughtimeLineAdmissionTests(unittest.TestCase):
                 request_owner, '"crates/ntp-wire/src/roughtime.rs"', 1))
             with self.assertRaisesRegex(MODULE.Incomplete, "registered security owner"):
                 MODULE.read_roughtime_line_policy(root)
+
+            disclosure: str = '"crates/nevrotick-engine/src/roughtime/round/recovery/disclosure.rs"'
+            self.assertEqual(manifest.count(disclosure), 2)
+            for changed in (
+                manifest.replace(disclosure, '"crates/ntp-wire/src/roughtime.rs"', 1),
+                manifest.replace(disclosure, disclosure + ", " + disclosure, 1),
+                manifest.replace(disclosure, '"crates/nevrotick-engine/src/roughtime/round/recovery/proof.rs"', 1),
+            ):
+                with self.subTest(manifest=changed), self.assertRaisesRegex(
+                        MODULE.Incomplete, "registered security owner"):
+                    manifest_file.write_text(changed)
+                    MODULE.read_roughtime_line_policy(root)
+            before, separator, after = manifest.rpartition(disclosure)
+            self.assertEqual(separator, disclosure)
+            for replacement in ('"crates/ntp-wire/src/roughtime.rs"', disclosure + ", " + disclosure):
+                with self.subTest(critical_file=replacement), self.assertRaisesRegex(
+                        MODULE.Incomplete, "registered security owner"):
+                    manifest_file.write_text(before + replacement + after)
+                    MODULE.read_roughtime_line_policy(root)
+
+    def test_refuses_missing_misassigned_and_substituted_disclosure_tests(self) -> None:
+        scope_path: Path = Path("policy/engine-roughtime-line-analysis.json")
+        manifest_path: Path = Path("policy/verification-manifest.toml")
+        with tempfile.TemporaryDirectory() as folder:
+            root: Path = Path(folder)
+            (root / "policy").mkdir()
+            shutil.copyfile(ROOT / scope_path, root / scope_path)
+            shutil.copyfile(ROOT / manifest_path, root / manifest_path)
+            policy, roster = MODULE.read_roughtime_line_policy(root)
+            disclosure: str = "roughtime::round::recovery::disclosure::tests::base64_literal_padding_cases"
+            self.assertIn(disclosure, roster[LIBRARY])
+            for label in ("missing", "wrong binary", "same count substitution"):
+                inventory: dict[str, list[str]] = {binary: names.copy() for binary, names in roster.items()}
+                inventory[LIBRARY].remove(disclosure)
+                if label == "wrong binary":
+                    integration_case: str = inventory[INTEGRATION].pop(0)
+                    inventory[LIBRARY].append(integration_case)
+                    inventory[LIBRARY].sort()
+                    inventory[INTEGRATION].append(disclosure)
+                    inventory[INTEGRATION].sort()
+                elif label == "same count substitution":
+                    inventory[LIBRARY].append("roughtime::fixture::alien")
+                    inventory[LIBRARY].sort()
+                with self.subTest(label=label):
+                    (root / scope_path).write_text(json.dumps({**policy, "test_inventory": inventory}))
+                    expected: str = ("malformed or assigned to the wrong binary" if label == "wrong binary"
+                                     else "test roster")
+                    with self.assertRaisesRegex(MODULE.Incomplete, expected):
+                        MODULE.read_roughtime_line_policy(root)
 
     def test_stable_session_role_rejects_wider_or_borrowed_scope(self) -> None:
         args: argparse.Namespace = argparse.Namespace(

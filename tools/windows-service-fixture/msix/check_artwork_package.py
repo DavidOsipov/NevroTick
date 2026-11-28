@@ -228,6 +228,72 @@ def check_content_types(raw: bytes) -> None:
     reader.require(not expected, "content-type inventory is incomplete")
 
 
+def guarded_startup_inventory(
+    members: dict[str, reader.PackageMember],
+    ui_receipt: Path,
+    ui_receipt_pin: str,
+    ui_map: Path,
+    role_receipt: Path,
+    role_receipt_pin: str,
+) -> dict[str, object]:
+    """Join original guarded link evidence to the already checked archive members."""
+    # The original unsigned reader is also used as a standalone two-file CLI.
+    import prepare_payload as stage
+    from windows_pe import service_preentry_declarations, ui_preentry_declarations
+
+    raw: bytes = reader.read_regular(ui_receipt, 8 * 1024**2, "guarded UI link receipt")
+    reader.require(sha256(raw).hexdigest() == ui_receipt_pin, "guarded UI link receipt SHA-256 differs")
+    report: object = json.loads(raw.decode("utf-8"), object_pairs_hook=reader.unique_object)
+    if type(report) is not dict:
+        raise reader.Refused("guarded UI link receipt must be an object")
+    artifact: object = report.get("artifact")
+    entry: object = report.get("ui_preentry")
+    image: bytes = members[UI].data
+    image_pin: str = sha256(image).hexdigest()
+    invalid_ui: str = "guarded UI link receipt differs from the archived UI"
+    if (type(artifact) is not dict or type(entry) is not dict
+            or report.get("status") != "passed"
+            or report.get("native_windows_execution") != "not performed"
+            or artifact.get("component_role") != "ui" or artifact.get("source_state") != "fixture"
+            or artifact.get("profile") != "release" or artifact.get("target") != "x86_64-pc-windows-msvc"
+            or artifact.get("sha256") != image_pin or entry.get("image_sha256") != image_pin
+            or not reader.is_sha256(entry.get("object_sha256"))
+            or not reader.is_sha256(entry.get("map_sha256"))):
+        raise reader.Refused(invalid_ui)
+    map_data: bytes = reader.read_regular(ui_map, 32 * 1024**2, "guarded UI link map")
+    reader.require(sha256(map_data).hexdigest() == entry["map_sha256"], "guarded UI link map SHA-256 differs")
+    try:
+        observed_ui: dict[str, object] = ui_preentry_declarations(
+            image, map_data.decode("utf-8"), object_sha256=entry["object_sha256"],
+        )
+    except ValueError as error:
+        raise reader.Refused("archived UI failed guarded PE/map readback") from error
+    reader.require(all(type(entry.get(key)) is type(value) and entry[key] == value
+                       for key, value in observed_ui.items()),
+                   "guarded UI startup facts differ from the archived PE/map")
+    observed: dict[str, dict[str, object]] = {
+        UI: {"sha256": image_pin, "map_sha256": entry["map_sha256"], **observed_ui},
+    }
+
+    try:
+        roles: dict[str, bytes] = stage.role_images(
+            role_receipt.absolute(), role_receipt_pin, require_baseline_entry=True,
+        )
+    except (KeyError, ValueError) as error:
+        raise reader.Refused("guarded service link evidence refused") from error
+    reader.require(roles.keys() == ROLES.keys(), "guarded service role inventory differs")
+    for name in sorted(ROLES):
+        archived: bytes = members[name].data
+        reader.require(roles[name] == archived, f"archived service differs from guarded link: {name}")
+        # role_images has already bound these exact bytes to the role's original
+        # PDB, linker map, gate object and the producer's entry/CRT facts.
+        observed[name] = {"sha256": sha256(archived).hexdigest(),
+                          **service_preentry_declarations(archived)}
+    return {"scope": "static-guarded-archive-member-declarations",
+            "ui_link_receipt_sha256": ui_receipt_pin, "service_link_receipt_sha256": role_receipt_pin,
+            "members": observed}
+
+
 def main() -> int:
     cli: argparse.ArgumentParser = argparse.ArgumentParser(description=__doc__)
     cli.add_argument("--payload", required=True, type=Path)
@@ -236,11 +302,26 @@ def main() -> int:
     cli.add_argument("--pins", required=True, type=Path, help="flat source-name/SHA-256 JSON map")
     cli.add_argument("--pins-sha256", required=True)
     cli.add_argument("--manifest-sha256", required=True, help="digest from the independently held authored manifest")
+    cli.add_argument("--guarded-ui-receipt", type=Path)
+    cli.add_argument("--guarded-ui-sha256")
+    cli.add_argument("--guarded-ui-link-map", type=Path)
+    cli.add_argument("--guarded-role-receipt", type=Path)
+    cli.add_argument("--guarded-role-sha256")
     args: argparse.Namespace = cli.parse_args()
     try:
         reader.require(all(reader.is_sha256(value) for value in
                            (args.package_sha256, args.pins_sha256, args.manifest_sha256)),
                        "external SHA-256 digests must be lowercase")
+        guarded: tuple[Path | str | None, ...] = (
+            args.guarded_ui_receipt, args.guarded_ui_sha256, args.guarded_ui_link_map,
+            args.guarded_role_receipt, args.guarded_role_sha256,
+        )
+        check_guards: bool = any(value is not None for value in guarded)
+        if check_guards:
+            reader.require(all(value is not None for value in guarded)
+                           and reader.is_sha256(args.guarded_ui_sha256)
+                           and reader.is_sha256(args.guarded_role_sha256),
+                           "guarded startup requires both pinned link receipts and the original UI map")
         pins: dict[str, str] = read_pins(args.pins, args.pins_sha256)
         pins[MANIFEST] = args.manifest_sha256
         package: bytes = reader.read_regular(args.package, MAX_ARCHIVE, "package")
@@ -260,6 +341,10 @@ def main() -> int:
         signing: dict[str, dict[str, str]] = payload_signing_inventory(members)
         reader.check_block_map(members, PAYLOAD_NAMES)
         check_content_types(members[reader.CONTENT_TYPES_FILE].data)
+        startup: dict[str, object] | None = guarded_startup_inventory(
+            members, args.guarded_ui_receipt, args.guarded_ui_sha256, args.guarded_ui_link_map,
+            args.guarded_role_receipt, args.guarded_role_sha256,
+        ) if check_guards else None
     except reader.Refused as error:
         cli.exit(1, f"Combined fixture package refused: {error}\n")
     except (OSError, zipfile.BadZipFile, zlib.error, EOFError, ValueError, RecursionError) as error:
@@ -268,7 +353,7 @@ def main() -> int:
     payload_catalog: bytes = "".join(
         f"{name}\t{len(members[name].data)}\t{pins[name]}\n" for name in sorted(PAYLOAD_NAMES)
     ).encode("ascii")
-    print(json.dumps({
+    report: dict[str, object] = {
         "status": "unsigned-combined-artworklab-checked",
         "identity": IDENTITY,
         "package_bytes": len(package), "package_sha256": package_sha,
@@ -282,7 +367,10 @@ def main() -> int:
             "package": {"format": "msix", "signature_requirement": "package-signature"},
             "payload": signing,
         },
-    }, indent=2))
+    }
+    if startup is not None:
+        report["startup_inventory"] = startup
+    print(json.dumps(report, indent=2))
     return 0
 
 

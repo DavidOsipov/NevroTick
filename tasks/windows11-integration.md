@@ -27524,6 +27524,48 @@ The separate [paired installed ScmFixture trial](#complete-the-paired-installed-
 has completed its deployment-only observation. The provisioning and
 standard-user access roles and continuous quiescence remain open.
 
+###### Bind archived ArtworkLab startup declarations to the original links
+
+W11-W10/S6.4 and CHECK-16/18/25/26/27. The maintained combined reader
+now offers guarded startup readback after the archived member, authored
+bytes, independent pins, manifest, block map and content types agree.
+The mode requires both independently pinned link receipts and the original
+UI map. It checks the archived UI against the actual executable section,
+entry and CRT map rows, TLS callback slot and import declarations. It reuses
+the existing guarded service PE/PDB and map reader and requires its exact
+Engine and Broker bytes to match the corresponding archive members. The
+ordinary unsigned report retains its existing shape.
+
+The read-only namespace accepted the retained 58-member strict-handle
+ArtworkLab archive
+`bb3f678a2ac9464881f8c86ac742b7c504ba3ca4efc3fe7bb0fa6ae1e0a19acf`.
+Its previous plain readback matched byte for byte. Independent header
+readback recovered UI entry RVA `0xe68e40` and both service entry RVAs
+`0x25bc0` from the three archive members. A crossed UI map, otherwise valid
+predecessor service link evidence and a separately repinned UI receipt
+claiming a different entry each refused with empty stdout. All 241 portable
+MSIX tests passed, including a healthy guarded CLI run and independent
+archive substitutions for each of the two service roles. These are static
+declarations for the exact unsigned
+laboratory artifact. Native loader closure, installed mitigations, production
+roles and final signatures retain their own acceptance gates.
+
+Use `maintain-windows-metadata`, `qa-package-artifacts`,
+`qa-regression-selection` and `qa-independent-review`. The isolated
+CPython reader replay and suite ran with read-only inputs, a private network
+namespace and bounded CPU, files, memory and worker count. The independent
+review traced both exact role bindings and verified the unchanged plain CLI
+path and refusal before receipt publication.
+
+| Record under `~/.local/share/nevrotick/msix-archive-startup-final.1hyXKqMq/` | SHA-256 |
+| --- | --- |
+| `run.py` | `128879280053c88873a7f4d5b70046d914579a2eb29038582dcace1ef79dc1ac` |
+| `guarded-archive.stdout` | `e5923dde09060d1cde4dac38411db61478886e04408b11779654956b3c8e76e6` |
+| `legacy-profile.stdout` | `2b2eca0e52d6b5e938a1a2f2858ed0dd85092f11678eb103f72af6eb62457a29` |
+| `independent-header-readback.json` | `ba3ce554c9b283f36ea608f0fba709fbd4e383c52e6998e6764bcfb93f3fa79d` |
+| `source-bookends.json` | `e64044f47d10ebd4ac45d14a560e35a42477a7486984cf627711d7f6a129f8c4` |
+| `portable-msix-tests.stderr` | `e3834e6d920c4fb9efbfea74bf4436e68ff0049c1657c9c2d88c0f6d948fd409` |
+
 #### Separate the recovery census from confirmed job retirement
 
 S0.6/W11-W05 and CHECK-25/26/27. The original `DeploymentJob` takes two
