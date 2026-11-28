@@ -1,6 +1,6 @@
 # NevroTick — owner decisions and remaining policy choices
 
-**Document:** NV-DEC-001, revision 1.32<br>
+**Document:** NV-DEC-001, revision 1.33<br>
 **Decision dates:** 29 October 2026; OD-07 added 30 October; OD-08 added 2 November; OD-05 delivery direction amended, OD-01 future replacement and OD-02 Roughtime/coordination directions added and bootstrap priority refined 3 November; OD-09 leap research/design integration added 4 November; OD-10 mandatory mathematical proofs, OD-11 SOCKS5 scope/deferral, OD-12 GeoIP experiment placement, OD-13 default Slint UI and OD-14 compact Windows platform scope added 5 November; OD-10 first-release deferral and proof-purpose/completion amendment, OD-13 complete GUI migration/licence clarification and OD-15 localization integration added 6 November 2026, Asia/Tbilisi<br>
 **Owner:** David Osipov  
 **Security clarification:** every JSON/CBOR input remains potentially malicious, including contributor/translator catalogs and packaged/generated/English data.
@@ -13,7 +13,9 @@
 places routine sanitizer qualification at coherent module completion and requires
 the complete applicable matrix before V1 release. Focused development checks and
 necessary early diagnostic/prerequisite checks continue; execution evidence and
-existing holds retain their separate status.
+existing holds retain their separate status. Its same-day applicability
+refinement routes additional mechanisms by supported target and declared
+contract; existing Windows CFG/CET qualification remains required.
 
 **V1 scope clarification — 27 November 2026:** [OD-02's current scope](#v1-protocol-and-hardware-scope--27-november-2026)
 includes NTP/NTS and Roughtime bootstrap; local PPS/GNSS/refclock inputs remain
@@ -99,7 +101,7 @@ OD-13 owns the complete Slint replacement; OD-15 owns hostile-catalog localizati
 | OD-19 | Apply a 14-day minimum publication age to routine selection of new registry versions, including changed/new transitives | **Accepted and implemented in the bounded tooling scope, 13 November 2026; isolated fixtures qualified under R4-B-02** | Product/native qualification remains separate; future updates need exact changed-graph/source approval and any concrete individual exception. Aging does not establish package safety |
 | OD-20 | Defer OneCRL and CRLite integration until after V1; add a roadmap entry and detailed plan, deciding its priority | **Accepted deferral, 14 November 2026; delegated engineering placement is second, after MATH-C01 and before MT-0** | TRUST-0/TRUST-C01: authenticated updates, accepted-chain checks, coverage/freshness, association invalidation and separate root-policy scope. No implementation or native pass; existing V1 OPEN-8/R-05 requirements remain |
 | OD-21 | Record a detailed restricted local clock-permissions plan and place the feature immediately before Khronos | **Accepted documentation and post-V1 placement, 27 November 2026** | CLK-0/CLK-C01 and NV-CLK-001 follow MT-C01. User acceptance covers planning and order; mechanisms require reassessment, bounded implementation/qualification and an explicit disposition. No automatic host mutation, V1 prerequisite or unrestricted-administrator exclusion is approved |
-| OD-22 | Run routine sanitizer qualification when a coherent module is ready, and complete every applicable sanitizer obligation before V1 release | **Accepted cadence and qualification requirement, 28 November 2026** | Reconcile ASan, LSan, TSan, MSan and native C/C++ UBSan against actual components/targets; qualify detector controls and product instrumentation separately, retain justified evidence reuse and explicit N/A or incomplete rows. Current tool controls supply no product or release pass |
+| OD-22 | Run routine sanitizer qualification when a coherent module is ready, and complete every applicable sanitizer obligation before V1 release | **Accepted cadence and applicability guidance, 28 November 2026** | Reconcile the five established families and relevant additional mechanisms under hardening §§9.5.3–9.5.4; distinguish required profiles, unsupported native modes and conditional analysis candidates. Preserve separate detector/product evidence, justified reuse and current Windows hardening requirements. Current tool controls supply no product or release pass |
 
 No item here establishes a completed security assessment, provider acceptance, safe numerical bound, verified release, or native Windows result.
 
@@ -2117,6 +2119,19 @@ a bounded mechanism N/A under §9.5.3; retain the underlying requirement and its
 alternative evidence/gaps. An unavailable supported runner is different. No
 mechanism exclusion supplies a clean detector result or silently waives an
 explicitly required mechanism.
+
+**Same-day applicability refinement:** David requested implementing the reviewed
+[additional-mechanism guidance](windows-time-development-hardening.md#954-additional-sanitizer-and-hardening-applicability)
+in skills and documentation. Keep one sanitizer coordinator with conditional
+manuals and existing data-flow, performance/resources and build/deployment owners.
+Select DFSan, RTSan, memory-tagging or LLVM control-flow/stack instrumentation only
+for a relevant supported target and declared guarantee or diagnostic question;
+the guidance does not adopt every research candidate as a V1 campaign. Native
+Windows exclusions retain underlying obligations and separate portable-analysis
+questions. Existing CFG/CET integration and qualification remain required, with
+startup prerequisites considered during implementation. Preserve current module
+contracts, including permitted rejection-path allocations; this amendment adds
+no runtime annotation, execution profile or native result.
 
 Reuse evidence only through immutable references and a documented match of the
 tested/current source, consumers, graph, configuration, fixtures, tools and

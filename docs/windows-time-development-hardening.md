@@ -506,7 +506,7 @@ every option name can be combined:
 
 | Excluded from this stable vector | Concrete reason and remaining owner |
 | --- | --- |
-| `/GUARD:EHCONT` | Rust 1.99.1's explicit generation is the false-by-default unstable `-Z ehcont-guard`. A linker-only flag cannot supply missing Rust continuation metadata; an empty declared table differs from an absent legacy table. Require supported complete generation before selecting it; do not bypass stable-channel admission. [C43] |
+| `/GUARD:EHCONT` | Rust 1.100.0's explicit generation remains the false-by-default unstable `-Z ehcont-guard`, rechecked 28 November. A linker-only flag cannot supply missing Rust continuation metadata; an empty declared table differs from an absent legacy table. Require supported complete generation before selecting it; do not bypass stable-channel admission. [C43] |
 | Rust stack protector / LLVM CFI | Unstable/internal interfaces and target/graph constraints require a separately supported compiler configuration. This is a recorded toolchain limitation, not claimed protection or permission to remove other controls. [C19, C21, C43] |
 | `/GUARD:XFG`, `/SAFESEH` | The pinned LLD guard parser does not support XFG; SafeSEH is the x86 mechanism, not the x64 exception model. [C41, C46] |
 | `/GUARD:LONGJMP` as an additional protection | Pinned LLD's `/GUARD:CF` already selects its long-jump handling. Verify actual emitted metadata instead of counting the duplicate switch. [C41] |
@@ -984,7 +984,7 @@ Use pinned Linux x64 nightly fuzzing for the portable core initially: NTP/NTS-KE
 
 Preserve and replay every failure. A reject-all parser or a harness that swallows every panic is not a passing fuzz target. Relevant minimized cases must run on the actual native product target as well.
 
-**Windows support requires careful wording.** The cargo-fuzz README still says Unix-like systems only, but the Rust Fuzz Book documents Windows/MSVC AddressSanitizer setup. Rust 1.99.1's x64 MSVC target source declares AddressSanitizer support, while sanitizer selection remains unstable. The sources do not justify either blanket Windows impossibility or claiming our stack already works. [V12–V16, V18, V22–V24]
+**Windows support requires careful wording.** The cargo-fuzz README still says Unix-like systems only, but the Rust Fuzz Book documents Windows/MSVC AddressSanitizer setup. Rust 1.100.0's x64 MSVC target source declares AddressSanitizer code-generation support; the `-Zsanitizer` route remains unstable. The sources do not justify either blanket Windows impossibility or claiming our stack already works. [V12–V16, V18, V22–V24]
 
 Qualify Windows x64 MSVC nightly fuzz/ASan separately against exact Rust, cargo-fuzz/libfuzzer-sys, native compiler, linker, CRT and sanitizer runtime. Require a deliberately faulty local fixture to produce its expected diagnostic and a valid neighbor to run. Inspect Rust and relevant native instrumentation. Do not infer ARM64 support from x64, install unsupported stable flags, or bypass the channel using `RUSTC_BOOTSTRAP`.
 
@@ -1068,6 +1068,12 @@ actual instrumented consumer paths and independently expected valid/refused
 behavior. Preserve first failures, raw diagnostics, selected/reached cases,
 timeouts, exclusions and cleanup outcomes.
 
+For the instrumentation frameworks in §9.5.4, require mechanism-specific
+evidence instead of inventing a built-in detector diagnostic. DFSan needs
+independently observed label propagation across relevant boundaries plus a
+separate application sink oracle; an assertion alone proves neither the
+instrumentation nor its propagation model.
+
 Use separate admitted ASan, TSan and MSan configurations and owned outputs;
 supported ASan/LSan integration may share execution while retaining both claims.
 Record compiler/runtime/target, effective flags/options, standard-library/native
@@ -1080,9 +1086,75 @@ Rerun invalidated observations and preserve required fresh/full checkpoint work.
 
 GNU/Linux evidence does not qualify Windows heap, handle, FFI or lifecycle
 behavior. Preserve §§9.5.1–9.5.2, Miri/Loom's distinct scope, required native
-Windows observations and all current Windows/fuzz/storage/UI holds. Android
-HWASan remains conditional future scope. This policy adds no executable lane,
-installation, formal-proof work or current product qualification claim.
+Windows observations and all current Windows/fuzz/storage/UI holds. Additional
+mechanisms follow §9.5.4's target and contract assessment. This policy adds no
+executable lane, installation, formal-proof work or current product qualification
+claim.
+
+#### 9.5.4 Additional sanitizer and hardening applicability
+
+**Applicability refinement, 28 November 2026:** assess an additional mechanism
+when the actual target, guarantee or coverage question makes it relevant. Keep
+its disposition in the existing module/P7 matrix, distinguishing the shipping
+target from any portable analysis target and an existing requirement from an
+unselected research candidate. The five families in §9.5.3 retain their existing
+obligations; this assessment does not make every additional tool a mandatory
+campaign. A selected required profile inherits that section's admission,
+controls, bounded execution, evidence reuse and completion rules.
+
+The [dated primary-source register](../.agents/skills/testing/SOURCES.md#additional-sanitizers-and-hardening--28-november-2026)
+binds this assessment to Rust 1.100.0 and the examined LLVM/runtime sources.
+The Rust Windows x64 MSVC target declares only `ADDRESS` sanitizer support;
+GNU/Linux x64 additionally declares `CFI`, `DATAFLOW`, `SAFESTACK` and `REALTIME`.
+Target declarations establish code-generation eligibility, not distributed
+runtimes or application qualification. Documented unstable Rust integration
+requires a separately admitted analysis compiler/profile; preserve the stable
+shipping configuration.
+
+| Mechanism / conditional manual | Current applicability and selection boundary |
+| --- | --- |
+| [HWASan](../.agents/skills/testing/qa-sanitizer-qualification/references/tagged-memory.md) | No supported mode in the inspected Rust Windows x64 target. Supported Rust AArch64 Linux/Android analysis may answer a named address/lifetime gap in shared code even before an ARM product exists. LLVM's other architecture implementations do not establish a Rust x86 route. HWASan does not require MTE. |
+| [MemTag/MTE](../.agents/skills/testing/qa-sanitizer-qualification/references/tagged-memory.md) | Arm MTE does not apply to the current x64 target. Require actual hardware, OS, mappings, allocator and checking-mode support; assess heap and compiler-instrumented stack coverage separately. Supported Android heap checking can work without recompiling application code. Production use also belongs to the deployment-hardening owner. |
+| [LLVM CFI](../.agents/skills/testing/qa-sanitizer-qualification/references/control-flow.md) | No supported sanitizer mode in the inspected Rust Windows target. A supported portable investigation needs an actual indirect-call/ABI question, compatible LTO and instrumented dependency boundaries. Rust CFI can reject some otherwise ABI-compatible calls; adjudicate a report against the real contract. It is distinct from Windows CFG. |
+| [SafeStack](../.agents/skills/testing/qa-sanitizer-qualification/references/control-flow.md) | Supported Rust GNU/Linux x64 code generation does not qualify the Windows product. Select for a concrete supported stack-protection or diagnostic purpose; stack-object separation is not a general memory-error detector. The inspected Rust Windows target does not support this mode. |
+| [LLVM ShadowCallStack](../.agents/skills/testing/qa-sanitizer-qualification/references/control-flow.md) | LLVM's current x86_64 implementation is absent; supported architectures still need the exact runtime and reserved-register/ABI arrangement. This mechanism is distinct from Windows hardware shadow stacks. A future architecture alone grants no admitted profile. |
+| Windows CFG and CET/HSP | Already required under §§6.2–6.4. Preserve actual Rust/native instrumentation, image metadata and per-role startup/effective-policy qualification through existing build, package and Windows owners. Image declarations and the v3 CPU floor do not prove hardware enforcement. |
+| [DFSan](../.agents/skills/testing/qa-sanitizer-qualification/references/dataflow.md) | Rust has an unstable GNU/Linux x64 route; the inspected native Windows route is unsupported. Select a named source/label/transformation/sink property, with instrumented or explicitly modeled ABI boundaries and independent propagation/oracle controls. Data ancestry alone proves no current authorization, general noninterference or Windows behavior. |
+| [RTSan](../.agents/skills/testing/qa-sanitizer-qualification/references/realtime.md) | Rust has direct unstable integration on supported analysis targets; the inspected native Windows route is unsupported. Select an explicit synchronous prohibited-operation contract. A time-synchronization product or nonblocking socket alone supplies no real-time scope, and a clean run supplies no deadline, worst-case time or UTC-accuracy guarantee. |
+
+For DFSan, account for label loss, ABI rules, suppressions and the selected
+control-dependency handling before interpreting a clean sink. Permitted
+disclosure and cryptographic transformations need their own property-specific
+rules. [Data-flow analysis](../.agents/skills/testing/qa-data-flow-analysis/SKILL.md)
+owns the source/transform/guard/sink model; the sanitizer coordinator owns the
+instrumentation evidence.
+
+For RTSan, choose the covered operations and outcomes before annotation. Some
+[existing contracts](../crates/time-core/src/conditioned_fit.rs) permit temporary
+Garde allocations on rejection while keeping
+successful work allocation-free; whole-function annotation must not silently
+strengthen those contracts. [`time_core::select_fixture`](../crates/time-core/src/selection.rs)
+is a possible bounded pilot, with input construction outside its no-allocation scope; its result would
+remain fixture evidence. Async executor work at `.await`, custom blocking work
+and native Windows operations retain separate coverage. Use
+[performance/resources](../.agents/skills/testing/qa-performance-resources/SKILL.md)
+for measured timing, responsiveness and resource bounds.
+
+An unsupported native mechanism may receive §9.5.3's bounded N/A, retaining its
+underlying requirement, alternative evidence and any separate portable question.
+An applicable required supported profile lacking a tool, runtime, instrumentation
+or execution permission remains incomplete. Reassess when relevant targets,
+contracts or graphs change; an unselected candidate is not a release pass or a
+worker-authorized deferral of an existing requirement.
+
+Select contracts and integration prerequisites during implementation, while
+routine diagnostic qualification retains OD-22's module/pre-V1 cadence. Existing
+Windows hardening continues through its current owners: initial HSP activation
+cannot be added through the ordinary runtime setter after it started disabled.
+Qualify actual startup and supported hardware/OS/VM classes under §6.4; this does
+not raise the CPU floor or defer required integration until V1. [C37, C38]
+No new runner, dependency, annotation, product/native pass or hold lift follows
+from this documentation.
 
 ### 9.6 Bounded use of Miri, Loom and Kani
 
@@ -1715,7 +1787,7 @@ compiler/linker source support does not establish Windows enforcement:
 
 - **C41:** Exact Rust LLVM pin `1b9c0d5ff9bbe7634aead059efe6b11a7eeba145`: [LLD COFF options](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Options.td), [option parsing and defaults](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Driver.cpp), [extended CET bits and load-config writing](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/Writer.cpp), [guard-option parser](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/lld/COFF/DriverUtils.cpp#L99-L114) and [PE bit definitions](https://github.com/rust-lang/llvm-project/blob/1b9c0d5ff9bbe7634aead059efe6b11a7eeba145/llvm/include/llvm/BinaryFormat/COFF.h).
 - **C42:** Microsoft [/DEPENDENTLOADFLAG static-import scope](https://learn.microsoft.com/en-us/cpp/build/reference/dependentloadflag?view=msvc-170), [LoadLibraryEx flag values](https://learn.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-loadlibraryexw) and [packaged/unpackaged DLL search order](https://learn.microsoft.com/en-us/windows/win32/dlls/dynamic-link-library-search-order).
-- **C43:** Pinned Rust [unstable option declarations, including EHCONT and stack protectors](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_session/src/options.rs), [conditional EHCONT LLVM module flag](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/context.rs#L486-L489) and Microsoft [EH continuation metadata requirements and empty-table semantics](https://learn.microsoft.com/en-us/cpp/build/reference/guard-enable-eh-continuation-metadata?view=msvc-170).
+- **C43:** Rust **1.100.0**, rechecked **28 November 2026**: pinned [unstable option declarations, including EHCONT and stack protectors](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/compiler/rustc_session/src/options.rs), [conditional EHCONT LLVM module flag](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/compiler/rustc_codegen_llvm/src/context.rs#L496-L499) and Microsoft [EH continuation metadata requirements and empty-table semantics](https://learn.microsoft.com/en-us/cpp/build/reference/guard-enable-eh-continuation-metadata?view=msvc-170). Rust EHCONT generation remains controlled by a false-by-default unstable option; this source recheck supplies no native qualification.
 - **C44:** Pinned Rust [stable jump-tables documentation](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/src/doc/rustc/src/codegen-options/index.md#jump-tables), [option declaration](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_session/src/options.rs#L2251) and [LLVM attribute lowering](https://github.com/rust-lang/rust/blob/58cf8f9c35b355199727627d07ae34a4e2846d67/compiler/rustc_codegen_llvm/src/attributes.rs#L330).
 - **C45:** Microsoft [/FIXED and relocation generation](https://learn.microsoft.com/en-us/cpp/build/reference/fixed-fixed-base-address?view=msvc-170) and [/LARGEADDRESSAWARE](https://learn.microsoft.com/en-us/cpp/build/reference/largeaddressaware-handle-large-addresses?view=msvc-170). For the selected linker's actual defaults, use C41's pinned driver; its comment explicitly distinguishes observed EXE behavior from Microsoft's `/FIXED` default wording.
 - **C46:** Microsoft [/SAFESEH architecture restriction](https://learn.microsoft.com/en-us/cpp/build/reference/safeseh-image-has-safe-exception-handlers?view=msvc-170) and [/INTEGRITYCHECK signing contract](https://learn.microsoft.com/en-us/cpp/build/reference/integritycheck-require-signature-check?view=msvc-170).
@@ -1778,9 +1850,9 @@ compiler/linker source support does not establish Windows enforcement:
 - **V19:** [Loom 0.7.2 crate documentation](https://docs.rs/loom/0.7.2/loom/).
 - **V20:** [Kani: Installation](https://model-checking.github.io/kani/install-guide.html).
 - **V21:** [Kani: Loops, unwinding, and bounds](https://model-checking.github.io/kani/tutorial-loop-unwinding.html).
-- **V22:** [Rust 1.99.1 x86_64_pc_windows_msvc target source](https://github.com/rust-lang/rust/blob/1.99.1/compiler/rustc_target/src/spec/targets/x86_64_pc_windows_msvc.rs).
+- **V22:** [Rust 1.100.0 x86_64_pc_windows_msvc target source](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/compiler/rustc_target/src/spec/targets/x86_64_pc_windows_msvc.rs), rechecked 28 November 2026; code-generation eligibility is distinct from runtime and application qualification.
 - **V23:** [Rust sanitizer stabilization tracking issue 123615](https://github.com/rust-lang/rust/issues/123615).
-- **V24:** [Rust 1.99.1 compiler options source](https://github.com/rust-lang/rust/blob/1.99.1/compiler/rustc_session/src/options.rs).
+- **V24:** [Rust 1.100.0 compiler options source](https://github.com/rust-lang/rust/blob/0ef1bc386059596dada8fb65b50425aab2ea637a/compiler/rustc_session/src/options.rs), rechecked 28 November 2026.
 
 Related documents: [architecture revision 1.4](windows-time-architecture.md), [package signing guide](windows-time-signing-guide.md), [ASVS applicability worksheet](asvs-5.0.0-applicability.md), [independent architecture review](windows-time-review.md) and [unadopted update-system assessment](windows-time-update-assessment.md).
 

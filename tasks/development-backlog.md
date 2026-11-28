@@ -1006,6 +1006,14 @@ candidate coverage, immutable evidence reuse and evidenced N/A. Missing product
 instrumentation, required native evidence or held applicable execution remains
 incomplete. Detector fixtures supply no product pass or execution-hold waiver.
 
+Reconcile [relevant additional mechanisms](../docs/windows-time-development-hardening.md#954-additional-sanitizer-and-hardening-applicability)
+in the same module/release records. Keep required profiles distinct from
+unselected research candidates and native-product scope distinct from portable
+analysis. Unsupported native modes retain their underlying obligations; missing
+required supported execution stays incomplete. Existing CFG/CET deployment
+qualification remains required through its current owners. Conditional DFSan and
+RTSan results retain their explicit flow-model or prohibited-operation limits.
+
 Include V1 RGT-C01 and applicable TA-W/TA-C evidence from the existing
 time-assurance task. Its revised V1 schedule supplies no implementation pass and
 does not move the conditional Khronos/Ananke reserve or Chrony replacement into V1.

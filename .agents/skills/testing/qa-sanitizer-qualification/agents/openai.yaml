@@ -1,4 +1,4 @@
 interface:
   display_name: "Qualify sanitizer evidence"
-  short_description: "Qualify memory, race and undefined-behavior checks"
+  short_description: "Qualify sanitizers by target, contract and evidence"
   default_prompt: "Use $qa-sanitizer-qualification to reconcile the applicable sanitizer matrix for the declared module or release candidate, run only admitted checks at the required checkpoint, and report observed results and remaining gaps."

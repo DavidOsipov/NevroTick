@@ -1,6 +1,6 @@
 ---
 name: "qa-data-flow-analysis"
-description: "Audit Rust data, control and lifecycle paths against invariants with source-backed slices and independent counterexamples; add qualified CodeQL when needed."
+description: "Audit Rust data, control and lifecycle paths against invariants with source-backed slices and independent counterexamples; add qualified CodeQL or targeted DFSan when needed."
 ---
 
 # Analyze Rust source-to-sink paths
@@ -20,6 +20,17 @@ Application boundaries, missing library summaries, conditional guards or AI
 model proposals: use [Rust domain models and semantic challenges](../references/codeql-rust-domain-models.md).
 Prefer smallest model justified by current source. Propagation alone proves no
 vulnerability; name violated property before reporting one.
+
+For a named dynamic information-flow question, use the conditional
+[DFSan manual](../qa-sanitizer-qualification/references/dataflow.md). This owner
+defines sources, labels, permitted transformations, current guards and sink
+oracles; [sanitizer qualification](../qa-sanitizer-qualification/SKILL.md) owns
+profile admission, mechanism controls and checkpoint timing. Rust has a supported
+portable analysis route; the recorded native Windows target does not. Verify
+label propagation and the application oracle separately. A clean sink with
+missing tagging, unmodeled boundaries or label loss supplies no absence claim;
+ancestry alone establishes neither authorization nor complete implicit-flow
+security. Conditional guidance adopts no blanket campaign or execution profile.
 
 Logical/long chains: reuse existing task's flow/invariant ledger. Inventory real
 inputs, protected effects, alternate callers independently of CodeQL models. Prioritize high-impact,

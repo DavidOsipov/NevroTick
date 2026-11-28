@@ -52,6 +52,17 @@ Admit PGO training/profile custody separately; Rust LTO admits no cross-language
 LTO or BOLT PE lane. Rebuilds invalidate affected artifact/signature evidence:
 reinspect the final PE and bind package/signing records to its exact bytes.
 
+For CFI, SafeStack, shadow-stack or target-support questions, load the conditional
+[control-flow guide](../../testing/qa-sanitizer-qualification/references/control-flow.md).
+Windows CFG and CET remain existing required protections: preserve code-coverage,
+artifact and effective per-role runtime evidence, including initial HSP activation.
+LLVM CFI and software ShadowCallStack are different mechanisms. Resolve required
+startup/dependency integration during implementation; OD-22's campaign checkpoints
+do not postpone it until release. A portable diagnostic cannot qualify the Windows
+profile. Proposed MTE deployment additionally uses the
+[memory-tagging guide](../../testing/qa-sanitizer-qualification/references/tagged-memory.md)
+to establish actual hardware/OS/allocator/mode coverage through these same owners.
+
 For packaged event-provider resources/channels or product Firewall/WFP policy, read [Windows host integration](../references/windows-host-integration.md): immutable payload/installed-resource receipts, actual service access/traffic observations, ownership-aware rollback/repair/removal.
 
 Contributor translation files use the [hostile-catalog chain](../../../../docs/plans/ui-localization.md#contributor-bytes-to-package-and-runtime).

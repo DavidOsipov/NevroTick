@@ -2786,3 +2786,73 @@ against materialized bytes/modes and the resulting Git tree. Recheck that comple
 candidate with the same controlled package checker and preserve concurrent main
 changes through an expected-head update. The commit/tree and tool receipt bind
 that final custody; this record supplies no product/native/fuzz/formal pass.
+
+## Additional sanitizer applicability guidance — 28 November 2026
+
+David requested implementation of the reviewed additional-mechanism guidance.
+Base: `249dcee18a8a1567bcc2c7b89e395cce220dc47a`, clean before edits. The existing
+coordinator retains checkpoint, admission and evidence ownership; four conditional
+references cover data flow, real-time checks, memory tagging and control-flow/stack
+protection. Existing property/performance/build owners retain their responsibilities.
+No product code, toolchain, execution profile or workflow change is intended.
+
+Bounded verification: one independent combined-source review, one fresh source-only
+instruction-use exercise with prewritten withheld expectations, affected corrections
+and a scoped recheck if needed; structural skill/link/whitespace checks on the
+complete intended candidate. Source review and hypothetical exercise results remain
+separate from product/native qualification. Existing holds remain in force.
+
+Three specialist authors supplied the four conditional references and canonical
+documentation edits. Root reconciled discovery/UI metadata, source/provenance
+records and the shared mechanism controls, including DFSan propagation evidence
+separate from its policy oracle. Hardening §9.5.4 owns the applicability matrix;
+OD-22, the development plan and release backlog route to that decision surface.
+The five established family manuals and existing Windows CFG/CET owners remain.
+
+The frozen **19-file normative candidate** has manifest SHA-256
+`506cc9506ff5961c60d2c8c08dc2aae73827b9805916d71f8913e45423591a02`, using the
+sorted path/NUL/file-SHA-256/newline definition above and excluding this record.
+A fresh source judge verified every listed digest, found no blocking finding,
+and checked the concrete allocation contracts plus selected primary Rust, LLVM
+and Microsoft claims. No normative correction or second review was needed.
+
+One fresh-context source-only instruction-use practice selected all seven cases
+below. Its task and prewritten withheld rubric SHA-256 identities were
+`381fd202344f9e438eac22fbe1b6fc154c00b6a9af93f4d975dadb31abefb88b` and
+`5b7c56f28d5e3063fc12dacb224fc703f0431c63fad969145ed81e16a66a2db6`.
+Root graded the returned decisions against that rubric: **7/7 satisfied**.
+
+| Synthetic case | Observed decision |
+| --- | --- |
+| Required RTSan profile without admission; async wrapper permits rejection allocations | Incomplete required profile; preserve the synchronous all-path scope and legal preparation/rejection behavior; no Windows or timing pass. |
+| CFG/CET flags and PE declarations without effective policy; proposed late HSP activation | Existing required qualification stays open; resolve startup activation and actual hardware/OS/VM evidence. |
+| Zero-label DFSan sink behind an unjustified clearing boundary | Model/propagation/oracle gap; neither a confidentiality pass nor an invented disclosure finding. |
+| Independently qualified DFSan propagation and sink oracle report forbidden candidate flow | Accept the scoped application-policy finding without demanding a built-in ASan-style message; retain the control/candidate distinction and coverage limits. |
+| LLVM x86 HWASan documentation, Rust x86 exclusion and available ARM analysis host | No invented Rust x86 profile; consider admitted ARM analysis for the named gap before a product port; retain native and required-profile dispositions. |
+| CFI rejects a call permitted by the actual Rust ABI | Interpret the stricter CFI policy/ABI mismatch; no automatic Rust-UB finding or Windows CFG closure. |
+| Routine comment edit without a checkpoint or diagnostic trigger | No new campaign; retain ordinary checks, integration work and later applicable checkpoints. |
+
+The task agent loaded the coordinator, shared controls, all four references and
+relevant contracts/owners/canonical sections. It reported no prior-answer or
+rubric exposure; status and an initially broad filename listing exposed paths,
+not excluded one-off record contents. Shared filesystem access supplied contextual
+separation, not OS isolation. Both fresh agents used the inherited configuration
+without a model override. This single practice has no old/new baseline, unseen
+holdout or measured reliability/improvement claim; neither agent executed code.
+
+The unchanged package checker passed with **68 skills**, metadata, UI prompts,
+local links and inventories. Enumeration retained **41 QA leaves and 12 local
+originals**. The skill-creator quick validator passed the two revised-description
+leaves. All **15 changed outside-pack local links, including 6 anchors**, plus
+tracked/new-file whitespace checks passed. `AGENTS.md` stayed unchanged at
+**32,671 bytes**; no root documentation checksum manifest exists. The normative
+candidate stayed byte-identical throughout review and structural validation.
+
+Structural execution reused the preceding receipt's exact external wrapper,
+control and seccomp identities and bounds. Fresh positive source/scratch and
+negative network/write/process controls passed before the package checker. The
+complete intended index, including this record, must be materialized and compared
+by path, mode and blob before the final bounded checker; publication binds that
+tree and preserves concurrent main changes through an expected-head update.
+No product, sanitizer, native, fuzz or formal campaign, installation, execution
+profile, compiler/dependency change or execution-hold waiver is supplied here.

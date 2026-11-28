@@ -1,6 +1,6 @@
 ---
 name: "qa-sanitizer-qualification"
-description: "Select and qualify applicable ASan, LSan, TSan, MSan and native UBSan checks at coherent module completion, before V1 release or for a named memory/race diagnosis; routine local edits need no sanitizer campaign."
+description: "Qualify applicable sanitizer evidence at module completion, before V1 or for a named diagnostic question; assess conditional data-flow, real-time, tagging and control-flow mechanisms without requiring every available flag."
 ---
 
 # Qualify sanitizer evidence
@@ -51,6 +51,24 @@ lane or an unresolved applicability decision.
 | [MSan](references/msan.md) | Which initialization-sensitive paths require sufficiently instrumented graph coverage? |
 | [Native UBSan](references/ubsan.md) | Which compiled C/C++ operations require selected language-rule checks? |
 
+Assess additional mechanisms through
+[hardening §9.5.4](../../../../docs/windows-time-development-hardening.md#954-additional-sanitizer-and-hardening-applicability).
+Load these guides only for a concrete property/platform question:
+
+| Conditional guide | Selection and existing owner |
+| --- | --- |
+| [Data flow](references/dataflow.md) | Named labeled sources, permitted transformations and output checks; [data-flow analysis](../qa-data-flow-analysis/SKILL.md) owns the property/model. |
+| [Real-time checks](references/realtime.md) | Explicit synchronous prohibited-operation scope, including allowed rejection behavior; [performance/resources](../qa-performance-resources/SKILL.md) retains timing evidence. |
+| [Memory tagging](references/tagged-memory.md) | Separate HWASan and MTE support, covered memory and diagnostic/deployment purpose on an actual target. |
+| [Control-flow and stack protection](references/control-flow.md) | LLVM CFI/SafeStack/ShadowCallStack applicability; [build/deployment security](../../security/security-build-deployment/SKILL.md) retains already-required Windows CFG/CET qualification. |
+
+Record a conditional candidate and its selection trigger without treating research
+as adoption of a required campaign. Once a profile is required for the declared
+scope, missing support/admission follows the rules below. Identify contracts and
+startup/dependency constraints during implementation; checkpoint cadence does not
+postpone required protection integration. Keep native product and portable analysis
+targets as distinct evidence scopes in the existing matrix.
+
 Decide applicability for the actual language, target and execution scope from
 primary support evidence. Demonstrated upstream lack of a native mechanism on
 that target may be bounded N/A for that mechanism; retain the underlying race,
@@ -61,8 +79,10 @@ applicable supported profile stays blocked/incomplete. If an accepted requiremen
 explicitly names the unsupported mechanism, leave it open for its owner to resolve;
 do not waive it. Do not manufacture native UBSan work for a graph with no compiled
 native C/C++ source. Reconsider applicability when the graph or target changes.
-Other mechanisms such as HWASan/MTE, data-flow instrumentation or real-time checks
-need their own relevant platform/contract; "all" is not every LLVM flag.
+Compiler target support describes code generation eligibility, not stable-channel
+availability, distributed runtimes or an admitted application profile. A supported
+portable analysis may be useful even when that mechanism is unsupported natively;
+neither result qualifies the other target. "All" is not every LLVM flag.
 
 Retain complementary [Miri/model/fuzz evidence](../references/configured-tooling.md#additional-rust-analysis),
 [Windows diagnostics](../references/windows-memory.md) and
@@ -72,7 +92,7 @@ schedule completeness, clock authority or a correct high-level state protocol.
 
 ## 3. Keep one matrix in the existing task
 
-| Component / consumer | Family and defect question | Target, profile and instrumented graph | Detector controls | Product candidate and cases | Disposition / evidence | Gap owner and next condition |
+| Component / consumer | Family and property question | Target, profile and instrumented graph | Mechanism controls | Product candidate and cases | Disposition / evidence | Gap owner and next condition |
 | --- | --- | --- | --- | --- | --- | --- |
 
 Use: **planned; executed with result; qualified evidence reused;
@@ -119,10 +139,14 @@ identities; this skill installs and executes nothing by itself.
 ## 5. Execute selected cases and classify the evidence
 
 Establish the shared reference's distinct healthy input-delivery, semantic-oracle
-and detector-mechanism controls. Reuse valid detector receipts within their exact
+and mechanism controls. Reuse valid mechanism receipts within their exact
 compiler/runtime/target/instrumentation assumptions; repeat affected controls when
-those assumptions change. Use existing owned isolated fixtures, keeping deliberate
-undefined behavior outside product and pure `forbid(unsafe_code)` owners.
+those assumptions change. Detector tools need the attributable expected diagnosis.
+For DFSan, independently observe label propagation and boundary-model behavior,
+then qualify the separate application sink oracle; no built-in application-specific
+diagnostic is implied. An assertion alone establishes neither propagation nor a
+memory-detector finding. Use existing owned isolated fixtures, keeping any
+deliberate undefined behavior outside product and pure `forbid(unsafe_code)` owners.
 
 Run the admitted product cases through actual selected entry points. Include
 useful healthy inputs, rejection and affected failure/recovery/cleanup behavior.
@@ -130,8 +154,9 @@ Inspect resource release before harness teardown conceals it. Preserve selected
 and executed counts, native exit status, symbolized diagnostic/site, effective
 options, logs, first failures and consumed budget.
 
-Classify each outcome as **pass within recorded scope; sanitizer finding; semantic
-assertion failure; invalid detector/harness setup; unsupported target/API/graph;
+Classify each outcome as **pass within recorded scope; sanitizer finding;
+DFSan-backed application-policy finding; semantic assertion failure;
+invalid mechanism/harness setup; unsupported target/API/graph;
 timeout/resource exhaustion; unclassified crash; or not executed**. An unsupported
 or unexecuted required row remains incomplete. A panic, nonzero exit, matching
 exit code or `libFuzzer: deadly signal` alone is no detector-specific finding.

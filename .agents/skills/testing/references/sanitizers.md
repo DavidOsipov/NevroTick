@@ -24,7 +24,10 @@ this reference creates no new runner lane, installation or per-edit campaign.
 | [TSan](../qa-sanitizer-qualification/references/tsan.md) | Does an exercised concurrent execution contain a data race? | Qualify a supported target and visibility of relevant code/synchronization. Rust documents gaps for atomic fences and assembly synchronization. Keep Loom for bounded modeled schedules and Lockbud for compatible static screening; TSan does not prove higher-level protocol correctness. |
 | [MSan](../qa-sanitizer-qualification/references/msan.md) | Is uninitialized memory consumed on a reached path? | Qualify instrumentation across the standard library and native/dependency graph. Missing instrumentation can invalidate reports; select for actual initialization-sensitive paths and account for applicable gaps at module/V1 checkpoints. |
 | [UBSan](../qa-sanitizer-qualification/references/ubsan.md) | Does compiled native C/C++ code violate selected language rules? | Instrument the actual C/C++ source and link a compatible runtime. Rust has no documented standard UBSan sanitizer mode; linking the runtime adds no missing checks to Rust code. Preserve Rust-specific Miri and checked-arithmetic tests. |
-| HWASan | Does a future Android ARM64 native path contain address/lifetime errors? | Qualify the exact Rust/NDK/runtime/ABI/device combination when Android work is active. HWASan and hardware MTE/memtag have different requirements; neither is a current Windows gate. |
+| [HWASan / MTE](../qa-sanitizer-qualification/references/tagged-memory.md) | Does a supported diagnostic or selected future product target benefit from memory tagging? | Separate compiler-instrumented HWASan from hardware MTE and heap/stack coverage. LLVM non-ARM support does not establish a Rust x86 lane; a supported portable investigation need not await an ARM product. Neither is a current native Windows x64 mechanism. |
+| [DFSan](../qa-sanitizer-qualification/references/dataflow.md) | Can named sensitive or forbidden-influence data reach a selected output under the declared policy? | Qualify labels, propagation/ABI models and an independent sink oracle. Rust GNU x64 support is conditional analysis capability; it proves no authorization, complete information-flow security or Windows behavior. |
+| [RTSan](../qa-sanitizer-qualification/references/realtime.md) | Does an explicit synchronous scope call a prohibited allocation/blocking operation? | Preserve allowed preparation/rejection behavior and qualify actual interception. Rust support exists on analysis targets; a clean run proves no deadline, UTC accuracy or complete async executor behavior. |
+| [Control-flow / stack protection](../qa-sanitizer-qualification/references/control-flow.md) | Which call, return or stack boundary needs a supported diagnostic or deployment protection? | Distinguish LLVM CFI/SafeStack/ShadowCallStack from already-required Windows CFG/CET. Existing security/build owners retain exact artifact, dependency, startup and runtime qualification. |
 | Application Verifier / PageHeap | Does the actual Windows process misuse observed heaps, handles or native APIs? | Follow the existing per-image checks, intended token, allocator/API coverage, debugger capture and restoration. Measure allocation, handle and GUI-object retention separately. |
 
 ## Qualify the selected mechanism
@@ -34,12 +37,16 @@ Keep three independent claims distinct:
 1. **Input delivery:** a valid neighbor reaches the actual target and succeeds.
 2. **Oracle and propagation:** a controlled semantic fault reaches its intended
    assertion and the runner preserves the failure.
-3. **Detector operation:** an owned test-only fault representative of the selected
-   mechanism produces its expected diagnostic at the intended site. For ASan,
+3. **Mechanism operation:** an owned test-only control establishes the selected
+   mechanism. For diagnostic detectors, a representative fault produces its
+   expected diagnostic at the intended site. For ASan,
    use a genuine address/lifetime error; for LSan, a genuinely unreachable leak;
    for TSan/MSan, a reached race/uninitialized read. Pair with a repaired healthy
    control. Keep deliberate UB outside production and pure `forbid(unsafe_code)`
-   owners; use an isolated fixture where necessary.
+   owners; use an isolated fixture where necessary. DFSan instead needs observed
+   label propagation and boundary-model controls, followed by the independent
+   application sink oracle. Its framework does not emit a built-in diagnosis of
+   every domain-policy violation; an assertion alone proves no working propagation.
 
 A panic, changed numerical result, nonzero exit or `libFuzzer: deadly signal`
 alone establishes no ASan memory-error detection. Require the selected tool's
@@ -106,3 +113,7 @@ Windows target snapshot. Verify rolling guidance against the selected compiler.
 The [28 November amendment](../SOURCES.md#sanitizer-qualification-manuals--28-november-2026)
 pins Rust 1.100, LLVM, cargo-fuzz and Miri sources and records current Microsoft
 guidance for the five conditional manuals.
+The [additional-mechanism review](../SOURCES.md#additional-sanitizers-and-hardening--28-november-2026)
+retains conditional target support, DFSan/RTSan contracts and the existing
+Windows hardening distinction. These references add no runner or mandatory
+all-mechanism campaign.

@@ -14,9 +14,12 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 places routine sanitizer qualification at coherent module completion and requires
 the complete applicable matrix before V1 release. The
 [sanitizer skill](../.agents/skills/testing/qa-sanitizer-qualification/SKILL.md)
-coordinates five conditional mechanism manuals; existing module tasks and P7 own
-the evidence. Detector fixtures are not product qualification, and existing
-execution holds retain their scope.
+coordinates five family manuals and conditional data-flow, real-time,
+memory-tagging and control-flow guides. [Additional applicability](windows-time-development-hardening.md#954-additional-sanitizer-and-hardening-applicability)
+keeps native and portable analysis scopes distinct and retains already-required
+Windows CFG/CET with existing hardening owners. Existing module tasks and P7 own
+the evidence. Detector fixtures are not product qualification; conditional
+research creates no automatic campaign and execution holds retain their scope.
 
 **V1 network scope and current routing — 27 November 2026:**
 [OD-02](nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)

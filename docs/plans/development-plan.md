@@ -643,6 +643,14 @@ product instrumentation or held required execution stays incomplete, not N/A.
 This schedules qualification without changing section 7's ready source work or
 lifting any execution hold.
 
+Apply [additional applicability guidance](../windows-time-development-hardening.md#954-additional-sanitizer-and-hardening-applicability)
+when a target, contract or coverage question makes another mechanism relevant.
+Keep native-product and portable-analysis scopes distinct. Define DFSan models
+or RTSan prohibited-operation boundaries before their conditional qualification;
+preserve permitted error-path allocations and separate timing evidence. Existing
+CFG/CET owners continue required build/startup integration during implementation.
+An unselected research candidate creates no automatic V1 campaign.
+
 ### Common requirements for every phase
 
 - The development coordinator reads [plan-code-change], maps lifecycle/phase
@@ -711,7 +719,7 @@ tool on every change.
 | Measured bottleneck or explicit optimization | [optimize-rust-performance] with [qa-performance-resources]; benchmark/profiler measurement reference. |
 | CPU baseline admission or runtime feature dispatch | [implement-cpu-dispatch]; [optimize-rust-performance] for measured path selection. Preserve x86-64-v3 and qualify actual process/OS admission. |
 | Unknown producer-to-consumer/effect path | [qa-data-flow-analysis]; its CodeQL reference when the source path cannot otherwise be established. Tool extraction coverage limits remain explicit. |
-| Coherent module completion, V1 release reconciliation or a named early sanitizer diagnostic/prerequisite | [qa-sanitizer-qualification] and only its applicable manuals; use [hardening §9.5.3](../windows-time-development-hardening.md#953-sanitizer-qualification-at-module-completion-and-before-v1). Keep ordinary development checks, separate instrumented builds, detector/product evidence and existing execution holds. |
+| Coherent module completion, V1 release reconciliation or a named early sanitizer diagnostic/prerequisite | [qa-sanitizer-qualification] and only its applicable manuals; use [hardening §9.5.3](../windows-time-development-hardening.md#953-sanitizer-qualification-at-module-completion-and-before-v1) and [additional applicability §9.5.4](../windows-time-development-hardening.md#954-additional-sanitizer-and-hardening-applicability). Keep ordinary development checks, separate native/analysis scopes, mechanism/product evidence and existing execution holds; route deployment protections to their existing owners. |
 | A failure, regression or disputed result | [qa-failure-triage]; [qa-system-stabilization] only for a bounded multi-defect convergence effort. Preserve first failure and healthy control. |
 | Useful independent development slices, multiple delegated owners or interrupted work | [plan-code-change] and [development delegation](#development-delegation); [qa-subagent-dispatch]/[qa-context-checkpoint] as triggered. One record, exclusive mutable ownership and integrated acceptance. |
 | Wire/persistence/version/units/validation acceptance changes | [evolve-data-contracts] with [qa-contract-tests], including old/new consumer and interrupted-migration cases. |
@@ -1270,6 +1278,14 @@ detector controls do not qualify a product graph. Retain required Windows memory
 handle/FFI and resource-lifecycle evidence separately; an unavailable/held
 applicable row keeps the gate open. Use existing module records and this release
 parent, without a parallel campaign plan or implied hold lift.
+
+Reconcile relevant [additional mechanisms](../windows-time-development-hardening.md#954-additional-sanitizer-and-hardening-applicability)
+in that same matrix, preserving required versus conditional status and exact
+native/analysis targets. An unsupported native mode does not close its underlying
+requirement or erase a useful portable question; a missing required supported
+profile remains incomplete. Complete existing CFG/CET artifact and native-policy
+obligations through their build/package/Windows owners. A clean DFSan or RTSan
+result carries only its declared model or prohibited-operation scope.
 
 Reconcile V1 RGT-C01 and the applicable TA-W/TA-C evidence in the
 [time-assurance task](../../tasks/time-assurance-integration.md) alongside the

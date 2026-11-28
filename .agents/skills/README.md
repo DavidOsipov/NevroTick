@@ -40,7 +40,7 @@ and evidence, with shared decisions and integration reconciled centrally.
 | Plan a change, architecture, review or threat model | [Planning guide](planning/README.md) |
 | Change privilege, IPC, NTS, logging or installation security | [Security guide](security/README.md) |
 | Choose or run testing and qualification | [Testing guide](testing/README.md) |
-| Qualify applicable sanitizers at module completion or before V1; diagnose a named memory/race gap | [qa-sanitizer-qualification](testing/qa-sanitizer-qualification/SKILL.md), with selected mechanism manuals |
+| Qualify applicable sanitizers at module completion or before V1; assess a named diagnostic mechanism and target | [qa-sanitizer-qualification](testing/qa-sanitizer-qualification/SKILL.md), with selected family manuals and conditional mechanism guides |
 | Challenge scheduling races, generated histories or Python admission semantics | [Tool-selection guide](testing/references/generated-testing-selection.md), then [lifecycle](testing/qa-state-concurrency-lifecycle/SKILL.md), [model](testing/qa-model-based-testing/SKILL.md) or [property](testing/qa-property-based-testing/SKILL.md) testing; extensive conditional tool manuals preserve admission and evidence limits |
 | Explore semantic states that revisit familiar code paths | [qa-state-guided-fuzzing](testing/qa-state-guided-fuzzing/SKILL.md), with an independent transition oracle |
 | Evaluate new or materially revised skills, or demonstrated agent failures; wording-only edits need no campaign | [qa-skill-evaluations](testing/qa-skill-evaluations/SKILL.md) |

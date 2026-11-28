@@ -22,6 +22,16 @@ For a consumer with unexplained structure-dependent work, use
 inputs, then confirm them through comparable ordinary measurements. Search finds
 observed heavy cases, not a global worst-case or resource-budget proof.
 
+For an explicitly owned synchronous no-allocation/no-blocking section, consider
+[RealtimeSanitizer](../qa-sanitizer-qualification/references/realtime.md) through
+the [sanitizer coordinator](../qa-sanitizer-qualification/SKILL.md). Preserve the
+actual success/refusal contract: some Garde rejection paths permit allocation.
+Choose the marked scope before qualification; whole-engine or async annotation
+cannot establish responsiveness. A clean RTSan run covers observed prohibited
+calls under its interception/exclusion model, while numerical deadlines, resource
+budgets and Windows timing retain separate measurements. This conditional route
+creates no mandatory pilot, runner or change to module/pre-V1 checkpoint cadence.
+
 Before sampling define metric start/stop events, bounded repeats/warmup, preselected statistic/spread. Retain all raw samples/outliers/failed/missing observations/reasons; unavailable is not zero. Compare only comparable candidate/environment identities; near-noise/unspecified-decision-rule verdict remains uncertain.
 
 Observe before fixture teardown; forced child cleanup must not hide leaks. Separate cold/warm caches/startup/steady state; preserve time series/workload inputs/first spikes/failures. Keep UTC/monotonic/active-awake distinctions.
