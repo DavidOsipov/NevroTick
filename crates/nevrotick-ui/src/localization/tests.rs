@@ -644,8 +644,8 @@ fn runtime_version_and_missing_text_failures_preserve_prior() -> Result<(), Erro
     for (field, value) in [
         ("schema_version", 1),
         ("schema_version", 3),
-        ("text_contract_version", 3),
-        ("text_contract_version", 5),
+        ("text_contract_version", 4),
+        ("text_contract_version", 6),
     ] {
         let mut fields = english()?.wire()?.map()?;
         let slot = fields
@@ -719,7 +719,7 @@ fn native_notification_feedback_keeps_closed_sticky_meanings() -> Result<(), Err
             expected
         );
     }
-    assert_eq!(snapshot.revision(), 4);
+    assert_eq!(snapshot.revision(), 5);
     assert!(matches!(
         MessageId::from_key("ui.shell.no-notification-submission"),
         Err(Error::Schema)

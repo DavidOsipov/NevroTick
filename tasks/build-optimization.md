@@ -208,6 +208,55 @@ page-size and supported-Windows outcomes remain unqualified. Complete B1
 machine-readable image/module attribution, other B2 profiles and all applicable
 native, metric, sanitizer, signing and installed-product gates remain open.
 
+### B3 pre-CRT stack-cookie observation — 28 November 2026
+
+The next qualification question is the existing conditional requirement for the
+two separately compiled C entries: determine whether the selected strong stack
+protection emits cookie-dependent frames before CRT startup. This is component
+artifact evidence, not another whole-product build or a source rewrite.
+`security-build-deployment`, the unchanged CPU-entry contracts,
+`qa-environment-preflight`, `qa-test-planning` and `qa-positive-paths` own it.
+
+Reuse the retained UI `entry.obj` and service `service-entry.obj` only after their
+recorded compiler/library pins, exact compile flags, current C/header bytes and
+object hashes agree. The independent source review found the no-LTO C inputs
+unchanged; new Rust/catalog inputs do not change these exact objects. They do
+invalidate any broader final-image or runtime reuse. Inspect the complete symbol
+and relocation records with the already pinned LLVM reader. Calibrate observation
+with one benign address-taken stack-buffer helper compiled under the same Clang
+Windows object flags, once with strong stack protection and once without it.
+The latter is a control artifact only; no product protection is removed.
+
+Budget: one tool/source/object admission pass, two control-only Clang compilations
+and four object readbacks, at most 30 seconds per command / 180 seconds total,
+one CPU, 1-GiB AS, 15-second CPU, 128 descriptors and 8-MiB output-file ceiling.
+Use credential-free, network-isolated read-only inputs and one owned work root.
+Stop on a pin/binding failure or non-discriminating controls; no install, Cargo,
+Windows execution, mitigation mutation or automatic retry is selected. A current
+object with cookie references requires a separate causal startup-order repair;
+absence closes only this conditional observation for those exact C objects.
+
+**Observed result:** the pinned-source/tool/object admission passed. Both
+control compilations and all four complete COFF readbacks returned zero in
+1.111 seconds total. The protected control contains relocations to
+`__security_cookie` and `__security_check_cookie`; its unprotected neighbor
+contains neither. Neither exact retained product entry object contains those
+symbols or `__stack_chk` references. Independent raw COFF review confirmed the
+symbol/relocation observations. This closes the conditional cookie-reference
+question for the two C objects only. It does not qualify final-image startup,
+CRT behavior, every native dependency or Windows runtime mitigation. Product
+strong stack protection remains selected; no entry-source change was needed.
+
+The full source, tool, receipt and object bindings, commands and readback logs
+are retained under `~/.local/share/nevrotick/b3-precrt-20261128-ltv7_51k/`.
+`receipt.json` SHA-256:
+`d5525d519c8e8cbfe2b17d383ed64be2b7287e7b088fd7d8d16cd68ee212e225`.
+The UI object is `eef45628c5d35e6faa1dae6954da700043b7a54a777bf27dd2d1b0a5adbb2b7b`;
+the service object is `4e6b70fb7b0ffc723c0f617dd2a724da9accdd8ab2ed22dbca5905feab023575`.
+The finite budget is consumed, with no Cargo build, Windows execution or product
+protection change. Complete B1 module attribution and native/final-package
+qualification retain their existing owners.
+
 ## Candidate and custody
 
 Initial HEAD: `bd78e324f697ae9492e9c567b5234d408e5eb636`, with concurrent staged,

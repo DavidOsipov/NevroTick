@@ -830,6 +830,52 @@ native/metric qualification remain incomplete; no runtime closure or phase
 completion is claimed. Independent ready source work retains its existing §7
 owners while this checkpoint stays open.
 
+**Hosted failure and causal fixture repair — 28 November.** On exact commit
+`78bbbda5ed1d48094d9aa90b273d148f396694c6`, the
+[Rust product job](https://github.com/DavidOsipov/NevroTick/actions/runs/46158841444/job/141021378054)
+passed admission and reached ordinary UI tests. Four cases returned `Approval`:
+`fixed_independent_approval_fixture_and_unapproved_candidate_are_distinct`,
+`compatibility_and_valid_syntax_cannot_self_approve_english`,
+`one_generated_copy_commit_preserves_drafts_and_owned_dialogs`, and
+`catalog_replay_restores_typed_status_shell_service_and_notification_feedback`.
+This is new reached-test evidence; the exhausted local compilation checkpoint
+above remains incomplete, with no automatic local build retry.
+
+Independent inspection identified a stale test-only approval pin: current
+English and its exact synthetic CBOR are revision/text-contract 5, but
+`approvals.rs` still required revision 4. The causal repair advances that
+synthetic pin, the snapshot expectation and the generated-copy expectation to
+5. Binary malformed-version controls now use the invalid neighbors 4 and 6.
+Historical v2/v3/v4 rejection fixtures and the empty production `REVIEWS` ledger
+are retained. No new text, compatibility policy or production semantic grant
+is introduced.
+
+`implement-rust` / `implement-rust-contracts` own the minimal repair;
+`qa-failure-triage` / `qa-regression-selection` retain the original failure and
+the affected catalogue/Slint consumers. The finite local check uses the actual
+approval module in an isolated Rust facade, paired original/current module
+bytes, the fixed current fixture, wrong revision, changed bytes and release
+refusal. Budget: two builds/two executions and one format check, 30 seconds per
+command, 180 seconds total, one CPU, 1-GiB AS, 15-second CPU, 128 descriptors,
+8-MiB output-file limit and the 4-GiB filesystem reserve. It cannot qualify
+CBOR decoding, catalogue construction or Slint callbacks. A subsequent exact
+published candidate still needs the configured hosted product run; no CI gate
+or native/metric hold is waived.
+
+**Local result:** the paired facade passed six observations, including the
+original predicate's refusal of current fixed bytes and the repaired predicate's
+acceptance, wrong-revision/changed-byte refusal and both release-ledger refusals.
+The pinned Rust 1.100.0 formatter passed the three edited modules. The first
+compiler invocation could not find sandbox `cc`; an explicit `/usr/bin/gcc`
+linker resolved that harness prerequisite within the two-build budget. A separate
+setup-only retry encountered its existing scratch directory before compilation.
+Both failures are retained. These observations exercise the actual approval
+module with a facade catalogue shape, not the full catalogue constructor or
+Slint. Independent source review found no additional issue in the correction.
+Receipt: `~/.local/share/nevrotick/catalog-approval-repair-20261128-kbshmq8r/receipt.json`,
+SHA-256 `1732703f73d3d5fd85a245ff384c6fd68bf792c946a4dbf06d85f3c5bea76da3`.
+The following publication's full hosted product result remains required.
+
 D1/D3, native rendering/keyboard/accessibility/resources, release text approval,
 and D2/currentness before live metadata or commands retain their existing
 triggers. Sanitizer qualification follows OD-22 at module freeze; neither this

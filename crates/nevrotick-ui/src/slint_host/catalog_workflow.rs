@@ -335,7 +335,7 @@ mod tests {
         host.publish_catalog(store)?;
         let global = window.global::<LocalizationCopy>();
         let copy = global.get_value();
-        assert_eq!(copy.revision, "4");
+        assert_eq!(copy.revision, "5");
         check_flat_rows(&copy);
         check_feedback_replacement(window, &copy);
         assert_eq!(window.get_draft_label(), "Exact raw label");
