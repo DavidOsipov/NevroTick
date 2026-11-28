@@ -33144,14 +33144,17 @@ A read-only, network-isolated pure control passed: it reconstructed exactly
 19 planned lanes, four Engine ordinary lanes, two Rustdoc lanes and the three
 original retirement points. A stale candidate, a missing empty-binary record
 and a changed recipe each refused at the intended identity boundary; the
-healthy case passed again. A separate read-only review found that this
-control checks nonempty commands and the retirement list but does not
-compare every returned command against the fixed recipe independently.
-That narrower oracle remains to be strengthened before physical use.
-Controller, control and log SHA-256 values are
-respectively `b7cd1f37176f730fa36431ceee4ee7f077fab527ec86e22d322db0ef43409ec4`,
-`3123c388491e621ba5e0dd9b9d278d00177eb229047f65905e45560638c1912e`
+healthy case passed again. A separate read-only review found that the
+first control did not independently compare every returned command. Its
+corrected source now compares each of the 19 labels, commands, kinds and
+retirement flags with the pinned recipe, plus the literal three retirement
+labels and exact four/two Engine/Rustdoc lane counts. The corrected control
+passed under the same read-only, network-isolated boundary. Controller,
+corrected control and its retained `test-plan-current-02.log` SHA-256 values
+are respectively `b7cd1f37176f730fa36431ceee4ee7f077fab527ec86e22d322db0ef43409ec4`,
+`f498f25c868a816cfd88d5fe024279778c1f15611b20b4b5e658763112089619`
 and `7b903cd42c8ad96f82a178068f6e8970cfcd00e9b5fe47df4f4ab433a6340260`.
+The initial control source `3123c388…` remains a narrower predecessor.
 This is source-only planning evidence. The current D: placement wrapper, exact
 work-view/backing identity, full-window budget and independent physical
 stock19 reader are not implemented; the historical FUSE tool and capacity
@@ -33168,6 +33171,77 @@ records, zero-case binary counts, annotated Rustdoc and the four Core
 selectors; separately observe the D: image, work attachment, complete closing
 resource log, read-only remount, service exit and scratch retirement. This is
 an implementation checklist, not a physical readback result.
+
+**Exact FUSE tool recovery — 29 November 2026.** Private Ubuntu package
+acquisition under `/tmp/nevrotick-stock19-fuse-acquire-20261128/` matched
+local APT SHA-256 metadata: `fuse2fs` `1.47.0-2.4~exp1ubuntu4.1` package
+`03a8c0d82b57f470994eb64349441bbc5eba02d7ebe0f48b6af0587414d0f728`
+and `libfuse2t64` `2.9.9-8.1build1` package
+`42919b326576c6c5cde85f4748092351c13b1b365c8793adb926b9c11cd5b22d`.
+The extracted executable and library match the archived launcher's exact
+`bbf0aa57…` and `654ae57b…` pins. Independent readback confirmed these
+bytes and package notices (GPL-2 executable; LGPL-2 library). A version-only
+smoke exited zero. Nothing was installed globally at this checkpoint. The old
+capacity record remained absent, so a fresh D: observation was still required.
+
+**Fresh D: capacity canary — 29 November 2026.** A separately reviewed private
+canary (`/tmp/nevrotick-stock19-capacity-source-20261128/canary.py`, SHA-256
+`afeadca496a151c15ced205768bb05764bd83a6fdd7c27ff25b3cbe021291ba4`)
+ran once under the bounded named user service
+`nevrotick-stock19-capacity-b5bd180f0e45d5e1.service`. The service exited
+zero with `Result=success` in 5.635 seconds. Its independent readback at
+`/tmp/nevrotick-stock19-capacity-b5bd180f0e45d5e1/capacity-readback.json`
+(SHA-256 `d301c031a08630eabec3e09f26e924a5757dcb01a674212fa56ff5f4df97eba8`)
+records `passed-capacity-only`, complete checks and no run or cleanup errors.
+The exclusive 10 GiB D: ext4 image reported 9,927,127,040 writable bytes;
+the probe survived a read-only FUSE remount, and a write-open refused with
+`EROFS`. Entry D: and RAM reserves exceeded 16 GiB and 5 GiB respectively.
+An independent post-exit check found no exact canary mount, D: image/directory,
+RAM scratch or matching mount entry. The service log SHA-256 is
+`064ecf213bb430523f36f57a9c45bcd1086b619fc2d7f6f7e18aa456ab9c2809`.
+This checks capacity, remount and cleanup for one fresh trial; it neither
+writes 5 GiB of report data nor runs or qualifies stock19. The current
+physical controller, reader and full-window resource budget remain open.
+
+**Current source map and lane-reader preparation — 29 November 2026.** A
+read-only, network-isolated configured `--plan` on the live `661186be…`
+checkout (index SHA-256 `047bc7af4e958aba6b662efa212b7293180fd2a266c78fb82a30f934261bd2de`)
+again returned the `2045b1be…` product digest, 838 inputs and 22 graph
+commands per profile. Its `plan.json` SHA-256 is
+`b76e621bf5a3564133aadbaf31601b03e1616e2ba09400574d3203de4fb3053d`;
+stderr was empty. This rechecks the live product map separately from the
+earlier basis capture's original HEAD/index, without running Cargo.
+After a fast-forward to remote successor `38e25354…`, the same isolated plan
+again exited zero with byte-identical `plan.json` SHA-256, 838 inputs and
+`2045b1be…`; the new index SHA-256 was
+`691f5c4e605bec1f9bdc2955d1d7921813c0e8c425597f4fa531ca6d734bac21`.
+The successor adds server-source inventories and joint decision TODOs; none
+of its changed paths is in the admitted 838-input product map. The outer
+physical run still owes fresh HEAD/index, document and product rechecks.
+
+The imported [joint production decisions](development-backlog.md#joint-production-decisions--28-november-2026)
+keep item 2 (production voting/freshness/uncertainty), item 4 (wrong-date
+Windows trust/recovery), item 6 (mandatory retry/trust-state lifetime) and
+item 8 (catalogue quality) open with their existing owners. They are held
+before dependent production admission; this source and capacity preparation
+continues under the existing P2 contract. Collected public servers and keys
+are candidates, not a selected runtime roster or source-independence proof.
+
+The private current lane reader at
+`/tmp/nevrotick-current-stock19-reader-20261129/reader.py` has SHA-256
+`d31e9defea5b28c0e41d03c531431e3026746cf7658113fffd484936048a3d90`.
+It binds the exact 60-file basis, fixed recipe, 19 raw lane records, empty
+binary identity, annotated Rustdoc, four Core selectors and an independently
+supplied configured sandbox prefix. It parsed the retained physical basis
+outputs as 318/693 ordinary cases and 90/91 Rustdoc cases. Its isolated inert
+19-lane fixture and six focused refusal/positive controls exited zero;
+`final-test.log` SHA-256 is
+`6c8a602a8f61e6af7818d715039a5c28d83bfbc8dce9a0b60684963e36085163`.
+Source review corrected a Core expected-shape mismatch and a Python
+`False == 0` exit-code acceptance before this final test. The reader returns
+`stock19-lane-readback-only` and explicitly gives no physical, native or
+metric qualification. Placement, full resource/service closure, fresh
+bookends and the actual 19-lane execution remain open.
 
 **Parallel development allocation — 28 November 2026.** Following David's
 request to use P2–P7 capacity, the coordinator retains P2 and shared contract,
