@@ -3,6 +3,59 @@
 
 use super::{ImageLoadPolicyError, PolicyCalls, enforce_with};
 
+/// The production conversion preserves every admission family and native cause.
+/// No policy setter, backend or native process observation is invoked here.
+///
+/// # Panics
+/// Any admission family or either restricted policy loses its exact typed cause.
+#[cfg(windows)]
+#[test]
+fn host_conversion_preserves_every_original_admission_cause() {
+    use super::super::HostError;
+    use super::{
+        DllSearchPolicyError, RestrictedExecutionPolicy, RestrictedExecutionPolicyError,
+        StartupAdmissionError, StrictHandlePolicyError,
+    };
+
+    let cases: [StartupAdmissionError; 5] = [
+        StartupAdmissionError::ImageLoad(ImageLoadPolicyError::ReadInitial(5)),
+        StartupAdmissionError::DllSearch(DllSearchPolicyError { code: 87 }),
+        StartupAdmissionError::StrictHandle(StrictHandlePolicyError::ReadEffective(6)),
+        StartupAdmissionError::RestrictedExecution(RestrictedExecutionPolicyError::Apply {
+            policy: RestrictedExecutionPolicy::DynamicCode,
+            code: 31,
+        }),
+        StartupAdmissionError::RestrictedExecution(RestrictedExecutionPolicyError::ReadEffective {
+            policy: RestrictedExecutionPolicy::ExtensionPoints,
+            code: 50,
+        }),
+    ];
+    for original in cases {
+        let converted: HostError = HostError::from(original);
+        let preserved: bool = match (original, &converted) {
+            (StartupAdmissionError::ImageLoad(expected), HostError::ImageLoadPolicy(actual)) => {
+                *actual == expected
+            }
+            (StartupAdmissionError::DllSearch(expected), HostError::DllSearchPolicy(actual)) => {
+                *actual == expected
+            }
+            (
+                StartupAdmissionError::StrictHandle(expected),
+                HostError::StrictHandlePolicy(actual),
+            ) => *actual == expected,
+            (
+                StartupAdmissionError::RestrictedExecution(expected),
+                HostError::RestrictedExecutionPolicy(actual),
+            ) => *actual == expected,
+            _ => false,
+        };
+        assert!(
+            preserved,
+            "startup conversion changed its original typed cause"
+        );
+    }
+}
+
 /// One call observed at the scripted native boundary.
 #[derive(Debug, Eq, PartialEq)]
 enum Call {

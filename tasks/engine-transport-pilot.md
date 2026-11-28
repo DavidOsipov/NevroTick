@@ -32911,6 +32911,52 @@ the paused optional protected-storage product experiment. Physical-reference
 qualification remains blocked on its existing evidence prerequisites; do not
 repeat an equipment survey or infer a production mapping pass from this work.
 
+**Resumed source readback — 28 November 2026.** On `5411d8c`, two read-only
+specialists independently traced the actual Engine producer and Core consumer.
+Engine still has no `time-core` dependency; the live joined receiving path
+returns `MappingUnavailable`, while the separate exchange-to-Core fixture is
+not the application bridge. David clarified that his concern about this gap
+was not an instruction to change the current phase order. Keep this receiving
+qualification continuation next; do not infer a new production supplier or
+activate the previously held Core edge from that discussion.
+
+A separate fresh-context reviewer completed the independent readback of
+`/dev/shm/nevrotick-current-basis-source-z9zrq6ne/`. Its three source hashes
+match the published preparation records. The prior CB-001 documentation-pin
+and CB-002 qualified-case/empty-binary repairs are present. No target imports,
+tests, graph commands, product builds, mounts or native operations ran in this
+readback. The next source corrections/integration are explicit:
+
+| Record | Observation and required next action |
+| --- | --- |
+| RB-01 — stale candidate | The producer still requires `18db3db3…` and exactly 833 inputs. Retain that draft's identity and rebind a successor to the actual current product map before dispatch; do not merely remove identity admission. |
+| RB-02 — missing independent consumer | The listing parser and producer-function controls do not independently admit the complete graph/discovery/terminal chain. Implement the current-candidate basis consumer; preserve historical `combined`/19-lane dispatch and reject unknown candidates. |
+| RB-03 — inconsistent storage admission | Initial durable output admission permits 128 MiB, but the first live guard requires 4 GiB. Reconcile startup with the unchanged entry/live reserves and the actual storage mechanism before allocation. The draft rejects `/mnt`; original D: lifecycle integration remains required rather than implied by available space. |
+| RB-04 — incomplete combined integration | The draft runs graph/discovery plus four ordinary/Rustdoc lanes, not stock19. Complete the stock19/storage wiring and review the total budget; its current 600-second basis ceiling is not a newly admitted complete combined window. |
+
+RB-03's source repair is prepared separately in
+`/dev/shm/nevrotick-receiving-basis-storage-hcwg8tfv/`: startup durable space is
+5 GiB, preserving the 4 GiB live floor and the existing work/memory reserves.
+The revised producer SHA-256 is
+`2c3f22b88d423d4654d5964e98578cf0b5f15aea59397cdc0594a0a5189464a7`;
+the published predecessor remains unchanged. This is source preparation only:
+boundary controls and the complete producer/reader/storage integration have not
+executed. RB-01/02/04 remain open, so no product capture is admitted. The prior
+11-second compiler allowance and historical metric bindings remain intact.
+Both source revisions and status files are also retained outside the RAM
+filesystem in `/tmp/nevrotick-receiving-preparation-gbonkpj4/`; these are
+unexecuted preparation copies, not captured product evidence.
+
+The implementation experiment prompted by the prematurely inferred priority
+change was stopped without main-tree integration or target execution. Its
+unfinished three-file original-quality draft is retained as
+`/tmp/nevrotick-unadmitted-original-quality-20261128.patch` (SHA-256
+`87e0ea51c138c53a0d75e2b92c1d0f96aa21d26eaf2fec15c418fb394c0bcf13`).
+The coordinator verified that patch against the unchanged base, then removed
+the owned detached worktree. It supplies no implementation or qualification
+credit. The source/storage correction above is the next action; positive Core
+history and all original native/physical/metric prerequisites remain open.
+
 **CI-EF-01 — P2 configured-verification blocker, 28 November 2026.**
 On the reviewed source,
 [Rust job 141036737138](https://github.com/DavidOsipov/NevroTick/actions/runs/46163770301/job/141036737138)
@@ -32961,9 +33007,19 @@ without suppressions. The repaired candidate passed explicit-feature all-target
 compiler/Clippy and the four named authentication library controls; the genuine
 loopback first/terminal case reaches the changed helper. Fresh complete source,
 vendor and tool bookends passed. This closes the observed local CI-EF-01 lint
-repair check; a complete hosted successor run remains pending. Full receiving
+repair check; a complete hosted successor run was pending at this local check. Full receiving
 stock19 capture, source/storage integration, current metrics and native/product
 qualification remain with the existing continuation above.
+
+**Hosted CI-EF-01 successor completed — 28 November 2026:** GitHub reports
+[run 46173719256](https://github.com/DavidOsipov/NevroTick/actions/runs/46173719256)
+successful on `5411d8c962f30d531ffe8a407fe0c952250b8e72`, completed at
+18:24:33 UTC. Job `141067619022` completed ordinary portable verification,
+the explicit KE graph and the explicit portable KE ownership step successfully.
+This closes the hosted successor requirement for the lint repair on that exact
+commit. Run/job metadata were independently retrieved; complete raw hosted logs
+were not re-adjudicated here. The current receiving basis/stock19, per-file
+metrics, native and production gates above remain open.
 
 ###### Calculate each original joined ordinary receipt
 

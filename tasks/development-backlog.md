@@ -103,7 +103,8 @@ current candidate-specific graph, full roster and complete physical stock19
 capture under a reviewed budget. Earlier registration, combined captures and
 metric receipts retain their original candidates. CI-EF-01's fixture repair
 passed selected local explicit-feature compiler/Clippy and authentication
-controls; its complete hosted successor checkpoint remains required.
+controls; the complete hosted successor passed on exact commit `5411d8c`.
+Current receiving, metric and native qualification remain separate.
 The [physical-reference trial is HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026);
 no admitted reference/evidence route is identified and no recurring inventory or
 purchase inquiry follows. Independent physical calibration, read-side mapping

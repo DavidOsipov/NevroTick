@@ -1424,7 +1424,81 @@ the successful continuation's is
 `b6fddde23c8c78721408269fe150c4a712f3f42f3e6ad4a8285ef3a42ca127b9`.
 These are selected development checks, not a full GNU UI rerun, linked Windows
 artifact, native enforcement/compatibility, per-file coverage/mutation or release
-qualification. The complete hosted successor checkpoint remains required.
+qualification. The hosted successor was still required at this checkpoint;
+the later review follow-up below records its exact-commit completion.
+
+#### Review follow-up for 5411d8c — 28 November 2026
+
+The supplied independent review established no new functional defect. Its two
+P3 evidence gaps retain separate dispositions; neither requires changing the
+startup policy or reopening the Engine fixture repair.
+
+**QAG-01 — exercise the real host conversion.** The existing wrapper assertions
+constructed `HostError` directly and did not call its `From<StartupAdmissionError>`
+implementation. The new Windows-gated
+`startup_image_policy::tests::host_conversion_preserves_every_original_admission_cause`
+calls that actual conversion for all four admission families, with separate
+dynamic-code and extension-point cases. Distinct original failure stages/codes
+must reach the corresponding host variant unchanged. The test invokes no native
+policy setter, backend or process observation. It is placed inside the existing
+startup-policy test module so the DLL-error fixture can use its private fields
+without adding a constructor or broadening production visibility.
+
+Selected verification is one 600-second total format/Windows all-target
+compiler/Clippy checkpoint, including causal repair. The first format check
+refused two layout differences after successful source/tool/vendor admission
+and sandbox control; closing bookends passed. Its 23.273429 seconds remain
+charged. The formatting repair precedes a new frozen capture; native execution
+of the Windows-only test, compatibility and current per-file metrics remain
+separate evidence.
+
+The repaired frozen input passed the configured format check, complete default
+MSVC graph projection, UI Windows all-target compiler and all-target Clippy.
+Source, vendor and tool bookends passed. The successful summary records
+207.839479 seconds cumulative within the same 600-second allocation, including
+the initial 23.273429-second refusal; do not add them together. Its raw rows are
+under `/tmp/nevrotick-qag01-99a56fv7/repaired-results/`; `verification.json`
+has SHA-256 `9d6cef40c1586137d3898f7485e701300fb4dcec108ce3eeea4ed6f8c6cbbf58`.
+A separate read-only reviewer inspected the test, actual conversion, caller,
+privacy and configuration and found no material source issue. This establishes
+the added test's Windows compilation/lint result; the Windows-only test was
+**not executed** and no process policy was changed.
+
+**QAG-02 — link the completed skill exercises.** The review correctly identified
+an omission in this checkpoint's documentation. A fresh read-only evidence
+review recovered the historical exercise/grade returns and exact final guidance
+binding; no new campaign was run. The retained compact summary is
+`/tmp/nevrotick-cleanup-summary-20261128-zes5bu9_.json`, SHA-256
+`0ca3b5df358238a2398a0ff4f305b7af80eae89b67b844f126fd5205655c5cc5`.
+Its skill, reference and UI-metadata hashes match the committed files.
+
+| Historical bounded exercise | Independent grading and limitations |
+| --- | --- |
+| Mixed evidence/vendor/tool boundaries and dirty worktree | Eight sandbox commands retired five authorized evidence boundaries and the selected dirty worktree after verified source recovery. All seven protected items and three grader fault controls passed. This worker initially read the preceding reference, observed the pruning amendment later and invoked no pruning; do not call it a complete final-byte pruning replay. |
+| Configured C:/D: discovery and scoped stale registrations | Five sandbox commands removed the two configured receipt directories and only the authorized stale registration, preserving the other owner's registration. All seven protected items and two grader fault controls passed. The worker's retained full guidance read equals the final committed skill/reference byte-for-byte: 24,328 bytes, concatenated SHA-256 `ab673961524fbc84c7e2413afba72165ffba688c131d535ef2d1bb387eac96c7`. |
+
+The exact final-guidance exercise is retained in session
+`01a2232b-fe38-7322-a5ae-e4e76ca85e37`; its JSONL SHA-256 at readback was
+`b78bc2ae6fae4cd8ec14fefc6c19cb49ead0d853237f9eefc033b83ced0c5126`.
+Parent session `01a21446-cd73-7351-990b-ac89396f04c5` retains both worker returns,
+the independent grader source and the two actual PASS returns, plus explicit
+raw-directory retirement after preservation of the compact grades. Completed
+fixture directories and standalone replay inputs were deliberately retired during
+the authorized cleanup; these are retained historical observations, not freshly
+replayed controls. The synthetic exercises establish neither native Windows
+deletion behavior nor a measured general improvement. The 68-entry structural
+skill validation remains a separate result.
+
+**Hosted successor observed complete.** GitHub reports
+[Rust product run 46173719256](https://github.com/DavidOsipov/NevroTick/actions/runs/46173719256)
+successful on exact commit `5411d8c962f30d531ffe8a407fe0c952250b8e72`,
+completed at 18:24:33 UTC on 28 November. Job `141067619022` reports success
+for ordinary portable verification, the explicit KE dependency graph and the
+explicit portable KE ownership checkpoint. This closes the hosted CI-EF-01
+successor requirement for that commit, not a newer uncommitted candidate.
+The run/job metadata are retained beside the focused follow-up receipt;
+the API observations do not independently certify all raw hosted logs,
+current receiving metrics or native Windows compatibility.
 
 ### Desktop delivery hardening — 25 November 2026
 
