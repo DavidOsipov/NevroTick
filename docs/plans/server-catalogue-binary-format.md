@@ -141,6 +141,14 @@ The publisher must represent approved old/new overlap with bounded cardinality a
 
 ### 5.2 Initial public-key evidence inventory — 4 November 2026
 
+**Refresh — 28 November 2026:** the [dated source collection](../server-lists/2026-11-28/README.md#roughtime-endpoints-and-public-keys)
+pins current Tanner and Cloudflare inventories, preserves exact files/licenses,
+and adds primary operator profile annotations. Tanner's 13 Ed25519 keys below
+are byte-identical at the newer revision; Cloudflare contributes the additional
+int08h candidate with unresolved deployment/profile evidence. The dated
+collection does not approve any binding or change the historical verification
+scope of this initial table.
+
 The following are **documentary candidates, not an approved shipped roster**. All 13 Ed25519 rows come from the exact [ecosystem snapshot][C12] (Git blob `cd9eb5043fd7ff77845333ffe97b8318303ff94e`); current fetched bytes matched that pinned blob. Each Base64 value was strictly decoded and checked to contain 32 bytes. No network exchange, signature verification, availability/accuracy test or operator-independence qualification was performed.
 
 The two RFC-v1 entries were also checked against their operators' pages; Cloudflare and roughtime.se have their own narrower documentary confirmations. Other rows remain list-derived in this check. Base64 below is a readable documentation spelling of **public** material, not the proposed runtime encoding.

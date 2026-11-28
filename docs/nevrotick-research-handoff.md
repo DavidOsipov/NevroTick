@@ -296,7 +296,14 @@ Ask David only after presenting measured options and their practical recovery di
 
 ### Inspected discovery source
 
-David supplied **[jauderho/nts-servers](https://github.com/jauderho/nts-servers)**. The inspected snapshot is **`90269c99d9c247a1a42659521c20dfa1e430202f`**, committed 26 October 2026:
+**Current collection — 28 November 2026:** the [dated NTS/Roughtime inventory](server-lists/2026-11-28/README.md)
+captures all 113 NTS rows at `97a5116fc1a31c309b5d2bb79bab38863f3f8f09`,
+plus pinned Roughtime lists and published keys/profile annotations. David's
+direction is to collect servers now and retain the
+[other eight audit topics for joint discussion](../tasks/development-backlog.md#joint-production-decisions--28-november-2026).
+This does not adopt a default preset or close OPEN-CAT-02.
+
+David supplied **[jauderho/nts-servers](https://github.com/jauderho/nts-servers)**. The earlier inspected snapshot was **`90269c99d9c247a1a42659521c20dfa1e430202f`**, committed 26 October 2026; its evidence is retained here:
 
 - [README at the inspected revision](https://github.com/jauderho/nts-servers/blob/90269c99d9c247a1a42659521c20dfa1e430202f/README.md).
 - [nts-sources.yml at the inspected revision](https://github.com/jauderho/nts-servers/blob/90269c99d9c247a1a42659521c20dfa1e430202f/nts-sources.yml).

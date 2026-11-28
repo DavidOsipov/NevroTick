@@ -59,6 +59,40 @@ Attestations, independent rebuilds and a public proof bundle add no P6/P7
 activation or release-blocking requirement. Required custody, SBOM/licence,
 package integrity and installed-product checks above keep their existing scope.
 
+## Joint production decisions — 28 November 2026
+
+**Owner direction:** collect the server lists first; retain audit items 2–9 as
+TODOs to think through with David. The eight rows below are **open for joint
+review**. They route the existing unresolved choices to their current owners;
+their numbering preserves the audit discussion, not a new execution order.
+
+**Item 1 — server discovery collected:** the
+[dated NTS and Roughtime inventory](../docs/server-lists/2026-11-28/README.md)
+records the supplied `jauderho/nts-servers` list and independently located
+Roughtime sources, including published keys and protocol evidence. Collection
+does not approve a shipping preset or establish server qualification. Preset
+admission remains with [R-04](../docs/nevrotick-research-handoff.md#r-04-preset-admission-and-consumer-closure--26-november-2026)
+and the catalogue owner.
+
+| Audit item | Joint-review TODO | Existing owner and dependent handoff |
+| --- | --- | --- |
+| 2 — open | **Production voting, freshness and uncertainty:** agree the production fault/dependence model, fresh-source denominator, observation-age limits and uncertainty growth. | S0.7/P1/P2; [R-02 decision/consumer](../docs/nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026), [deferred production research contracts](#deferred-production-research-contracts) and the current Engine/Core owners before production admission. |
+| 3 — open | **Correction, holdover and boot epochs:** agree supported step/slew and cumulative-movement limits, holdover expiry, restart/epoch continuity and recovery from incomplete correction. | S0.4/S0.7/P4; [clock-limit preparation](windows11-integration.md#431-clock-correction-limits-preparation--5-november-2026), Core/broker and lifecycle owners. Measured native capability and acceptable policy limits remain separate. |
+| 4 — open | **Wrong-date Windows trust and recovery:** settle the supported date/era envelope, certificate/revocation behavior and authorized recovery from an intact but wrong future floor, including unavailable or conflicting evidence. | P2 security/acquisition with W11; [R-02 recovery](../docs/nevrotick-research-handoff.md#r-02-decision-and-consumer-closure--26-november-2026), [R-05 authentication lifetime](../docs/nevrotick-research-handoff.md#r-05-ordinary-and-reused-authentication-closure--26-november-2026) and [Windows closure inventory](windows11-integration.md#442-architectural-closure-execution-inventory--26-november-2026). |
+| 5 — open | **MSIX provisioning and surviving recovery:** choose the supported pre-start provisioning mechanism and establish how trusted code, protected state, authority and independent invocation survive removal or a failed successor while recovery is owed. | W11-W05/W11-W10, S0.6/P3/P6; [MSIX provisioning](../docs/plans/windows-msix-store.md#75-pre-start-provisioning-authority-and-admission--5-november-2026) and [independent-removal recovery](../docs/plans/windows-msix-store.md#76-independent-removal-with-outstanding-recovery--5-november-2026). |
+| 6 — open | **Mandatory state schemas and lifetime:** settle each required store's concrete records, writer/reader, finite capacity, migration/retirement and crash, replay, reset or saturation behavior. | S3.3 and dependent P2/P4/P6 owners; [mandatory-state lifetime](../docs/windows-time-architecture.md#1214-mandatory-state-lifetime-and-bounded-recovery) and [Engine restriction continuity](engine-transport-pilot.md#production-retry-continuity-closure--26-november-2026). Optional Q/H storage does not own mandatory trust or correction state. |
+| 7 — open | **Exact TUF implementation and independent maintenance time:** select an admissible client/metadata-crypto graph and qualified time issuer, then settle persistent trust/floor recovery and the actual Windows update-owner integration. | P5/P6 updater/security/release and W11-W10; [updater closure deliverables](../docs/windows-time-update-assessment.md#concrete-closure-deliverables--26-november-2026) and [TUF integration](windows11-integration.md#440-tuf-authenticated-updater-integration--25-november-2026). TUF adoption and the one-consent complete-MSIX direction are already accepted. |
+| 8 — open | **Catalogue quality and statistics:** choose the remaining catalogue encoding/admission details, advisory quality model, aggregation and retention bounds, and any exclusion/re-entry rules. | Existing [catalogue/statistics task](server-catalogue-and-statistics.md), DATA/OPEN-CAT/OPEN-DATA owners. Collected candidates and historical statistics alone confer no trust, source independence or correction authority. |
+| 9 — open | **Platform, resource, publisher and support profiles:** finalize exact supported OS/build/protection profiles, aggregate resource ceilings, publisher custody/renewal/recovery and support terms. | W11-W08/W11-W10 and P6/P7; [two-family matrix](windows11-integration.md#432-two-family-windows-qualification-matrix--5-november-2026), [publisher readiness](../docs/windows-time-signing-guide.md#104-publisher-readiness-record--26-november-2026) and [release policy](../docs/release-policy.md). Accepted Windows families, x86-64-v3 and maximum compatible hardening remain selected. |
+
+Resolve these choices together under
+[OD-04](../docs/nevrotick-owner-decisions.md#server-discovery-and-joint-decision-review--28-november-2026)
+when their existing dependent task needs them. Preparation can make the options
+concrete; it cannot silently adopt a production default. Existing acceptance
+requirements, stage triggers and execution holds continue to apply. The
+[current Core/Engine continuation](#current-coreengine-continuation--26-november-2026)
+and other already authorized work continue within their existing scope.
+
 ## Architectural closure intake — 26 November 2026
 
 The [canonical coverage inventory](../docs/windows-time-architecture.md#221-architectural-closure-coverage--26-november-2026)

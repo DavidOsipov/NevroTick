@@ -1,0 +1,138 @@
+{
+  "purpose": "Dated public source discovery; not an approved runtime catalogue or server configuration.",
+  "checked_on": "2026-11-28",
+  "check_timezone": "Asia/Tbilisi",
+  "retrieval": "Read-only upstream repository and operator documentation retrieval; no time-server probes.",
+  "counts": {
+    "nts_main_rows": 89,
+    "nts_virtualized_rows": 24,
+    "nts_unique_hostnames": 113,
+    "tanner_roughtime_records": 14,
+    "tanner_ed25519_records": 13,
+    "tanner_experimental_ml_dsa_44_records": 1,
+    "cloudflare_ed25519_records": 4,
+    "union_distinct_ed25519_keys": 14
+  },
+  "files": [
+    {
+      "file": "nts-servers-README.md",
+      "repository": "jauderho/nts-servers",
+      "upstream_path": "README.md",
+      "revision": "97a5116fc1a31c309b5d2bb79bab38863f3f8f09",
+      "committed_at": "2026-11-23T19:38:08Z",
+      "uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/README.md",
+      "git_blob": "900d50fe74955fcbf9b2176195865456531ef753",
+      "sha256": "41c3ad345c241e07f040d498e7ed276c0604ce27b97735fe894f608d370df2a9",
+      "bytes": 13028,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "file": "nts-sources.yml",
+      "repository": "jauderho/nts-servers",
+      "upstream_path": "nts-sources.yml",
+      "revision": "97a5116fc1a31c309b5d2bb79bab38863f3f8f09",
+      "committed_at": "2026-11-23T19:38:08Z",
+      "uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/nts-sources.yml",
+      "git_blob": "bc82ce8f6400558a880734030d302895bdb1e546",
+      "sha256": "26e130e06d3271e6a9bd59b45ea3cefb9a87d981088bc9e86e1d784637259ff9",
+      "bytes": 15306,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "file": "nts-servers-LICENSE",
+      "repository": "jauderho/nts-servers",
+      "upstream_path": "LICENSE",
+      "revision": "97a5116fc1a31c309b5d2bb79bab38863f3f8f09",
+      "committed_at": "2026-11-23T19:38:08Z",
+      "uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/LICENSE",
+      "git_blob": "d5174965e86d4d5d5df41038d2626cf9730c2ca1",
+      "sha256": "6e053b94d6feafc40bb37e694237c37c912f54011712b2fffe0a492eeef68944",
+      "bytes": 1517,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "file": "chrony.conf",
+      "repository": "jauderho/nts-servers",
+      "upstream_path": "chrony.conf",
+      "revision": "97a5116fc1a31c309b5d2bb79bab38863f3f8f09",
+      "committed_at": "2026-11-23T19:38:08Z",
+      "uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/chrony.conf",
+      "git_blob": "c465c6751e20cb9c0f473872246e3f5a895f2dbd",
+      "sha256": "2101d2f73a53ebd56db49fce37eb0d4774b47fa13e81b9b3145fa4eb04c5ba3f",
+      "bytes": 4409,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "file": "ntp.toml",
+      "repository": "jauderho/nts-servers",
+      "upstream_path": "ntp.toml",
+      "revision": "97a5116fc1a31c309b5d2bb79bab38863f3f8f09",
+      "committed_at": "2026-11-23T19:38:08Z",
+      "uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/ntp.toml",
+      "git_blob": "676e19a16e3a32147ee5bf7862b3cac0eddf2e6f",
+      "sha256": "d29c32489e77de72622c769e4589eac81e4a9d3b64b1415d97a85a2d4011fd28",
+      "bytes": 6557,
+      "license": "BSD-3-Clause"
+    },
+    {
+      "file": "tannerryan-roughtime-ecosystem.json",
+      "repository": "tannerryan/roughtime",
+      "upstream_path": "ecosystem.json",
+      "revision": "7454b45d337b413d3639da88acf5559d08d7af27",
+      "committed_at": "2026-11-26T15:04:14Z",
+      "uri": "https://github.com/tannerryan/roughtime/blob/7454b45d337b413d3639da88acf5559d08d7af27/ecosystem.json",
+      "git_blob": "cd9eb5043fd7ff77845333ffe97b8318303ff94e",
+      "sha256": "f4602b67ddfb3b8c550a9f1bb1bb8fd1ab5c88c29ffb4716ad989aa26a444a70",
+      "bytes": 5617,
+      "license": "BSD-2-Clause"
+    },
+    {
+      "file": "tannerryan-roughtime-LICENSE",
+      "repository": "tannerryan/roughtime",
+      "upstream_path": "LICENSE",
+      "revision": "7454b45d337b413d3639da88acf5559d08d7af27",
+      "committed_at": "2026-11-26T15:04:14Z",
+      "uri": "https://github.com/tannerryan/roughtime/blob/7454b45d337b413d3639da88acf5559d08d7af27/LICENSE",
+      "git_blob": "8351da05ff1568227b807ecf931200758d1af442",
+      "sha256": "ee848ea5471ef081d0c4f54f68f900dc12c3079693b37adede58f57037b308f2",
+      "bytes": 1321,
+      "license": "BSD-2-Clause"
+    },
+    {
+      "file": "cloudflare-roughtime-ecosystem.json",
+      "repository": "cloudflare/roughtime",
+      "upstream_path": "ecosystem.json",
+      "revision": "75645289794cfbd71a08f0e7ecf9bc4f3f87d133",
+      "committed_at": "2026-04-28T20:48:37Z",
+      "uri": "https://github.com/cloudflare/roughtime/blob/75645289794cfbd71a08f0e7ecf9bc4f3f87d133/ecosystem.json",
+      "git_blob": "dcc081bbcdb0caa56e5118833b52c942b6d2183b",
+      "sha256": "e25262731aff6305ea2058250b089f1347a9ddacb3a64a271d92ed5e267753b5",
+      "bytes": 1285,
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "cloudflare-roughtime-LICENSE",
+      "repository": "cloudflare/roughtime",
+      "upstream_path": "LICENSE",
+      "revision": "75645289794cfbd71a08f0e7ecf9bc4f3f87d133",
+      "committed_at": "2026-04-28T20:48:37Z",
+      "uri": "https://github.com/cloudflare/roughtime/blob/75645289794cfbd71a08f0e7ecf9bc4f3f87d133/LICENSE",
+      "git_blob": "d645695673349e3947e8e5ae42332d0ac3164cd7",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+      "bytes": 11358,
+      "license": "Apache-2.0"
+    },
+    {
+      "file": "cloudflare-roughtime-ecosystem.md",
+      "repository": "cloudflare/roughtime",
+      "upstream_path": "ecosystem.md",
+      "revision": "75645289794cfbd71a08f0e7ecf9bc4f3f87d133",
+      "committed_at": "2026-04-28T20:48:37Z",
+      "uri": "https://github.com/cloudflare/roughtime/blob/75645289794cfbd71a08f0e7ecf9bc4f3f87d133/ecosystem.md",
+      "git_blob": "e5b933a64115e5858c67c5a4400f575b3c26f9f2",
+      "sha256": "b8be454f6cfc2cb1dd53fc64b7c8a1cabb7b317d6a0380bb3fa07f4f9b63a429",
+      "bytes": 6169,
+      "license": "Apache-2.0"
+    }
+  ]
+}

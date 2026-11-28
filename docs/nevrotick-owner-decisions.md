@@ -286,6 +286,23 @@ Agents should proceed with ordinary implementation and bounded experiments under
 
 Use the architecture OPEN register for issue ownership, this document for owner decisions, and the ASVS worksheet for affected clauses. Do not create a separate hidden decision list in each agent's notes.
 
+### Server discovery and joint decision review — 28 November 2026
+
+David directed agents to collect the NTS list from
+[jauderho/nts-servers](https://github.com/jauderho/nts-servers), find Roughtime
+servers, and retain the other eight audit topics as TODOs for joint consideration
+with him. The [dated discovery record](server-lists/2026-11-28/README.md) owns
+the collected sources and provenance. The
+[joint production-decision TODO](../tasks/development-backlog.md#joint-production-decisions--28-november-2026)
+retains items 2–9 with their existing owners and dependencies.
+
+Their open choices remain open until discussed and recorded with David;
+collection alone does not approve a production server preset. Continue already
+authorized preparation and implementation under the current contracts. Bring a
+concrete decision when the dependent work needs it; this instruction neither
+reopens accepted V1 requirements nor pauses unrelated work or changes the
+existing execution holds.
+
 ### Decision card
 
 ```text

@@ -1,5 +1,17 @@
 # Server catalogue and advisory statistics: continuation task
 
+**Server discovery refresh — 28 November 2026:** David requested collecting the
+supplied NTS directory and finding Roughtime servers before discussing the other
+audit topics. The [dated inventory and exact upstream snapshots](../docs/server-lists/2026-11-28/README.md)
+contain 113 NTS hostnames (89 main rows, 24 marked virtualized), the unchanged
+13-key Tanner Ed25519 roster and one additional int08h key from Cloudflare's
+list, with protocol limitations, original licenses and byte provenance.
+The experimental ML-DSA-44 record remains source evidence only. This completes
+collection, not runtime roster approval, production C generation or server
+qualification. The [eight joint-discussion TODOs](development-backlog.md#joint-production-decisions--28-november-2026)
+reuse existing owners; earlier §8 receipts below keep their historical inputs
+and test scope. No new collector execution is claimed.
+
 **4 November 2026 — catalogue/storage design plus a later offline publisher input stage.** Sections 1–7 retain the discussion milestones; §8 records the separately authorized R implementation and its exact verification scope. Production C, Q/H measurements and runtime/native qualification remain open. This task belongs to the [existing draft and §10 comparison card](../docs/plans/server-catalogue-and-statistics-draft.md#10-minimum-record-profile-and-bounded-comparison-card), the [storage tables](../docs/plans/server-catalogue-storage-tables.md) and the later [binary catalogue refinement](../docs/plans/server-catalogue-binary-format.md). It does not create a competing product queue or replace protected-storage/time-assurance tasks.
 
 ## 1. Scope and current disposition

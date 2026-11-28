@@ -9,6 +9,15 @@ The earlier guide inventory recorded eleven principal Markdown documents, seven 
 
 ## Plans, acceptance and execution evidence
 
+**Server discovery and joint TODOs — 28 November 2026:**
+the [NTS/Roughtime collection](server-lists/2026-11-28/README.md) preserves the
+complete supplied NTS directory, researched Roughtime endpoints/public keys,
+immutable source snapshots, licenses and protocol limitations. The
+[catalogue task](../tasks/server-catalogue-and-statistics.md) owns collection;
+the [existing backlog](../tasks/development-backlog.md#joint-production-decisions--28-november-2026)
+retains the other eight audit topics for joint discussion with David. No
+production server preset or remaining architecture choice is finalized.
+
 **Exploit-hardening coverage — 28 November 2026:**
 [Architecture §15.4](windows-time-architecture.md#154-per-process-mitigation-profiles-and-startup-admission)
 and [hardening §6.4.2](windows-time-development-hardening.md#642-complete-artifact-and-process-coverage)

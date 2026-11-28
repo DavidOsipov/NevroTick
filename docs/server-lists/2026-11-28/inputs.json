@@ -1,0 +1,59 @@
+{
+  "schema": "nevrotick-r-input-v1",
+  "sources": [
+    {
+      "id": "jauderho-nts-20261128",
+      "adapter": "jauderho-nts-markdown-v1",
+      "file": "nts-servers-README.md",
+      "sha256": "41c3ad345c241e07f040d498e7ed276c0604ce27b97735fe894f608d370df2a9",
+      "bytes": 13028,
+      "origin": {
+        "uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/README.md",
+        "revision": "97a5116fc1a31c309b5d2bb79bab38863f3f8f09",
+        "git_blob": "900d50fe74955fcbf9b2176195865456531ef753",
+        "license_uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/LICENSE",
+        "related": [
+          {
+            "kind": "canonical-input",
+            "uri": "https://github.com/jauderho/nts-servers/blob/97a5116fc1a31c309b5d2bb79bab38863f3f8f09/nts-sources.yml",
+            "git_blob": "bc82ce8f6400558a880734030d302895bdb1e546"
+          }
+        ]
+      }
+    },
+    {
+      "id": "tanner-roughtime-20261128",
+      "adapter": "tannerryan-ecosystem-json-v1",
+      "file": "tannerryan-roughtime-ecosystem.json",
+      "sha256": "f4602b67ddfb3b8c550a9f1bb1bb8fd1ab5c88c29ffb4716ad989aa26a444a70",
+      "bytes": 5617,
+      "origin": {
+        "uri": "https://github.com/tannerryan/roughtime/blob/7454b45d337b413d3639da88acf5559d08d7af27/ecosystem.json",
+        "revision": "7454b45d337b413d3639da88acf5559d08d7af27",
+        "git_blob": "cd9eb5043fd7ff77845333ffe97b8318303ff94e",
+        "license_uri": "https://github.com/tannerryan/roughtime/blob/7454b45d337b413d3639da88acf5559d08d7af27/LICENSE",
+        "related": []
+      }
+    },
+    {
+      "id": "cloudflare-roughtime-20261128",
+      "adapter": "tannerryan-ecosystem-json-v1",
+      "file": "cloudflare-roughtime-ecosystem.json",
+      "sha256": "e25262731aff6305ea2058250b089f1347a9ddacb3a64a271d92ed5e267753b5",
+      "bytes": 1285,
+      "origin": {
+        "uri": "https://github.com/cloudflare/roughtime/blob/75645289794cfbd71a08f0e7ecf9bc4f3f87d133/ecosystem.json",
+        "revision": "75645289794cfbd71a08f0e7ecf9bc4f3f87d133",
+        "git_blob": "dcc081bbcdb0caa56e5118833b52c942b6d2183b",
+        "license_uri": "https://github.com/cloudflare/roughtime/blob/75645289794cfbd71a08f0e7ecf9bc4f3f87d133/LICENSE",
+        "related": [
+          {
+            "kind": "use-document",
+            "uri": "https://github.com/cloudflare/roughtime/blob/75645289794cfbd71a08f0e7ecf9bc4f3f87d133/ecosystem.md",
+            "git_blob": "e5b933a64115e5858c67c5a4400f575b3c26f9f2"
+          }
+        ]
+      }
+    }
+  ]
+}
