@@ -2,7 +2,7 @@
 
 **Distribution amendments — 21 and 25 November 2026:** [OD-05 §7.9](../nevrotick-owner-decisions.md#79-direct-msix-distribution-microsoft-store-rejected--21-november-2026) selects one complete MSIX for direct distribution and rejects Microsoft Store publication because David rejects its publisher indemnity requirements. [OD-05 §7.10](../nevrotick-owner-decisions.md#710-tuf-authenticated-direct-msix-updater--25-november-2026) adopts the TUF-authenticated complete-MSIX updater with one Update now decision. Exact client/signing/trust/hosting, time/state and native deployment/recovery qualification remain open. Source/package preparation continues; no Store trial, refusal, certification or Partner Center identity is required. Existing complete-product, native/security and exact-release gates remain; former Store-specific CIG and metadata assumptions require direct-route reconciliation.
 
-**Created:** 29 October 2026; **current-routing reconciliation:** 27 November 2026
+**Created:** 29 October 2026; **current-routing reconciliation:** 28 November 2026
 
 **V1 scope clarification — 27 November 2026:** [OD-02](../nevrotick-owner-decisions.md#v1-protocol-and-hardware-scope--27-november-2026)
 places NTP, NTS and Roughtime in V1. RGT-C01 belongs to P2/P7 below;
@@ -54,8 +54,14 @@ The [rebuilt authenticated timing pair](../../tasks/engine-transport-pilot.md#re
 completed its exact offline Windows laboratory scope. Physical-reference
 qualification is **HELD/BLOCKED**: no admitted reference/evidence route is
 identified. Ordinary resumption does not restart equipment questions, procurement
-or a general hardware survey. The next executable source child is the
-[consume-once handoff for original joined protected receipts](../../tasks/engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026).
+or a general hardware survey. The
+[consume-once handoff for original joined protected receipts](../../tasks/engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+is implemented and has selected development checks. Its
+[current qualification continuation](../../tasks/engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026)
+starts with independent basis readback and integration of the verification source
+and storage controls, followed by current candidate-specific graph, roster and
+complete physical stock19 capture under a reviewed execution budget. Earlier
+registration, combined captures and metric receipts retain their original candidates.
 Qualified mapping/withdrawal, date, era, scale and uncertainty remain prerequisites
 for positive production Engine-to-Core history admission. The seven-owner Core union and earlier KE
 Preview, configuration and worker-custody receipts retain their original
@@ -128,6 +134,65 @@ selected Slint migration stays in `tasks/s0.5-ui-comparison.md`. New development
 may have bounded records under `tasks/`, linked here, without duplicating the
 architecture. Raw generated logs/builds belong in owned external output locations
 or the architecture's phase evidence location, not in the maintained design bundle.
+
+### V1 progress estimate — 28 November 2026
+
+**Advisory estimate: approximately 35/100, with a planning range of 30–45.**
+This dated assessment covers the complete accepted V1 at
+[`ef446b9f473afdf36d7ce0ea9bd2113b3011fd42`](https://github.com/DavidOsipov/NevroTick/commit/ef446b9f473afdf36d7ce0ea9bd2113b3011fd42).
+It gives partial credit for implemented components and their scoped qualification;
+all P0–P7 acceptance exits remain open. It measures estimated engineering
+completion, not elapsed or remaining time, probability of release, source volume,
+test totals or the number of closed phases. The range is judgmental, not a
+statistical confidence interval.
+
+The denominator includes NTP/NTS and Roughtime, production sample admission,
+secured Windows services/IPC/state, actual clock ownership and recovery, live
+Slint UI, the complete direct MSIX and adopted TUF updater, WinGet capability and
+required integrated/native/security/release qualification. Accepted post-V1 work,
+including formal proofs and Khronos/Ananke, is excluded. Special timing hardware
+is not a V1 runtime prerequisite; the separate physical-reference qualification
+hold remains as routed in [section 7](#resume-in-dependency-order--23-november-2026).
+
+| Phase | Weight in V1 | Estimated completion | Evidence and remaining boundary |
+| --- | ---: | ---: | --- |
+| P0 foundations and feasibility | 5% | 50% | Workspace, source controls and bounded feasibility exist; complete platform/provider qualification remains open. |
+| P1 portable protocols and numerical Core | 15% | 75% | Substantial pure algorithms and scoped fixture exits; full coherent P1 acceptance and production integration remain open. |
+| P2 acquisition, NTP/NTS and Roughtime | 15% | 45% | Controlled cryptographic/socket, receiving and Roughtime owners exist; eligible production Core admission and complete acquisition remain open. |
+| P3 services, IPC and secured state | 15% | 35% | Lifecycle, privilege, SCM and IPC foundations exist; product workers, mandatory state and installed identity integration remain open. |
+| P4 Windows clock integration and recovery | 15% | 20% | Native observation and preparation exist; production broker effects, W32Time ownership and effect recovery remain open. |
+| P5 production UI | 10% | 35% | Slint presentation, localization and native controls exist; live backend, persistent configuration and product/native acceptance remain open. |
+| P6 complete delivery and updater | 15% | 20% | Laboratory MSIX/artifact/metadata machinery exists; complete production payload, signing, TUF and maintenance lifecycle remain open. |
+| P7 final integrated acceptance | 10% | 0% | No complete installed production candidate has passed final end-to-end acceptance; preparatory work is credited in its owning phases. |
+
+The weighted sum is 35.25 points, reported as about 35 to avoid false precision.
+Weights and phase scores are engineering judgments, not a verified hours-based
+work breakdown. Giving Core/acquisition more weight and delivery/final acceptance
+less weight (P0–P7: 5/20/20/15/15/10/10/5) yields about 40 using the same scores.
+The 30–45 range reflects uncertainty in both partial completion and the remaining
+integration/qualification work. P1 receives the modeled correction/accounting
+credit; P4 does not count it again as an implemented production broker.
+
+The assessment used source and task inspection, three independent specialist
+reviews and a separate judge. The exact-candidate
+[hosted Rust job](https://github.com/DavidOsipov/NevroTick/actions/runs/46163770301/job/141036737138)
+passed ordinary portable product verification, including UI tests and doctests,
+then failed the explicit KE profile on the pre-existing Clippy blocker recorded
+as [CI-EF-01](../../tasks/engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026).
+The [Security](https://github.com/DavidOsipov/NevroTick/actions/runs/46163770341)
+and [Push](https://github.com/DavidOsipov/NevroTick/actions/runs/46163770132)
+workflows passed for that candidate. No repository-controlled local execution
+was performed for this assessment; historical native and metric receipts retain
+their original scope and were not promoted to fresh whole-candidate evidence.
+
+Future updates should use the same accepted scope and explain weighting changes.
+Material milestones remain with the existing [section 7 owners](#resume-in-dependency-order--23-november-2026):
+an admitted authenticated sample reaches production Core history; actual service,
+IPC and mandatory-state workers compose; the broker applies and recovers a real
+authorized correction; UI journeys consume real outcomes; the complete signed
+package installs, updates and recovers; and the exact installed candidate meets
+the acceptance matrix. This estimate changes no task status, threshold, execution
+hold or release gate and supplies no delivery date.
 
 ### Progress reconciliation — 9 November 2026
 
@@ -1364,13 +1429,13 @@ later production-policy choice into a prerequisite for controlled-profile work.
 Use this sequence for current activation. The dated checkpoints below retain
 their original candidates. The table routes existing requirements and does not
 schedule execution while a hold applies. The 27 November owner clarification
-separates the next source child from held physical-reference qualification;
+separates independent source work from held physical-reference qualification;
 earlier “next reference” directions in dated receipts do not restart that hold.
 
 | Order and owner | Entry and allowed parallel work | Discriminating exit |
 | --- | --- | --- |
 | **Completed lab timing pair — S2.1/W11-W01, Engine and Windows platform** | The [rebuilt native pair](../../tasks/engine-transport-pilot.md#replay-the-rebuilt-authenticated-timing-pair) binds the admitted facade, peer and controller to the same-session loader and held-file parser. The two authenticated exchanges and their trust and resource retirement passed in the offline guest. | The retained candidate establishes relative order at application capture points. The report preserves unavailable measurement and zero sample eligibility. |
-| **Implemented source child — S2.1/W11-W01 receiving handoff** | The [consume-once admission handoff for original joined protected receipts](../../tasks/engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026) passed the selected GNU/MSVC development checks. The handoff preserves original receipt custody and refuses unavailable or withdrawn mapping before report projection. Production eligibility remains unavailable. | Re-admit the current signed Engine candidate and full case roster through the configured graph and combined checkpoint, with the current resource and custody prerequisites recorded in that task. Affected 90% executable-line and 95% viable per-file mutation gates remain open. |
+| **Implemented source child — S2.1/W11-W01 receiving handoff** | The [consume-once admission handoff for original joined protected receipts](../../tasks/engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026) passed the selected GNU/MSVC development checks. The handoff preserves original receipt custody and refuses unavailable or withdrawn mapping before report projection. Production eligibility remains unavailable. | Follow the [current qualification continuation](../../tasks/engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026): independent basis readback and verification source/storage integration, then current candidate-specific graph, complete roster and physical stock19 capture under its reviewed budget. Earlier registration/captures remain historical; resolve the current CI-EF-01 KE lint blocker through its existing owner. Affected 90% executable-line and 95% viable per-file mutation gates remain open. |
 | **Implemented and development-checked source children — P2 TA-W03/04/06 Roughtime** | The [controlled three-traversal round](../../tasks/time-assurance-integration.md#312-rfc-m02-controlled-three-traversal-measurement) requires all nine replies from one fixed three-operator selection. The [shared binding](../../tasks/time-assurance-integration.md#314-rfc-w01-controlled-tcp-connect-and-shared-retry-floor) guards actual UDP and TCP effects across aliases. The [bound UDP recovery invocation](../../tasks/time-assurance-integration.md#316-rfc-w01-bound-recovery-and-retained-conflict) carries retry debt through both rounds and bars final date reset while a signed conflict stands. The [controlled fallback](../../tasks/time-assurance-integration.md#317-rfc-w01-controlled-udp-to-tcp-fallback-and-fresh-chain) reuses that debt and the original cutoff, starting a fresh chain on a selected TCP route after UDP silence. The [scheduled fallback admission](../../tasks/time-assurance-integration.md#318-rfc-w01-schedule-controlled-fallback-at-the-original-retry-floor) waits under that same floor and cutoff and wakes on acknowledged withdrawal. The [controlled worker handoff](../../tasks/time-assurance-integration.md#319-ta-w06-scheduled-tcp-connect-with-shared-worker-custody) dispatches through the shared DNS/TCP lane and retains retry custody through join. The [transport-qualified binding](../../tasks/time-assurance-integration.md#320-ta-w06-bind-retry-admission-to-the-selected-transport) checks both the address and transport before either adapter can act. The [controlled randomized selector](../../tasks/time-assurance-integration.md#321-ta-w06-select-one-retry-ready-independent-roughtime-round) chooses one feasible independent trio and retains that order and the original retry bindings through fallback. The same checkpoint separates Appendix B signature rejection and authenticated disagreement from healthy loopback agreement. The [historical conflict receiver](../../tasks/time-assurance-integration.md#322-ta-w04-reconstruct-the-retained-signed-conflict) rechecks the exact selected roots, frames, nonce links and first witness after retirement. The [audit controls](../../tasks/time-assurance-integration.md#323-ta-w06-independently-check-emitted-padding-and-reserved-tcp-withdrawal) check actual emitted padding and independent Stop paths before TCP dispatch. The [hostile-input checkpoint](../../tasks/time-assurance-integration.md#324-ta-w03-hostile-wire-and-keyed-verifier-coverage) adds generated wire cases, keyed verifier refusals and an isolated wire-only libFuzzer run. The [second-audit controls](../../tasks/time-assurance-integration.md#325-ta-w030406-second-audit-regression-controls) exercise the exact date-admission cutoff, deep signed Merkle proofs, actual UDP/TCP framing, TCP request padding and the retained retry count after Stop. | Carry [the retry contract](time-assurance-integration.md#842-acquisition-retries-and-the-complete-measurement) through production integration and restart. The [guarded Engine Roughtime GNU line lane](../../tasks/time-assurance-integration.md#326-ta-w030406-exact-engine-roughtime-line-coverage) met all ten per-file gates for the selected cohort. The [historical ten-file inventory](../../tasks/time-assurance-integration.md#327-ta-w030406-engine-roughtime-mutation-inventory) lists 601 descriptors for its recorded candidate. The [generation-gap controls](../../tasks/time-assurance-integration.md#328-ta-w030406-controls-for-gaps-in-the-generated-inventory) and [public cardinality follow-up](../../tasks/time-assurance-integration.md#329-ta-w06-public-roster-cardinality-controls) close their targeted gaps. The [partial TCP checkpoint](../../tasks/time-assurance-integration.md#330-ta-w06-partial-tcp-request-writes-and-retirement) passed its 90 selected GNU cases and all ten line gates for that candidate. The [private request-encoder controls](../../tasks/time-assurance-integration.md#333-ta-w03-private-request-encoder-command-and-result-controls) exercise the planned command and result checks and the Linux runtime's isolation and stop paths. The [exact unmodified GNU rehearsal](../../tasks/time-assurance-integration.md#334-ta-w03-exact-unmodified-request-encoder-rehearsal) passed all 90 selected cases with its original Build and Test vectors. The [request-encoder per-file result](../../tasks/time-assurance-integration.md#335-ta-w03-request-encoder-per-file-mutation-result) passed the 95% gate with five of five viable variants caught and three compiler-unviable variants. The fresh GNU mutation baseline passed all 90 selected cases. At that checkpoint, the other nine critical files still required per-file mutation evidence. The [conflict proof rehearsal](../../tasks/time-assurance-integration.md#336-ta-w04-conflict-proof-baseline-and-campaign-boundary) passed its eight focused GNU cases and bound its 26-descriptor file. The first campaign [stopped at graph input admission after the host linker update](../../tasks/time-assurance-integration.md#337-ta-w04-campaign-preflight-refusal-after-the-host-linker-update). The updated linker passed the P0 controls. Both affected dependency profiles passed and, at that checkpoint, the line and listing policies bound the refreshed product. The [renewed GNU metrics and proof rehearsal](../../tasks/time-assurance-integration.md#338-ta-w030406-renewed-gnu-metrics-and-proof-cohort-after-linker-refresh) passed 90 instrumented cases, all ten line gates and the eight uninstrumented proof cases. The listing reproduced all 601 descriptors. The [historical conflict-proof per-file result](../../tasks/time-assurance-integration.md#339-ta-w04-conflict-proof-per-file-mutation-result) met the 95% gate with all 22 viable variants caught and four compiler-unviable. Its fresh campaign baseline passed all eight cases. The [public reconstruction refusal](../../tasks/time-assurance-integration.md#340-ta-w04-public-conflict-reconstruction-refusal) checks the exact first witness on genuine authenticated receipts. Carry forward both earlier mutation results at their original candidate identities and bind the current per-file campaigns to the updated tests. Carry the controlled disclosure into the authorized production DATA-18 recipient when its identity, disclosure and custody contracts are ready. Bind live catalogue, key, policy, clock-frame and scale issuers to the controlled selection and qualify the live work budget. Qualify conflict resolution and the private NTS date basis with whole-interval verification and original connection and receipt ancestry. The [OPEN-8 offline matrix](../../tasks/s0.1-crypto-feasibility.md#open-8-certificate-interval-and-revocation-fixtures) supplies fresh laboratory certificates and CRLs for TA-W07. Bind the exact image and controller and establish the candidate/ambient split under the admitted Windows trust context. Per-file metrics, native Windows, TA-W06 trust/transport and interoperability prerequisites remain. |
 | **HELD/BLOCKED — physical reference and positive mapping qualification, S2.1/W11-W01** | The [finite disposition and current routing](../../tasks/windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026) identify no admitted reference/evidence route. Resume only for changed concrete reference/access/calibration/route evidence or an explicit owner decision changing the approach. Do not ask for a recurring device inventory, procurement or general hardware research. Independent service, package and UI source work continues under its own gates. | The [bench trial](../../tasks/windows11-integration.md#w11-w01-application-timing-reference-trial--20-november-2026) still needs traceable UTC, original-event pairing, finite placement/residual/drift bounds and full-span validity. Actual mapping/withdrawal and independent date/era/scale issuers must be qualified before positive production admission. Unavailability is not a pass. |
 | **First admitted sample — S2.1/S2.2 with S1.2/S1.4** | Join ordinary authenticated KE/UDP and original receipt custody with the qualified mapping, date/scale and quality/reference-time inputs. Use the existing [Engine receiving owner and Core handoff](../../tasks/engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026). Finish reached Core and Engine gates on the combined candidate. | A current exchange enters checked history once. Unmapped, stale, foreign, duplicate, crossing-span and excessive-error exchanges leave history and freshness unchanged. Insufficient agreement stays below Tracking and no clock write occurs. Direct address progress, KoD and exceptional-recovery gates retain their own exits. |

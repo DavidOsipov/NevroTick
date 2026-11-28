@@ -17,8 +17,10 @@ GPS/PPS/refclock runtime or special timing-hardware requirement. Physical-refere
 qualification is [HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026),
 and ordinary resumption must not restart equipment inventory, procurement or a
 general hardware survey. The [original joined-receipt source child](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
-advances independently; qualified mapping and positive production history remain
-open. Khronos/Ananke, Chrony replacement and other post-V1 work stay deferred.
+is implemented with selected development checks. Its
+[current qualification continuation](engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026)
+retains current-candidate evidence gates; qualified mapping and positive production
+history remain open. Khronos/Ananke, Chrony replacement and other post-V1 work stay deferred.
 
 Activate only the next bounded child when its named prerequisites and current
 authorization hold. In that existing chain, freeze candidate/source/graph,
@@ -86,14 +88,21 @@ phase exits control; a coverage row is neither an executed check nor a waiver.
 
 ## Current Core/Engine continuation — 26 November 2026
 
-**Routing amended 27 November 2026; heading retained for existing links.**
+**Routing amended 28 November 2026; heading retained for existing links.**
 
 Follow the
 [dependency order in development §7](../docs/plans/development-plan.md#resume-in-dependency-order--23-november-2026)
 and the [actual Engine-to-Core handoff](engine-transport-pilot.md#current-engine-to-core-admission-handoff--23-november-2026).
 The rebuilt authenticated laboratory pair and the seven-owner Core fixture
-union completed their exact selected scopes. The next source child is the
-[consume-once handoff for original joined protected receipts](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026).
+union completed their exact selected scopes. The
+[consume-once handoff for original joined protected receipts](engine-transport-pilot.md#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+is implemented and development-checked. Follow its
+[current qualification continuation](engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026):
+independent basis readback and verification source/storage integration, then
+current candidate-specific graph, full roster and complete physical stock19
+capture under a reviewed budget. Earlier registration, combined captures and
+metric receipts retain their original candidates. CI-EF-01 records the current
+explicit KE profile's pre-existing Clippy blocker and its bounded repair exit.
 The [physical-reference trial is HELD/BLOCKED](windows11-integration.md#v1-reference-routing-and-documentation-reconciliation--27-november-2026);
 no admitted reference/evidence route is identified and no recurring inventory or
 purchase inquiry follows. Independent physical calibration, read-side mapping

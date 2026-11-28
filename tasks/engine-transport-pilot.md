@@ -32882,6 +32882,64 @@ These controls enter at the lineage dispatcher and exercise the full
 predecessor reader. The current successor's physical lane evidence
 remains owned by the configured checkpoint.
 
+###### Current receiving qualification continuation — 28 November 2026
+
+**Reviewed source:** `ef446b9f473afdf36d7ce0ea9bd2113b3011fd42`.
+The [consume-once receiving handoff](#consume-once-admission-handoff-for-original-joined-protected-receipts--27-november-2026)
+is implemented and has recorded configured development checks. Registration,
+the earlier combined 19-lane capture, receiving coverage of 88/94 executable
+lines (93.62%) and the 1,324-descriptor host catalogue also have historical
+receipts above. Those results retain their original candidates. Changed
+source, graph, helper and policy inputs require current admission; neither
+the earlier coverage result nor the catalogue closes current per-file
+qualification. The non-test receiving path still returns `MappingUnavailable`
+after valid timing checks. Qualified mapping, date/era/scale and uncertainty,
+positive production Core history admission, and the affected 90% line and
+95% viable-mutation gates remain open.
+
+**Next action:** independently read back the prepared current-basis source,
+complete producer/reader and evidence-storage integration, then
+capture the current candidate's configured default/EP1 graphs, complete
+binary/case and Rustdoc rosters, and full stock19 execution evidence. Re-admit
+the actual tool/vendor payloads and changed source/helper bindings first.
+The earlier 597.512-second stock19 attempt leaves insufficient grounded
+margin in a 600-second window for the added graph/discovery work; a fresh
+complete capture requires its reviewed full execution budget. Preserve the
+existing resource floors, raw graph custody, report envelope, retirement
+checks and consumed work. This evidence-storage preparation does not resume
+the paused optional protected-storage product experiment. Physical-reference
+qualification remains blocked on its existing evidence prerequisites; do not
+repeat an equipment survey or infer a production mapping pass from this work.
+
+**CI-EF-01 — P2 configured-verification blocker, 28 November 2026.**
+On the reviewed source,
+[Rust job 141036737138](https://github.com/DavidOsipov/NevroTick/actions/runs/46163770301/job/141036737138)
+passed the ordinary portable product stage, including UI tests and doctests,
+then failed the explicit portable KE profile at Clippy. In
+`crates/nevrotick-engine/src/nts_ke_experiment/recovery/worker_tests.rs`,
+`assert_joined_loopback_successor` has eight arguments against the configured
+seven-argument limit and 110 lines against the 100-line limit.
+`clippy::all` and `clippy::pedantic` deny those lints; the Engine lib-test
+compile failed, the checkpoint reported `INCOMPLETE`, and the job exited 1.
+This is a configured verification failure, not an observed runtime assertion
+failure. The entire file has the same Git blob
+`49908b285513ebe7a1dd6fd7c294958ef15a4f9d` in this commit and its parent
+`b4ae328b59d594da5ea2dfd0c5fee91da3b9a34e`; the blocker predates this delta.
+
+**Bounded repair and closure:** the existing receiving/worker-test owner
+should reuse `LoopbackScenario` in place of the separate `successor` and
+`sends_nak` parameters, and extract the authentication-bracket assertions.
+Preserve the independently expected bracket values, absent full-authentication
+brackets, same-association/different-exchange checks, missing/nonordinary
+receipt refusal, conditional `None` behavior, platform guards, contracts,
+error propagation and all terminal/resource assertions. Keep both lint
+thresholds; do not suppress the findings. After that source repair, apply the
+configured formatter and explicit `engine-ke-association` all-target Clippy,
+exercise the existing shared-helper cases, and complete the failed hosted
+checkpoint on its exact successor. Existing admission, isolation, budgets
+and execution holds still govern that work. This documentation reconciliation
+changes no Rust source and supplies no new execution or metric result.
+
 ###### Calculate each original joined ordinary receipt
 
 S2.1/W11-W01 and CHECK-7/11/21/24/25/27. The normally retired managed

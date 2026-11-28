@@ -892,6 +892,20 @@ The failed run and skipped downstream KE rows remain incomplete. This source
 repair does not restart the exhausted local UI compilation checkpoint; current
 hosted execution remains required.
 
+**Exact-head hosted follow-up — 28 November 2026:**
+`ef446b9f473afdf36d7ce0ea9bd2113b3011fd42`
+[job 141036737138](https://github.com/DavidOsipov/NevroTick/actions/runs/46163770301/job/141036737138)
+passed the ordinary portable product verification stage, including
+`product-tests:nevrotick-ui` and `doctests:nevrotick-ui`. This supplies the
+later hosted observation for the repaired UI source; the retained stage
+summaries do not establish a new UI case count. The full Rust workflow failed
+in its subsequent explicit portable KE profile: two structural Clippy lints
+in `assert_joined_loopback_successor` prevented the Engine lib-test target
+from compiling. [CI-EF-01](engine-transport-pilot.md#current-receiving-qualification-continuation--28-november-2026)
+owns that pre-existing verification blocker separately. The earlier failed
+runs remain historical evidence, and this hosted result does not restart
+the exhausted local UI compilation checkpoint or qualify native GUI behavior.
+
 D1/D3, native rendering/keyboard/accessibility/resources, release text approval,
 and D2/currentness before live metadata or commands retain their existing
 triggers. Sanitizer qualification follows OD-22 at module freeze; neither this

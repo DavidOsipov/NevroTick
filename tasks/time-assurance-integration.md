@@ -89,8 +89,9 @@ retains the existing explicit helper policy; Roughtime failure neither enables
 helpers nor clears signed conflict. Claiming the later combined automatic-reserve profile
 requires its reserve implementation and integration evidence.
 
-Roughtime key/profile support is required in the first catalogue schema even
-while this task's V1 runtime work remains unimplemented. A usable Roughtime record
+Roughtime key/profile support is required in the first catalogue schema. The
+controlled V1 implementation and recorded development checks in §3 are present;
+full production integration and qualification remain open. A usable Roughtime record
 needs its admitted root-key algorithm/bytes, exact profile, endpoint scope and
 provenance; an optional-key diagnostic path cannot create authenticated evidence.
 The ordinary NTP/NTS catalogue and publisher collector can be prepared before
@@ -106,16 +107,30 @@ storage experiment pause. Reconcile current gates at the dependent checkpoint.
 
 ## 2. Current evidence and reconciliation
 
-**Completed:** source/documentation research and this coordinated plan.
-Reviewed RFC 10049, RFC 9523, the original Ananke paper, existing NTS recovery and
-broker contracts, and retained dated Roughtime implementation/provider findings.
+**Reconciled 28 November 2026 against `ef446b9f473afdf36d7ce0ea9bd2113b3011fd42`.**
+
+**Recorded progress:** source/documentation research, the coordinated plan and
+bounded controlled implementation. Section 3 records wire decoding, mandatory-root
+keyed verification, three chained traversals, interval and whole-date admission,
+retained signed conflict, invocation withdrawal and shared UDP/TCP retry handling,
+with selected development checks on their stated candidates. The
+[latest source-policy reconciliation](#352-rebind-roughtime-verification-after-the-authentication-bracket-change)
+retains the current coverage and mutation gates. Historical results retain their
+original source, graph, case and environment identities.
+The research reviewed RFC 10049, RFC 9523, the original Ananke paper, existing NTS
+recovery and broker contracts, and retained dated implementation/provider findings.
 The plan's sources distinguish specification, inspected implementation and
 unverified operational claims.
 
-**Not established:** product implementation, exercised TA-C cases, provider
-interoperability, native Windows verification/recovery, performance or either
-roadmap exit. The earlier Sandbox readiness receipt belongs to its own candidate
-and does not qualify this task's planned binaries.
+**Still open:** full production integration and applicable TA-C acceptance,
+live catalogue/key/policy/clock-frame issuers, provider interoperability, remaining
+current-candidate per-file metrics, native Windows verification/recovery,
+performance and either roadmap exit. The controlled implementations and selected
+checks do not qualify the complete interval → NTS → broker recovery path.
+[The latest OPEN-8 continuation](#353-ta-w07-rebind-the-open-8-overlay-after-the-authentication-bracket-change)
+still requires the cross-link, exact PE/PDB binding, cold Windows observations and
+complete-interval receiving path. The earlier Sandbox readiness receipt belongs
+to its own candidate and does not qualify this task's current binaries.
 
 | Predecessor obligation | Disposition in this task |
 | --- | --- |
@@ -133,6 +148,10 @@ and does not qualify this task's planned binaries.
 ### 2.1 Source review and implementation basis — 27 November 2026
 
 **Inspected project source:** `3e3536d808789dabb1b6577b069140ca13ad6e31`.
+**Historical source baseline:** the observations in this subsection describe that
+inspected candidate. The later implementation and development-check records in
+§3, summarized in §2 above, govern current progress; the original absence of a
+Roughtime client below is not a statement about the 28 November source tree.
 The [implementation-source review](../docs/plans/time-assurance-integration.md#82-implementation-source-review--27-november-2026)
 records the supplied `roughtime 0.2.1` package and pinned Roughenough comparison.
 The engineering recommendation is RFC 10049/v1 with pinned Roughenough protocol
@@ -173,7 +192,7 @@ run. Later unresolved choices do not block this documentation handoff.
 | **TA-W01 — coordinator/source reviewer** | Reconcile the request, primary sources, existing KHR/RGT stages and affected consumers | Source/design findings, RFC semantic baseline and canonical routing are recorded. **Revision 1.9 independent reviews completed: ready for documentary handoff only, §6.5. The revision 1.8 receipt remains in §6.4; historical receipts keep their original scopes** |
 | **TA-W02 — protocol/security owner** | Use NV-TA-001 §8.4's RFC semantic baseline and §4.2's independent expectations; freeze §3.1's remaining typed construction, packet/work/date/rate limits, aggregation/fault assumptions, exact fixtures, retry-state lifecycle and evidence retention/clearance. Preserve mandatory roots, independent groups, selected sequential schedule, original time frames, generations and refusal. Distinguish date-specific NTS failures and retain compromised-key controls. Integrate NV-LP-001 without a circular bootstrap prerequisite. Freeze reserve-only envelope and expired-NTS-key/common-path threats at the later KHR entry | Reviewed executable contract and independent expected-result table for each selected slice; exact owners, assurance limits and forbidden effects. **RFC semantic mapping complete at documentary scope; V1 P2 engineering freeze pending; reserve-only work post-V1** |
 | **TA-W03 — Roughtime/dependency owner** | Evaluate §2.1's source recommendation; admit the exact wire/crypto implementation and graph under CHECK-26, then implement bounded inert decoding and mandatory-root-key evidence construction after TA-W02. Keep protocol-profile fixtures independent of the implementation | The mandatory-root verifier and wire decoder passed the selected GNU behavior, consumer contracts and cross-target compiler checks in §3.1. Wire and Engine per-file coverage and mutation are separate gates in §3.3. **V1 P2, in progress** |
-| **TA-W04 — core/engine owner** | Implement the actual pure evidence-admission consumer and model V1 Roughtime/NTS branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth. Retain acquisition during leap ambiguity, all-silent healthy controls and fresh post-guard admission under S1.4. Add reserve-specific behavior after TA-W05 | Applicable TA-C01–TA-C07/10/12/13/16/18/21 controls reach the actual consumer; no duplicate credit, stale admission, calendar-vote learning or extra clock controller. **V1 P2 work pending; reserve portions post-V1** |
+| **TA-W04 — core/engine owner** | Implement the actual pure evidence-admission consumer and model V1 Roughtime/NTS branch selection, receipt consumption, epoch changes, ancestry, uncertainty and outcomes with independent fixture truth. Retain acquisition during leap ambiguity, all-silent healthy controls and fresh post-guard admission under S1.4. Add reserve-specific behavior after TA-W05 | Applicable TA-C01–TA-C07/10/12/13/16/18/21 controls reach the actual consumer; no duplicate credit, stale admission, calendar-vote learning or extra clock controller. **V1 P2 in progress:** §3 records controlled exchange, interval/date, conflict and withdrawal consumers with selected development checks; live production issuers, full NTS receiving integration and applicable acceptance remain open. **Reserve portions post-V1** |
 | **TA-W05 — KHR numerical/security owner** | After actual V1 release, MATH-C01 disposition, TRUST-C01, MT-C01 and CLK-C01, evaluate cold-start reserve candidates, Ananke-inspired admission, initial roster/refresh and bounded sampling against the unchanged baseline; do not import periodic-watchdog security bounds | KHR-0's recovery/error/false-acceptance/latency/cost evidence plus `ADOPT_LIMITED`, `DEFER` or `REJECT`; adoption needs qualified bounded implementation. **Future KHR phase** |
 | **TA-W06 — RGT transport/trust owner** | Reconcile the dated census and linked first-schema key inventory by wire version/operator/key/upstream; consume required key/profile bindings, admit update/rollback rules, and qualify advertised UDP/TCP alternatives and finite interoperability work; controlled counterpart first. Observe NV-TA-001 §8.4's acquisition backoff and authenticated reset at actual sends/connect attempts under TA-C14/19 | Exact compatibility, transport/retry and minimum-independent-source success/failure evidence, including TA-C17; terms and observed availability scope retained. Catalogue entries and decoded public-key lengths are not live passes. **V1 P2/P7 evidence pending** |
 | **TA-W07 — Windows/NTS owner** | With admitted artifacts and owned disposable environment, exercise the V1 Roughtime date-basis route under OPEN-8/R-02/R-05, exact error categories and fresh isolated verification across hypotheses; exercise the reserve route only after its post-V1 admission | Valid supported-date recovery and explicit failure for bad identity/revocation/era; applicable TA-C11/19/20/22, no unauthorized effect, observed cleanup/restoration. **V1 P2/P7 gate open; existing native admission/holds remain** |
@@ -4196,8 +4215,11 @@ The original 3 November change was limited to English documentation and task
 routing, with source consistency, link/anchor, diff, independent-review and
 remote-content checks. Its receipts below establish only the readiness of those
 research/plan candidates. They do not review the later scheduling amendments or
-qualify any runtime. TA-W02–TA-W09 and all TA-C cases remain unexecuted, at their
-current V1 or post-V1 placement.
+qualify any runtime. At that original 3 November documentary checkpoint,
+TA-W02–TA-W09 and all TA-C cases were unexecuted. The later implementation and
+development-check records in §3 and the current assignment table govern their
+present V1 or post-V1 status; the original receipt is not a current absence-of-work
+claim.
 
 ### 6.1 Completed independent review — 3 November 2026
 
