@@ -1192,6 +1192,55 @@ Use existing admitted verification paths; sanitizer or debugger evidence retains
 its diagnostic scope and does not replace a final installed normal-operation run.
 Historical receipts below are retained without extending their candidate or scope.
 
+#### W1 populated UI startup row — 28 November 2026
+
+**Source record; native evidence pending.** This bounded W1 child records only
+the five existing ordinary UI startup controls at
+`8325506fbb30aacf4373b4bcbfdfcc65165b2c1c`, under CHECK-16/20/26/27.
+It does not close the complete desktop profile. Architecture §15.4 and the W1
+row above retain the remaining controls and failure/currentness rules.
+
+The actual local representation is already implemented: constants and private
+`PolicyCalls` in `slint_host/startup_image_policy.rs`, the existing
+`StrictHandlePolicyError`/`RestrictedExecutionPolicy` and corresponding typed
+errors, and `admission::StartupCalls`/`StartupAdmissionError`. Native current-process
+adapters produce each query/setter result. `admission::NativeCalls` consumes them
+in the order below; private `before_backend_with` propagates its first typed
+failure and invokes the backend factory once only after all five succeed.
+`slint_host::create_native` calls `before_backend` before backend selection,
+fixture construction and native observers. No new shared type/API is proposed.
+
+| Order / existing owner | Exact expected fields and accepted observations | Unknown/support/failure behavior and evidence kind |
+| --- | --- | --- |
+| 1. `startup_image_policy::enforce_with` / `windows::SystemPolicyCalls` | Image load: `NoRemoteImages=1`, `NoLowMandatoryLabelImages=1`, `PreferSystem32Images=1` (`REQUIRED_FLAGS=0x7`). Known mask `0x1f`; `0x8`/`0x10` are audit fields. Requested word is `initial \| 0x7`; an initial word already containing the three required fields succeeds without a setter. Otherwise one setter and query must return all requested fields; additional known audit fields are accepted. | Unknown initial/effective bits refuse; lost inherited audit or missing enforcement refuses. Query/setter errors preserve stage and original Win32 code. Query/readback evidence, not setter-only evidence; audit alone never satisfies `0x7`. |
+| 2. `configure_default_dll_search_with` / `windows::set_default_dll_search` | Exactly `LOAD_LIBRARY_SEARCH_APPLICATION_DIR \| LOAD_LIBRARY_SEARCH_SYSTEM32` (`0x0200 \| 0x0800 = 0xA00`) is passed once to `SetDefaultDllDirectories`. | Setter-only `Result<(), DllSearchPolicyError>`; no effective-policy query exists in this owner. Failure preserves its original Win32 code and stops admission. The source records successful configuration of subsequent default searches, not independent effective readback, pre-entry loading or searches with explicit loader flags. |
+| 3. `strict_handles::enforce_with` / `windows::StrictHandlePolicyCalls` | `RaiseExceptionOnInvalidHandleReference=1` and `HandleExceptionsPermanentlyEnabled=1`; known/required word exactly `0x3`. Initial `0x3` needs only its query; other recognized words receive one `0x3` setter and must read back exactly `0x3`. | Every reserved bit at either observation refuses. Exception-only/debugger/verifier word `0x1` cannot satisfy permanent admission. Initial/set/effective errors remain `StrictHandlePolicyError`; no weaker retry. Query/readback evidence. |
+| 4. `restricted_execution::enforce_with(DynamicCode)` / `windows::RestrictedExecutionPolicyCalls` | `ProhibitDynamicCode=1`, `AllowThreadOptOut=0`, `AllowRemoteDowngrade=0`; known mask `0xf`. Requested word is `0x1 \| (initial & 0x8)`, preserving inherited `AuditProhibitDynamicCode`. Initial `0x1` or `0x9` needs only its query. After tightening, permitted words are `0x1`/`0x9` without inherited audit, and only `0x9` with inherited audit. | Reserved bits, missing prohibition, either weakening bit (`0x6`) or lost inherited audit refuse. Newly observed audit is accepted only alongside enforcement. Typed error retains fixed DynamicCode policy, stage and original code/word. Query/readback evidence; native selector is code-owned value `2`. |
+| 5. `restricted_execution::enforce_with(ExtensionPoints)` / same fixed adapter | `DisableExtensionPoints=1`; known/required word `0x1`. Initial `0x1` needs only its query; initial zero receives one `0x1` setter and must read back `0x1`. | Any reserved bit or missing disable bit refuses. Typed error retains fixed ExtensionPoints policy, stage and original code/word. Query/readback evidence; native selector is code-owned value `6`. |
+
+These owners do not apply a support mask to drop fields or expose an optional
+weaker branch: unavailable/unsupported native calls follow the same typed refusal
+path. Already completed tightening remains in force after a later failure. The
+source row supplies no native OS/CPU/VM compatibility, DLL/module closure,
+assistive-technology or installed-activation qualification. B1's UI source binding
+remains a fixture with `pending-complete-role-qualification`.
+
+**One missing acceptance observation; planned and held.** The existing image-load
+and strict-handle test modules contain separate ignored fresh-process native
+readback tests. `restricted_execution/tests.rs` instead uses scripted adapters;
+`admission/tests.rs` observes guard ordering and factory calls with scripted
+`StartupCalls`. Add one admitted fresh-process native case for the complete UI
+`create_native` path: independently query dynamic-code and extension-point words
+before the call and after a successful return, then require the table's exact
+enforcement/forbidden-field rules and preservation of inherited dynamic-code audit.
+A failed query/startup is incomplete or refused, never a zero-valued pass. Keep
+the host owned through observation and normal cleanup; record actual Windows,
+CPU/VM, image, debugger/verifier and module/profile identity. This case observes
+actual restricted-policy/GUI compatibility; existing portable order tests retain
+the separate pre-backend-order assertion. No native execution is authorized or
+claimed by this source record. No additional portable acceptance gap was
+established in this bounded readback, and no tests were added or run.
+
 #### Service and IPC qualification — 25 November 2026
 
 **Source and status:** review of `a281ec3b254be76a079bfe66a4623c06684c1119`.

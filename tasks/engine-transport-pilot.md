@@ -32947,6 +32947,277 @@ Both source revisions and status files are also retained outside the RAM
 filesystem in `/tmp/nevrotick-receiving-preparation-gbonkpj4/`; these are
 unexecuted preparation copies, not captured product evidence.
 
+**Current-basis source implementation — 28 November 2026.** On clean
+`8325506`, the coordinator resumed RB-01/02/03/04 rather than activating a
+different product phase. This source stage has a 30-minute work bound beginning
+18:33 UTC and a separate 90-second aggregate control allowance; it admits no new
+Rust/compiler capture window. Preserve earlier spent work and the historical
+11-second remainder.
+
+The v3 producer under `/dev/shm/nevrotick-current-basis-v3-k_72vnwu/` binds the
+actual 838-input product digest
+`f81dfa76a1bbfbf63d771d1bbaf958478d6cb290c8ac3fc041d04e4c7b1480ba`.
+Its independent reader contract now includes actual closing source, HEAD/index,
+frozen-file, configuration, target-library, tool/vendor and doc/helper maps, plus
+explicit entry observations and unchanged resource limits. These values are
+read at the existing closing checks, not inferred from a success flag. The
+original preceding producers remain unchanged. Durable source and status copies
+are in `/tmp/nevrotick-basis-v3-source-yome87np/`.
+
+An isolated source-only `--plan` passed current product admission, yielding 22
+configured graph commands for each profile, two discovery commands and four
+ordinary/Rustdoc commands. It executed no graph, compiler or product lane. Five
+isolated source controls passed the current candidate/hash/count and storage
+predicates, their exact boundaries and the source ordering before output
+allocation. The old predicate admitted a two-GiB durable view below its four-GiB
+live floor; the new five-GiB entry predicate refused that same specimen. This
+establishes a source-preflight discriminator, not a new physical storage canary.
+The two invocations consumed 1.283091 seconds in total within the 90-second
+control allowance, with no failed attempt. Records are in
+`/tmp/nevrotick-basis-source-controls-zbm1ncp6/`; plan and preflight stdout
+SHA-256 values are respectively
+`52a48d34d184596b3947543e006c26b8fdca202dfbe58a422a9d26221024bcad`
+and `393833810ef3e29ad43346a5602e72a0ceee3090d8cf30016497cccf6c37145f`.
+Required build-custody, contract/integration, boundary and environment QA guide
+these checks; target-specific fuzz/native holds and post-V1 formal deferral
+remain unchanged.
+
+RB-02's independently authored reader and physical synthetic controls are
+prepared in `/tmp/nevrotick-receiving-basis-reader-gj8bbwex/`. Root owns producer/storage integration; the reader
+writer owns only that private directory, with no concurrent Cargo output or
+native state. The basis consumer must preserve qualified case pairs and empty
+binaries, annotated Rustdoc cases, complete raw graph custody and explicit
+basis-only credit; it cannot substitute for the 19 physical lanes.
+
+The first isolated reader execution completed 35 controls with 29 failures and
+one error: the supposedly healthy fixture created an intermediate directory with
+ambient permissions rather than the reader's required private custody. This is
+a fixture/setup failure, not a product rejection result. A separate completed
+fresh-context review confirmed that cause, identified an unclosed directory
+iterator on refusal, and retained **RBR-02**: a nonempty monotone resource log can
+be truncated to its first complete sample without a retained hash/count or
+closing coverage observation distinguishing the loss.
+
+The repair copy `/tmp/nevrotick-basis-reader-repair-shzj23f8/` explicitly creates
+each owned directory with mode `0700` and context-manages the directory iterator;
+the consumer's custody requirement and all 35 expectations remain unchanged.
+The same isolated controls then passed all 35, including the healthy physical
+synthetic basis. Reader and fixture SHA-256 values are respectively
+`f68934df458968d926b18c4f7f14e6f81e8d5f3a8e1055d45c73b79916dbe5a3`
+and `bbbec3cccf8b61dad3de2c530fb749e7e807b4d154f24a61d84f0a2774a4d5c1`.
+The test source remains `5a8f60d6…`. The failed and repaired records are
+`reader-01.json`/`reader-02.json` in the source-control directory above; their
+stdout hashes are `b6a7a512e7618d37a1b80fff94894d51f386575a0cc6f70560bd8c0488d00d79`
+and `ffa9799922654140b772fc2a406effb5cbad47edd7da1dd016f3d4b4d47be4c3`.
+All four source/control invocations consumed 1.777037 seconds cumulatively.
+The synthetic graph contains 13 raw commands, so it establishes no actual
+configured 45-command compatibility. RBR-02 remains open: bind the completed
+observer log and its count/closing observation, enforce a bounded coverage rule,
+and pair complete evidence with first-sample-only and missing-tail refusals.
+This source stage remains incomplete; no graph, Cargo, stock19, mount or native
+qualification has been dispatched.
+
+The initial source window ended incomplete at 19:03 UTC. RBR-02 supplied a
+concrete changed approach for a separate ten-minute producer/consumer repair,
+ending by 19:13 UTC; earlier work and the same 90-second control allowance were
+preserved. The v4 producer in `/dev/shm/nevrotick-current-basis-v4-7f_vl46_/`
+now stops and joins the observer, appends an actual closing sample, closes and
+boundedly reads the log, and retains its SHA-256, count and first/last times.
+Both producer and independent consumer require at least two samples and start,
+interior and closing observation gaps of at most two seconds for the half-second
+sampling schedule. These are explicit incomplete-evidence boundaries, not a
+continuous-availability guarantee or a relaxation of resource floors/ceilings.
+
+Fresh review also found **RBR-03**: the cgroup event/peak observations preceded
+the newly extended completion work. The producer now refreshes and validates
+those observations after observer/log completion, before terminal publication;
+a failed closing observation preserves `incomplete`. The reviewer inspected the
+actual changed bytes and closed RBR-02/03 in source, without execution. External
+process-after-exit resources and actual retirement still require their original
+storage/controller integration.
+
+The final producer SHA-256 is
+`c511cce49e8438789afb4017db43e47a2b8ce521f2b9a85f3712a7dc9ace611c`.
+The independent consumer in `/tmp/nevrotick-basis-resource-reader-Gpo294Yt/`
+is `03e6663984b1b0a41c3c11a8b1daba3ac18a45d18a53ef62e085857f921bed58`.
+All 47 physical synthetic reader controls passed, retaining the original 35
+expectations and adding complete-log, raw truncation, resealed missing-tail,
+coverage, count, endpoint, schedule and final-marker controls. Ten isolated
+producer controls passed on the final source: eight exercise its actual pure
+completion helper, one exercises the actual closing-counter predicate, and one
+checks source order only. The first eight-control predecessor result remains
+separately retained. `reader-03.json` and `resource-completion-02.json` record
+the final controls; stdout hashes are respectively
+`7a18bbe2004673d60a5ce07b743c93cdf4362d76c5e877904119a3846a4b6fa7`
+and `881190070a7dac3113272ad4deac5d088dbc247cc06fe3e1266666d3299a6330`.
+All seven source/control invocations, including the failed first reader run,
+consumed 2.348367 seconds. The reviewed source and checkpoint are durably copied
+to `/tmp/nevrotick-basis-v4-retained-8f56b1g5/`.
+
+This closes the two specific source findings, not RB-02's complete configured
+consumer integration or RB-04. Actual configured callback/terminal binding,
+fresh graphs/discovery and physical stock19/storage/controller capture remain
+unadmitted; the draft's 600-second basis ceiling is unchanged. No Rust, graph,
+mount, native or metric result follows from the synthetic controls.
+
+**Current candidate basis preparation — 28 November 2026.** Regeneration of
+the UI text fingerprint companion changed exactly one member of the previous
+838-file source map. An independent full-file readback and the configured
+source-only plan agree on candidate digest
+`2045b1be4c1fed336d6843cbea9f914e18447a8d808b4399e86aeb5fad96be79`.
+The private successor at `/dev/shm/nevrotick-current-basis-v5-20261128/` pins
+that digest, requires a fresh caller-recorded compiler path, gives the
+configured runner closed resource-stop codes and bounds serialized records to
+the independent reader's limits. Its runner SHA-256 is
+`e615f499c168fa9ae09eb21024b377d13b2c41ca9f4dcf5ed59c30e852d98ee6`.
+The isolated source plan passed with 22 default and 22 explicit-profile graph
+commands. Five focused path/record controls passed. The separate configured
+callback controls initially refused missing synthetic policy pins and a
+fixture-type mismatch, then passed nine healthy/refused groups after those
+test-only setup corrections. Raw source/control records are under
+`/tmp/nevrotick-basis-v5-plan-20261128/`. The private configured consumer is
+rebound to this successor but still needs a complete physical receipt and an
+externally observed terminal hash. These controls supply no graph, Cargo,
+stock19, native or metric result.
+
+**First physical basis attempt and reader repair — 28 November 2026.** The
+bounded user service `nevrotick-current-basis-0c743098` completed both default
+and explicit-profile GNU/MSVC dependency graphs, then stopped during default
+test discovery. Its terminal is `incomplete`, after 55.21 seconds of runner
+time. The owned compiler directory retired and the service exited. The raw
+default discovery contains 318 cases across ten binaries, including empty
+binaries. `verify.ENV.require_ok` removed leading spaces from the first Cargo
+progress line, so the independent listing reader rejected the transformed
+string as `MALFORMED_LINE`. Replaying the exact retained raw string through
+that reader accepts all ten binary records; replaying its stripped version
+reproduces the refusal. The producer now uses `require_ok` for command status
+and passes the unchanged retained output to downstream readers. Its current
+SHA-256 is `48a3a6776f8b21e4d66ec7d4a201d913bd5be87da423ef85445380045e0d5f9e`.
+The failed attempt and its raw graphs remain under
+`/tmp/nevrotick-current-basis-v5-evidence-20261128/run-01/`. They supply no
+complete basis or stock19 qualification. A fresh attempt must rebind the
+private consumer and retain a distinct terminal.
+
+**Second physical current-basis attempt — 28 November 2026.** The exact
+recorded source was `8325506fbb30aacf4373b4bcbfdfcc65165b2c1c`, with
+index SHA-256 `a866397e243f3c9a893cd9179534afa61cac62e3c6bee47442145cebfcef39c2`
+and producer SHA-256
+`48a3a6776f8b21e4d66ec7d4a201d913bd5be87da423ef85445380045e0d5f9e`.
+The bounded second service exited zero after 180.003 seconds; the producer
+reported `passed` after 163.568 seconds. Its complete physical receipt has
+45 graph lanes and four profile/target rows. Default and explicit-profile
+ordinary discovery and execution agree on 318 and 693 cases across ten
+binaries each, including one empty binary per profile. Rustdoc ran 90 and
+91 cases. The observer retained 325 samples, observed a 2,089,152,512-byte
+peak, joined at completion, and confirmed retirement of owned compiler work.
+
+The terminal's 983,949 bytes were independently pinned to SHA-256
+`c923038f81a76fd4f15c75166cc319f21f54a2ad672ccd03f092bb2df5eec769`
+before independent readback. The separate configured consumer accepted the
+complete 60-file set and its source, tool, vendor, graph, test and bookend
+checks. Its readback SHA-256 is
+`69e38945e27145f3ee48754cf3995decbaa37c22ee50ddb95e88e120f2fcb149`.
+Two earlier readback wrappers failed before admission: the first made
+`/dev/null` unreadable to Git; the second hid the pinned `/dev/shm` source.
+The corrected read-only, network-isolated wrapper completed. All raw records
+are under `/tmp/nevrotick-current-basis-v5-evidence-20261128/`, including
+`readback-input-02.json`, `service-02-result.json` and `readback-02.json`.
+
+This result qualifies only the exact recorded current basis. It does not
+qualify physical stock19, native Windows, current coverage or mutation, live
+positive Engine-to-Core admission, or P2/P7 exit. The reader explicitly
+returns false for stock19, native and metrics qualification. The 19 physical
+stock19 lanes and W11-W01 reference/mapping/quality supplier remain next;
+the live Core boundary still returns `MappingUnavailable`. Later edits to
+this task or Git index change the live bookends, so reuse the retained
+admitted readback as the original capture rather than rerunning it as a
+claim about a changed checkout.
+
+**Current stock19 planning control — 28 November 2026.** The separate
+private controller in `/tmp/nevrotick-current-stock19-controller-08gECU/`
+now pins the admitted `2045b1be…` product digest and the complete independent
+basis readback SHA-256 `69e38945…`. It checks that exact canonical readback
+before using its discoveries and keeps the raw command output after the
+configured status check. The fixed recipe SHA-256 is
+`f1d82848dd2607068c62207b918cf3cbaed084af9849d559b8a9ab7239aaa1b0`.
+A read-only, network-isolated pure control passed: it reconstructed exactly
+19 planned lanes, four Engine ordinary lanes, two Rustdoc lanes and the three
+original retirement points. A stale candidate, a missing empty-binary record
+and a changed recipe each refused at the intended identity boundary; the
+healthy case passed again. A separate read-only review found that this
+control checks nonempty commands and the retirement list but does not
+compare every returned command against the fixed recipe independently.
+That narrower oracle remains to be strengthened before physical use.
+Controller, control and log SHA-256 values are
+respectively `b7cd1f37176f730fa36431ceee4ee7f077fab527ec86e22d322db0ef43409ec4`,
+`3123c388491e621ba5e0dd9b9d278d00177eb229047f65905e45560638c1912e`
+and `7b903cd42c8ad96f82a178068f6e8970cfcd00e9b5fe47df4f4ab433a6340260`.
+This is source-only planning evidence. The current D: placement wrapper, exact
+work-view/backing identity, full-window budget and independent physical
+stock19 reader are not implemented; the historical FUSE tool and capacity
+record are absent at their original paths. No stock19 lane, mount, native
+operation or metric campaign ran in this control.
+
+A separate read-only physical-reader review confirmed that the archived reader
+still pins the old 768-input candidate, 49 graph members, 686 EP1 cases and
+`ANALYSIS_BOUNDARY_OK`; it cannot admit the current 838-input basis, 693 EP1
+cases or `PRODUCT_BOUNDARY_OK`. Its global case-name uniqueness loses the
+qualified `(binary, case)` distinction and omits empty binaries. The current
+reader must bind the independently pinned 60-file basis, exact 19 raw lane
+records, zero-case binary counts, annotated Rustdoc and the four Core
+selectors; separately observe the D: image, work attachment, complete closing
+resource log, read-only remount, service exit and scratch retirement. This is
+an implementation checklist, not a physical readback result.
+
+**Parallel development allocation — 28 November 2026.** Following David's
+request to use P2–P7 capacity, the coordinator retains P2 and shared contract,
+graph and integration ownership. Three fresh-context workers independently
+inspect P3/P4 service and read-only/simulated-clock source, P5 UI source, and
+P6 delivery/P7 acceptance preparation. Each has a six-minute readiness/patch
+bound, read-only checkout access and an exclusive private output directory;
+no compiler/native/resource campaign or shared writer is admitted. Each must
+return one prerequisite-checked concrete child or its precise held dependency,
+not a generic phase survey. P7 final qualification still requires an integrated
+candidate. Assignment is not completion, and these workers lift no phase,
+execution, UI, storage, signing or release gate.
+
+All three readiness workers returned. P3/P4 confirmed that prior component and
+synthetic package-presence controls already exist; production status still needs
+the real installed actor/component and current authorization contract. Do not
+repeat those completed fixtures or invent their production supplier. P5 then
+prepared an exact-content, explicitly unapproved review bundle; its source and
+canonical hashes are recorded in the GUI handoff. P6 authored a W1 proposal,
+but a separate reviewer required revision because its generic contracts repeated
+architecture section 15.4 without populated role fields. That proposal remains
+private and unintegrated; author completion supplies no W1 implementation or
+P6/P7 qualification. The useful correction is one populated row tied to existing
+UI startup owners, rather than another general obligation catalogue.
+
+The corrective pass replaced that proposal with the five populated existing UI
+controls, actual local owners, exact fields and evidence categories. The separate
+reviewer verified those source facts and the one planned native composed-startup
+observation, reporting no material finding. That bounded record is now under
+W1 in the Windows task. Both attempts consumed five minutes combined; no runtime
+API, role policy or native implementation was changed, and full W1/P6/P7 remains
+open. The rejected generic proposal was not integrated.
+
+The bounded source-recovery worker recovered the original D: launcher and reader
+byte-for-byte in `/tmp/nevrotick-recovered-stock19-01a21446/`, matching the
+published `a4361a92…` and `3df04105…` hashes. `recovery.json` records exact
+named-session fields and overlapping source excerpts, SHA-256
+`f61493d8ad0b3d4690d146254b66b2bad37dc07896ced63e741da3af0c16045f`.
+This recovered code supplies no fresh mount, capacity or retirement result.
+The original controller, capacity record and FUSE payload tree are absent at
+their referenced paths; the bounded pass found only controller excerpts. Do not
+repeat that search unchanged. The retained `plan.json` still supplies all exact
+19 commands, fixed Core selectors and three cache-retirement points. Use those
+inputs for an explicitly reviewed current successor, preserving the 64-member,
+eight-MiB-per-file and 48-MiB-total report envelope and separate graph custody.
+The recovered historical reader discards empty-binary identity and forbids equal
+names across different binaries; its current successor must carry the complete
+fresh basis through physical readback. Full storage/controller integration,
+current-candidate evidence, metrics and native/product qualification remain open.
+
 The implementation experiment prompted by the prematurely inferred priority
 change was stopped without main-tree integration or target execution. Its
 unfinished three-file original-quality draft is retained as

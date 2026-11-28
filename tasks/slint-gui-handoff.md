@@ -983,6 +983,52 @@ a locale or critical-content approval bundle; this dated snapshot cannot qualify
 changed inputs. Production `REVIEWS` remains empty. Compatibility, source checks
 and historical bundles grant no semantic approval or native/product qualification.
 
+**Parallel P5 exact-content preparation — 28 November 2026.** A separate worker
+prepared `/tmp/nevrotick-p5-text-review-a9bji527/` from `8325506`, explicitly
+unapproved, with all 539 messages, 481 critical members in ten groups, action and
+placeholder/plural contracts, eight emergency strings and three engineering
+notification strings. Its 66-payload manifest has SHA-256
+`6bc4759e01bd490957704b86a0331f185a1b3d66255e2e04929c161dbe0b0867`.
+The canonical English is 48,674 bytes, SHA-256
+`053c09a3d9b2518e67ddd13bd556cee9adc7e93b2a4e980c547ff8a542f76e54`,
+matching the current test-only fixture. The coordinator verified all payload
+hashes/private-file custody and all 55 source snapshots against current files.
+The worker's bounded inert-data encoder/decoder and membership readback are
+source preparation, not execution of the application or its generator.
+
+The next semantic action is independent human review of this exact whole catalog,
+coherent critical groups and separate bootstrap wording, bound to manifest and
+canonical hashes. AI preparation grants no semantic approval; preserve the empty
+production ledger until genuine approval and later technical/native admission.
+
+The pass also found a stale generated companion:
+`src/localization/contract-fingerprint-input.bin` still represents contract 4,
+whereas current `contract.rs` and catalog use the correctly derived contract-5
+fingerprint above. Source/caller triage found no runtime semantic consumer of
+that retained file; the generator emits its current companion and generator
+tests inspect fresh output. This is an artifact inconsistency, not an established
+runtime defect. The smallest follow-up is to regenerate that companion through
+the existing reviewed generator; preserve historical JSON and v2/v3/v4 CBOR
+fixtures. The source triage is `/tmp/nevrotick-p5-fingerprint-triage.md`, SHA-256
+`c7a71248153f7750912ee673131d2ee90fc051e09b51f3202982e220ad0b21bd`.
+No checkout repair or generator execution is claimed by this preparation.
+
+**Generated companion refreshed — 28 November 2026.** The configured generator
+and all 17 focused generator controls passed in an offline Bubblewrap run. The
+initial wrapper refused a precreated empty log directory before dispatch. After
+checking that the directory was empty, the retry completed in 3.21 seconds with
+matching entry and closing snapshots of 30 source and 622 runtime files. The
+raw `execution.json` and both command logs are retained under
+`/tmp/nevrotick-p5-generator-prep-qcyaa59g/work/logs/`.
+
+Independent readback verified all 15 outputs against the generated identity
+record (SHA-256 `0af06387a7ee7ddecfeb737093754019ce28b7fe40da6d8b1f7c60ad3c00e71e`).
+The checked-in companion is now the generated 172,832-byte file with SHA-256
+`973058fb8f1d923f20b06e66e0ba6406230af8575ea5b109cb94339de7e4547d`, also
+matching the review bundle's independent derivation. This updates one input
+in the receiving verification source inventory. The English content remains
+pending human semantic approval. Native UI qualification remains open.
+
 **Historical candidate text identities — 27 November 2026:** schema 2,
 text contract 4, English revision 4 and informational GUI build 2;
 525 active messages, with fingerprint
